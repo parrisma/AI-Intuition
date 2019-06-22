@@ -1,0 +1,6 @@
+This is a Kaggle data set.
+
+1. Sign into Kaggke
+2. Navigate to https://www.kaggle.com/moltean/fruits
+3. download the zip file
+4. expand in this location.
