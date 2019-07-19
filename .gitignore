@@ -1,2 +1,4 @@
 **/fruits-360/*
 **/*.npy
+**/.ipynb_checkpoints
+**/.ipynb_checkpoints/*.ipynb
