@@ -1,4 +1,6 @@
 **/fruits-360/*
 **/*.npy
+**/*.log
 **/.ipynb_checkpoints
 **/.ipynb_checkpoints/*.ipynb
+__pycache__
