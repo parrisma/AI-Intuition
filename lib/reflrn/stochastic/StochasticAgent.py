@@ -1,4 +1,5 @@
 import logging
+import random
 
 from lib.reflrn.interface.Agent import Agent
 from lib.reflrn.interface.State import State
@@ -12,46 +13,46 @@ class StochasticAgent(Agent):
                  agent_id: int,  # immutable & unique id for this agent
                  agent_name: str,  # immutable & unique name for this agent
                  lg: logging):
-        self.__lg = lg
-        self.__id = agent_id
-        self.__name = agent_name
-        self.__episode = 0
-        self.__policy = StochasticActorCriticPolicy(st_size=9,
-                                                    a_size=9,
-                                                    num_states=6000)
+        self.lg = lg
+        self.agent_id = agent_id
+        self.agent_name = agent_name
+        self.episode = 0
+        self.policy = StochasticActorCriticPolicy(st_size=9,
+                                                  a_size=9,
+                                                  num_states=6000)
         return
 
     # Return immutable id
     #
     def id(self):
-        return self.__id
+        return self.agent_id
 
     # Return immutable name
     #
     def name(self):
-        return self.__name
+        return self.agent_name
 
     #
     # Environment call back when environment shuts down
     #
     def terminate(self,
                   save_on_terminate: bool = False):
-        self.__lg.debug(self.__name + " Environment Termination Notification")
+        self.lg.debug(self.agent_name + " Environment Termination Notification")
         return
 
     #
     # Environment call back when episode starts
     #
     def episode_init(self, state: State):
-        self.__lg.debug(self.__name + " Episode Initialisation Notification  : ")
-        self.__episode += 1
+        self.lg.debug(self.agent_name + " Episode Initialisation Notification  : ")
+        self.episode += 1
         return
 
     #
     # Environment call back when episode is completed
     #
     def episode_complete(self, state: State):
-        self.__lg.debug(self.__name + " Episode Complete Notification  : ")
+        self.lg.debug(self.agent_name + " Episode Complete Notification  : ")
         return
 
     #
@@ -61,22 +62,35 @@ class StochasticAgent(Agent):
     # possible_actions : The set of possible actions the agent can play from this curr_coords
     #
     def chose_action(self, state: State, possible_actions: [int]) -> int:
-        action, _ = self.__policy.act(state, self.__episode)
+        action = -1
+        guess = 0
+        while (action not in possible_actions) and guess < 5:
+            action, _ = self.policy.act(state, self.episode)
+            guess += 1
+        if guess >= 5:
+            action = random.choice(possible_actions)
         return action
 
-        #
+    def predict(self, state: State) -> None:
+        """
+        Show the probability of winning by action for the given state
+        :param state: The State to predict for
+        :return:
+        """
+        print(str(self.policy.actor_model.predict(state.state_model_input(), batch_size=1).flatten()))
+        return
 
     # Environment call back to reward agent for a play chosen for the given
     # state passed.
     #
     def reward(self, state: State, next_state: State, action: int, reward_for_play: float, episode_complete: bool):
-        self.__lg.debug(self.__name + " reward  : " + str(reward_for_play) + " for action " + str(action))
-        self.__policy.remember(state=state,
-                               action=action,
-                               r=reward_for_play,
-                               next_state=next_state)
+        self.lg.debug(self.agent_name + " reward  : " + str(reward_for_play) + " for action " + str(action))
+        self.policy.remember(state=state,
+                             action=action,
+                             r=reward_for_play,
+                             next_state=next_state)
         if episode_complete:
-            self.__lg.debug(self.__name + " Episode Completed")
+            self.lg.debug(self.agent_name + " Episode Completed")
         return
 
     #
@@ -85,7 +99,7 @@ class StochasticAgent(Agent):
     #
     def session_init(self,
                      actions: dict) -> None:
-        self.__lg.debug(self.__name + " Session Initialisation Notification  : ")
+        self.lg.debug(self.agent_name + " Session Initialisation Notification  : ")
         return
 
     #

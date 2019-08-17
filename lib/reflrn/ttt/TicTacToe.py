@@ -10,10 +10,9 @@ from lib.reflrn.interface.State import State
 
 
 class TicTacToe(Environment):
-
     __play = float(-1)  # reward for playing an action
-    __draw = float(-10)  # reward for playing to end but no one wins
-    __win = float(100)  # reward for winning a game
+    __draw = float(0)  # reward for playing to end but no one wins
+    __win = float(10)  # reward for winning a game
     __no_agent = None
     __win_mask = np.full((1, 3), 3, np.int8)
     __actions = {0: (0, 0), 1: (0, 1), 2: (0, 2), 3: (1, 0), 4: (1, 1), 5: (1, 2), 6: (2, 0), 7: (2, 1), 8: (2, 2)}
@@ -35,7 +34,8 @@ class TicTacToe(Environment):
     # Constructor has no arguments as it just sets the game
     # to an initial up-played set-up
     #
-    def __init__(self, x: Agent,
+    def __init__(self,
+                 x: Agent,
                  o: Agent,
                  lg: logging,
                  save_on_exit: bool = False):
@@ -128,17 +128,19 @@ class TicTacToe(Environment):
             self.__stats[self.__episode] = self.__stats[self.__episode] + 1
             self.__lg.debug("Episode Drawn")
 
-        if self.__stats[self.__episode] % 100 == 0:
-            self.__lg.info("Stats: Agent : " + self.__x_agent.name() + " [" +
-                           str(round(
-                               (self.__stats[self.__x_agent.name()] / self.__stats[self.__episode]) * 100)) + "%] " +
-                           "Agent : " + self.__o_agent.name() + " [" +
-                           str(round(
-                               (self.__stats[self.__o_agent.name()] / self.__stats[self.__episode]) * 100)) + "%] " +
-                           "Draw : [" +
-                           str(round(
-                               (self.__stats[self.__drawn] / self.__stats[self.__episode]) * 100)) + "%] "
-                           )
+        return
+
+    def show_summary(self) -> None:
+        print("Stats: Agent : " + self.__x_agent.name() + " [" +
+              str(round(
+                  (self.__stats[self.__x_agent.name()] / self.__stats[self.__episode]) * 100)) + "%] " +
+              "Agent : " + self.__o_agent.name() + " [" +
+              str(round(
+                  (self.__stats[self.__o_agent.name()] / self.__stats[self.__episode]) * 100)) + "%] " +
+              "Draw : [" +
+              str(round(
+                  (self.__stats[self.__drawn] / self.__stats[self.__episode]) * 100)) + "%] "
+              )
         return
 
     #
@@ -161,9 +163,9 @@ class TicTacToe(Environment):
 
             while not self.episode_complete():
                 state = TicTacToeState(self.__board, self.__x_agent, self.__o_agent)
-                self.__lg.debug(agent.name())
-                self.__lg.debug(state.state_as_string())
-                self.__lg.debug(state.state_as_visualisation())
+                # self.__lg.debug(agent.name())
+                # self.__lg.debug(state.state_as_string())
+                # self.__lg.debug(state.state_as_visualisation())
                 agent = self.__play_action(agent)
                 self.__keep_step_stats(state)
                 i += 1
@@ -174,8 +176,8 @@ class TicTacToe(Environment):
             self.__lg.debug("Episode Complete")
             state = TicTacToeState(self.__board, self.__x_agent, self.__o_agent)
             self.__lg.debug(state.state_as_visualisation())
-            self.__x_agent.episode_complete(state)
-            self.__o_agent.episode_complete(state)
+            # self.__x_agent.episode_complete(state)
+            # self.__o_agent.episode_complete(state)
         self.__x_agent.terminate()
         self.__o_agent.terminate()
         return
@@ -217,9 +219,7 @@ class TicTacToe(Environment):
 
     #
     # Make the play chosen by the given agent. If it is a valid play
-    # confer reward and switch play to other agent. If invalid play
-    # i.e. play in a cell where there is already a marker confer
-    # penalty and leave play with the same agent.
+    # confer reward and switch play to other agent.
     # ToDo
     def __play_action(self, agent: Agent) -> Agent:
 

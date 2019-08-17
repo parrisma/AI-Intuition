@@ -11,41 +11,41 @@ class TestAgent(Agent):
                  agent_id: int,  # immutable & unique id for this agent
                  agent_name: str,  # immutable & unique name for this agent
                  lg: logging):
-        self.__lg = lg
-        self.__id = agent_id
-        self.__name = agent_name
+        self.lg = lg
+        self.agent_id = agent_id
+        self.agent_name = agent_name
         return
 
     # Return immutable id
     #
     def id(self):
-        return self.__id
+        return self.agent_id
 
     # Return immutable name
     #
     def name(self):
-        return self.__name
+        return self.agent_name
 
     #
     # Environment call back when environment shuts down
     #
     def terminate(self,
                   save_on_terminate: bool = False):
-        self.__lg.debug(self.__name + " Environment Termination Notification")
+        self.lg.debug(self.agent_name + " Environment Termination Notification")
         return
 
     #
     # Environment call back when episode starts
     #
     def episode_init(self, state: State):
-        self.__lg.debug(self.__name + " Episode Initialisation Notification  : ")
+        self.lg.debug(self.agent_name + " Episode Initialisation Notification  : ")
         return
 
     #
     # Environment call back when episode is completed
     #
     def episode_complete(self, state: State):
-        self.__lg.debug(self.__name + " Episode Complete Notification  : ")
+        self.lg.debug(self.agent_name + " Episode Complete Notification  : ")
         return
 
     #
@@ -64,9 +64,9 @@ class TestAgent(Agent):
     # state passed.
     #
     def reward(self, state: State, next_state: State, action: int, reward_for_play: float, episode_complete: bool):
-        self.__lg.debug(self.__name + " reward  : " + str(reward_for_play) + " for action " + str(action))
+        self.lg.debug(self.agent_name + " reward  : " + str(reward_for_play) + " for action " + str(action))
         if episode_complete:
-            self.__lg.debug(self.__name + " Episode Completed")
+            self.lg.debug(self.agent_name + " Episode Completed")
         return
 
     #
@@ -75,7 +75,7 @@ class TestAgent(Agent):
     #
     def session_init(self,
                      actions: dict) -> None:
-        self.__lg.debug(self.__name + " Session Initialisation Notification  : ")
+        self.lg.debug(self.agent_name + " Session Initialisation Notification  : ")
         return
 
     #

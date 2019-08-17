@@ -4,14 +4,16 @@ from collections import deque
 from typing import Tuple
 
 import numpy as np
+import keras.backend as K
 from keras.initializers import RandomUniform
 from keras.initializers import Zeros
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.models import Sequential
 from keras.optimizers import Adam
-
+from keras.utils import multi_gpu_model
 from lib.reflrn.common.SimpleLearningRate import SimpleLearningRate
+from lib.reflrn.interface.State import State
 
 
 #
@@ -39,6 +41,8 @@ class StochasticActorCriticPolicy:
                  st_size,
                  a_size,
                  num_states):
+
+        self.num_gpu = 2
         self.state_size = st_size
         self.action_size = a_size
         self.num_states = num_states
@@ -47,7 +51,7 @@ class StochasticActorCriticPolicy:
 
         self.gamma = 0.99
         self.learning_rate = 0.001
-        self.replay = deque(maxlen=2500)
+        self.replay = deque(maxlen=300)
         self.replay_kl_factor = 0.0
         self.kl_update = 0
         self.actor_model = self._build_actor_model()
@@ -91,7 +95,7 @@ class StochasticActorCriticPolicy:
         sd = dict()
         for s in self.replay:
             state, _, _, _ = s
-            state = state[0]
+            state = np.array2string(state[0])
             if state in sd:
                 sd[state] += 1
             else:
@@ -132,7 +136,13 @@ class StochasticActorCriticPolicy:
         model.add(Dense(200, activation='relu', kernel_initializer=ki, bias_initializer=bi))
         model.add(Dropout(0.05))
         model.add(Dense(units=self.action_size, activation='linear', kernel_initializer=ki, bias_initializer=bi))
-        model.compile(loss='mean_squared_error',
+        if self.num_gpu > 0:
+            model = multi_gpu_model(model, gpus=self.num_gpu)
+
+        def custom_loss(y_true, y_pred):
+            return K.sum(K.mean(K.square(y_pred - y_true), axis=-1)) + K.abs(1 - K.sum(y_pred))
+
+        model.compile(loss=custom_loss,  # 'mean_squared_error',
                       optimizer=Adam(lr=self.learning_rate),
                       metrics=['accuracy']
                       )
@@ -155,6 +165,8 @@ class StochasticActorCriticPolicy:
         model.add(Dense(200, activation='relu', kernel_initializer=ki, bias_initializer=bi))
         model.add(Dropout(0.05))
         model.add(Dense(units=self.action_size, activation='linear', kernel_initializer=ki, bias_initializer=bi))
+        if self.num_gpu > 0:
+            model = multi_gpu_model(model, gpus=self.num_gpu)
         model.compile(loss='mean_squared_error',
                       optimizer=Adam(lr=self.learning_rate),
                       metrics=['accuracy']
@@ -162,10 +174,10 @@ class StochasticActorCriticPolicy:
         return model
 
     def remember(self,
-                 state: np.array,
+                 state: State,
                  action,
                  r: float,
-                 next_state: np.array) -> None:
+                 next_state: State) -> None:
         """
         Update the playback memory with the given State-Action-Reward set
         :param state: Current State
@@ -176,10 +188,10 @@ class StochasticActorCriticPolicy:
         """
         y = np.zeros([self.action_size])
         y[action] = 1  # One hot encode.
-        self.replay.append([np.round(state, self.state_dp),
+        self.replay.append([StochasticActorCriticPolicy.state_model_input(state=state),
                             np.array(y).astype('float32'),
                             r,
-                            np.round(next_state, self.state_dp)])
+                            StochasticActorCriticPolicy.state_model_input(state=next_state)])
         # Update the stats on the current bias of the reply memory
         if self.kl_update % 250 == 0:
             self.replay_kl_factor = self.replay_kl()
@@ -205,7 +217,7 @@ class StochasticActorCriticPolicy:
         return
 
     def act(self,
-            state,
+            state: State,
             episode: int) -> Tuple[int, float]:
         """
         Suggest an action based on the currently learned (stochastic) policy
@@ -213,7 +225,7 @@ class StochasticActorCriticPolicy:
         :param episode: Current Episode
         :return: predicted action, bias-factor
         """
-        state = state.reshape([1, state.shape[0]])
+        state = StochasticActorCriticPolicy.state_model_input(state=state)
         klf = self.replay_kl_factor
         aprob = self.actor_model.predict(state, batch_size=1).flatten()
         aprob[aprob < 0.0] = 0.0
@@ -247,7 +259,7 @@ class StochasticActorCriticPolicy:
         :return: training loss, training accuracy
         """
         batch_size = min(len(self.replay), 250)
-        X = np.zeros(batch_size)
+        X = np.zeros((batch_size, self.action_size))
         Y = np.zeros((batch_size, self.action_size))
         samples = random.sample(list(self.replay), batch_size)
         i = 0
@@ -272,8 +284,7 @@ class StochasticActorCriticPolicy:
     # Train the actor to learn the stochastic policy; the reward is the reward for the action
     # as predicted by the critic.
     #
-    def train_actor(self,
-                    lr: float) -> Tuple[float, float]:
+    def train_actor(self) -> Tuple[float, float]:
         """
         Take a random sample from the replay buffer. Ask the current critic network to create up to date
         predictions and then create a training data set for the actor.
@@ -302,11 +313,6 @@ class StochasticActorCriticPolicy:
 
             X[i] = state
             Y[i] = action_probs_s
-
-            print("ST: " + '{:+.2}'.format(float(X[i])) + " [ " +
-                  str(round(Y[i][0] * 100, 2)) + "% , " +
-                  str(round(Y[i][1] * 100, 2)) + "%], {"
-                  )
             i += 1
         ls, acc = self.actor_model.train_on_batch(X, Y)
         print("Actor Training: loss [{:f}] accuracy [{:f}]".format(ls, acc))
@@ -330,7 +336,17 @@ class StochasticActorCriticPolicy:
         self.actor_model.save_weights('actor' + name)
         self.critic_model.save_weights('critic' + name)
 
-    #
+    @classmethod
+    def state_model_input(cls, state: State) -> np.ndarray:
+        """
+        Convert the state to the tensor form needed for model inout
+        :param state: State object
+        :return: state as numpy array
+        """
+        st = state.state_as_array()
+        st = st.reshape([1, 9])
+        return st
+
     # Simple debugger output - could be refactored into PBFunc env as it is more env specific ?
     #
     def print_progress(self) -> None:

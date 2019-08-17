@@ -34,3 +34,10 @@ class State(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def state_as_array(self) -> np.ndarray:
         pass
+
+    #
+    # Return the state in a form that can be passed directly to a NN
+    #
+    @abc.abstractmethod
+    def state_model_input(self) -> np.ndarray:
+        pass
