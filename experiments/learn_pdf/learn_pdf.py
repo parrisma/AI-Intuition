@@ -1,22 +1,20 @@
-import logging
-import unittest
-
 import numpy as np
-import keras.backend as K
 from keras.initializers import RandomUniform
 from keras.initializers import Zeros
-from keras.layers import Dense
-from keras.layers import Dropout
-from keras.models import Sequential
 from keras.optimizers import Adam
+from keras import backend as K
+from keras.layers import Input, Dense, Dropout, BatchNormalization
+from keras.models import Model
 from keras.utils import multi_gpu_model
+import matplotlib.pyplot as plt
+
 from lib.reflrn.interface.State import State
 
 
 class PDFNeuralNet:
     def __init__(self):
         self.seed = 42.0
-        self.state_size = 1
+        self.state_size = 9
         self.action_size = 9
         self.num_gpu = 2
         self.learning_rate = 0.001
@@ -30,57 +28,104 @@ class PDFNeuralNet:
         and action space of 5 - 10
         """
         ki = RandomUniform(minval=-0.05, maxval=0.05, seed=self.seed)
-        bi = Zeros()
+        bi = RandomUniform(minval=-0.05, maxval=0.05, seed=self.seed) # Zeros()
 
-        pdf_model = Sequential()
-        pdf_model.add(
-            Dense(1600, input_dim=self.state_size, activation='relu', kernel_initializer=ki, bias_initializer=bi))
-        pdf_model.add(Dropout(0.1))
-        pdf_model.add(Dense(800, activation='relu', kernel_initializer=ki, bias_initializer=bi))
-        pdf_model.add(Dropout(0.1))
-        pdf_model.add(Dense(400, activation='relu', kernel_initializer=ki, bias_initializer=bi))
-        pdf_model.add(Dropout(0.05))
-        pdf_model.add(Dense(100, activation='relu', kernel_initializer=ki, bias_initializer=bi))
-        pdf_model.add(Dropout(0.05))
+        pdf_in = Input(shape=(self.state_size,), name="pdf_in")
+        pdf_l1 = Dense(1600, activation='relu', kernel_initializer=ki, bias_initializer=bi)(pdf_in)
+        pdf_l2 = Dropout(0.1)(pdf_l1)
+        pdf_l3 = Dense(800, activation='relu', kernel_initializer=ki, bias_initializer=bi)(pdf_l2)
+        pdf_l4 = BatchNormalization()(pdf_l3)
+        pdf_l5 = Dense(400, activation='relu', kernel_initializer=ki, bias_initializer=bi)(pdf_l4)
+        pdf_l6 = Dropout(0.05)(pdf_l5)
+        pdf_l7 = Dense(100, activation='relu', kernel_initializer=ki, bias_initializer=bi)(pdf_l6)
+        pdf_l8 = BatchNormalization()(pdf_l7)
+        pdf_out = Dense(units=self.action_size, activation='linear')(
+            pdf_l8)
 
-## ToDo re write with 2 outputs
+        pdf_model = Model(inputs=[pdf_in], outputs=[pdf_out])
 
-        pdf_model.add(Dense(units=self.action_size, activation='linear', kernel_initializer=ki, bias_initializer=bi))
         if self.num_gpu > 0:
             pdf_model = multi_gpu_model(pdf_model, gpus=self.num_gpu)
 
-        def mse_loss(y_true, y_pred):
-            return K.sum(K.mean(K.square(y_pred - y_true), axis=-1))
+        def custom_loss1(y_true, y_pred):
+            mse = K.mean(K.square(y_true - y_pred), axis=-1)
+            sum_constraint = K.abs(K.sum(y_pred, axis=-1) - 1)
+            return mse + sum_constraint
 
-        def sum1_loss(y_true, y_pred):
-            return K.abs(1 - K.sum(y_pred))
-
-        pdf_model.compile(loss=[mse_loss, sum1_loss],
-                          optimizer=Adam(lr=self.learning_rate),
-                          metrics=['mse']
+        pdf_model.compile(loss=custom_loss1,
+                          optimizer=Adam(),
+                          metrics=[custom_loss1]
                           )
+
+        print(pdf_model.summary())
+
         return pdf_model
 
     @classmethod
+    def plot_results(cls,
+                     history,
+                     loss_name,
+                     num_epochs):
+        color_r = 'tab:red'
+        color_b = 'tab:blue'
+
+        epocs = np.arange(0, num_epochs)
+
+        fig, _ = plt.subplots(figsize=(15, 6))
+
+        # Loss
+        ax1 = plt.subplot(1, 1, 1)
+        plt.title('Loss')
+        ax1.set_xlabel('Epoc')
+        ax1.set_ylabel('Traing Loss', color=color_r)
+        ax1.plot(epocs, history.history[loss_name], color=color_r)
+        ax1.tick_params(axis='y', labelcolor=color_r)
+        ax2 = ax1.twinx()  # 2nd Axis for Validation Loss
+        ax2.set_ylabel('Validation Loss', color=color_b)
+        ax2.plot(epocs, history.history['val_' + loss_name], color=color_b)
+        ax2.tick_params(axis='y', labelcolor=color_b)
+
+        # Accuracy
+        # ax1 = plt.subplot(1, 2, 2)
+        # plt.title('Accuracy')
+        # ax1.set_xlabel('Epoc')
+        # ax1.set_ylabel('Traing accuracy', color=color_r)
+        # ax1.plot(epocs, history.history['acc'], color=color_r)
+        # ax1.tick_params(axis='y', labelcolor=color_r)
+        # ax2 = ax1.twinx()  # 2nd Axis for Validation Loss
+        # ax2.set_ylabel('Validation Accuracy', color=color_b)
+        # ax2.plot(epocs, history.history['val_acc'], color=color_b)
+        # ax2.tick_params(axis='y', labelcolor=color_b)
+
+        fig.tight_layout()  # otherwise the right y-label is slightly clipped
+        plt.show()
+        return
+
+    @classmethod
     def generate_pdf_training_data(cls):
-        _x = np.zeros((100, 1))
+        _x = np.zeros((100, 9))
         _y = np.zeros((100, 9))
+        u = dict()
         for i in range(0, 100):
             _pdf = np.random.randint(100, size=9)
             _pdf = _pdf / np.sum(_pdf)
-            _x[i] = i
+            _x[i] = np.random.randint(2, size=9)
             _y[i] = _pdf
         return _x, _y
 
     @classmethod
-    def train(cls, pdf_model, x, y):
-        batch_size = 16
-        num_epochs = 500
-        history = model.fit(x, y,
+    def train(cls, pdf_model, t_x, t_y):
+        batch_size = 32
+        num_epochs = 10000
+        history = model.fit(t_x,
+                            t_y,
                             epochs=num_epochs,
                             batch_size=batch_size,
                             shuffle=True,
+                            validation_split=0.15,
+                            verbose=2
                             )
+        cls.plot_results(history, 'custom_loss1', num_epochs)
         return
 
 
@@ -91,12 +136,12 @@ if __name__ == "__main__":
     pdf.train(model, x, y)
 
     test = np.random.randint(100, size=20)
-    _p = np.zeros((1, 1))
+    _p = np.zeros((1, 9))
     for i in test:
-        _p[0] = i
+        _p[0] = x[i]
         print('-----------------------')
-        print(str(y[i]))
+        print('Yo: ' + str(y[i]))
         pr = model.predict(_p)
-        print(str(pr))
-        print(str(np.sum(pr)))
-        print(str(y[i] - pr))
+        print('Yp: ' + str(pr))
+        print('1: ' + str(np.sum(pr)))
+        print('Err: ' + str(y[i] - pr))

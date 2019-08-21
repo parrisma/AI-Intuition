@@ -1,0 +1,24 @@
+        ki = RandomUniform(minval=-0.05, maxval=0.05, seed=self.seed)
+        bi = RandomUniform(minval=-0.05, maxval=0.05, seed=self.seed) # Zeros()
+
+        pdf_in = Input(shape=(self.state_size,), name="pdf_in")
+        pdf_l1 = Dense(1600, activation='relu', kernel_initializer=ki, bias_initializer=bi)(pdf_in)
+        pdf_l2 = Dropout(0.1)(pdf_l1)
+        pdf_l3 = Dense(800, activation='relu', kernel_initializer=ki, bias_initializer=bi)(pdf_l2)
+        pdf_l4 = BatchNormalization()(pdf_l3)
+        pdf_l5 = Dense(400, activation='relu', kernel_initializer=ki, bias_initializer=bi)(pdf_l4)
+        pdf_l6 = Dropout(0.05)(pdf_l5)
+        pdf_l7 = Dense(100, activation='relu', kernel_initializer=ki, bias_initializer=bi)(pdf_l6)
+        pdf_l8 = BatchNormalization()(pdf_l7)
+        pdf_out = Dense(units=self.action_size, activation='linear')(
+            pdf_l8)
+
+
+
+                    pdf_in = Input(shape=(self.state_size,), name="pdf_in")
+        pdf_l1 = Dense(10, activation='relu')(pdf_in)
+        pdf_l2 = Dense(200, activation='relu')(pdf_l1)
+        pdf_l3 = Dense(500, activation='relu')(pdf_l2)
+        pdf_l4 = Dense(200, activation='relu')(pdf_l3)
+        pdf_l5 = Dense(50, activation='relu')(pdf_l4)
+        pdf_out = Dense(units=self.action_size, activation='linear')(pdf_l5)
