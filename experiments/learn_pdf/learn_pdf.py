@@ -16,7 +16,7 @@ class PDFNeuralNet:
         self.seed = 42.0
         self.state_size = 9
         self.action_size = 9
-        self.num_gpu = 2
+        self.num_gpu = 0
         self.learning_rate = 0.001
 
     def build_pdf_model(self):
@@ -49,7 +49,7 @@ class PDFNeuralNet:
 
         def custom_loss1(y_true, y_pred):
             mse = K.mean(K.square(y_true - y_pred), axis=-1)
-            sum_constraint = K.abs(K.sum(y_pred, axis=-1) - 1)
+            sum_constraint = K.square(K.sum(y_pred, axis=-1) - 1)
             return mse + sum_constraint
 
         pdf_model.compile(loss=custom_loss1,
@@ -116,7 +116,7 @@ class PDFNeuralNet:
     @classmethod
     def train(cls, pdf_model, t_x, t_y):
         batch_size = 32
-        num_epochs = 10000
+        num_epochs = 25000
         history = model.fit(t_x,
                             t_y,
                             epochs=num_epochs,
