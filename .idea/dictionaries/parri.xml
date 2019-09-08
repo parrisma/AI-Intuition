@@ -5,6 +5,7 @@
       <w>kullback</w>
       <w>leibler</w>
       <w>relu</w>
+      <w>tanh</w>
     </words>
   </dictionary>
 </component>
