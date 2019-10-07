@@ -1,6 +1,10 @@
 **/fruits-360/*
+**/data1/*
 **/*.npy
+**/*.zip
 **/*.log
+**/*.csv
+**/*.swp
 **/.ipynb_checkpoints
 **/.ipynb_checkpoints/*.ipynb
 __pycache__
