@@ -5,8 +5,8 @@ from journey10.stateeffortmap import StateEffortMap
 
 
 class SimpleTask(Task):
-    _start_state = State.S0
-    _terminal_state = State.S9
+    _process_start_state = State.S0
+    _process_terminal_state = State.S9
     _global_id = 0
 
     def __init__(self,
@@ -14,12 +14,14 @@ class SimpleTask(Task):
         """
         Constructor
         """
-        self._state = SimpleTask._start_state
+        self._state = SimpleTask._process_start_state
         self._id = SimpleTask._global_id
         SimpleTask._global_id += 1
         self._effort_map = effort_map
         self._remaining_effort = None
-        self.state = self._start_state
+        self.state = self._process_start_state
+        self._failed = False
+        self._lead_time = 0
 
     @property
     def id(self) -> int:
@@ -28,6 +30,14 @@ class SimpleTask(Task):
         :return: Globally Unique id of the task
         """
         return deepcopy(self._id)
+
+    @property
+    def lead_time(self) -> State:
+        """
+        The lead time between task starting and task finishing
+        :return: Lead Time
+        """
+        return deepcopy(self._lead_time)
 
     @property
     def state(self) -> State:
@@ -46,9 +56,26 @@ class SimpleTask(Task):
         """
         self._state = deepcopy(s)
         self._remaining_effort = 0
-        if s.value != self._terminal_state.value:
+        if s.value != self._process_terminal_state.value:
             self._remaining_effort = self._effort_map.effort()
         return
+
+    @property
+    def failed(self) -> bool:
+        """
+        True if task filed during processing
+        :return: Failure state of task
+        """
+        return deepcopy(self._failed)
+
+    @failed.setter
+    def failed(self,
+               s: bool) -> None:
+        """
+        Set the failed status of the task
+        :param s: the state to set the task to
+        """
+        self._failed = deepcopy(s)
 
     def do_work(self,
                 work: int) -> int:
@@ -60,6 +87,7 @@ class SimpleTask(Task):
         :return: The remaining units of work, where 0 means the task ne
         """
         self._remaining_effort = max(0, self._remaining_effort - work)
+        self._lead_time += 1
         return deepcopy(self._remaining_effort)
 
     def __str__(self) -> str:
@@ -67,20 +95,21 @@ class SimpleTask(Task):
         Render the task as a string
         :return: Task as string
         """
-        return "Task id[{0}] in State[{1}] @ effort[{2}]".format(str(self._id),
-                                                                 str(self._state),
-                                                                 str(self._remaining_effort))
+        return "Task id[{0}] in State[{1}] @ effort[{2}] - Lead Time[{3}]".format(str(self._id),
+                                                                                  str(self._state),
+                                                                                  str(self._remaining_effort),
+                                                                                  str(self._lead_time))
 
     @classmethod
     def process_start_state(cls,
                             start_state: State = None) -> State:
         if start_state is not None:
-            cls._start_state = start_state
-        return deepcopy(cls._start_state)
+            cls._process_start_state = start_state
+        return deepcopy(cls._process_start_state)
 
     @classmethod
     def process_end_state(cls,
                           end_state: State = None) -> State:
         if end_state is not None:
-            cls._terminal_state = end_state
-        return deepcopy(cls._terminal_state)
+            cls._process_terminal_state = end_state
+        return deepcopy(cls._process_terminal_state)

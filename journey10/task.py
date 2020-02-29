@@ -14,6 +14,15 @@ class Task(ABC):
 
     @property
     @abstractmethod
+    def lead_time(self) -> State:
+        """
+        The lead time between task starting and task finishing
+        :return: Lead Time
+        """
+        pass
+
+    @property
+    @abstractmethod
     def state(self) -> State:
         """
         Current State of the Task
@@ -27,6 +36,25 @@ class Task(ABC):
               s: State) -> None:
         """
         Set the tasks new state
+        :param s: the state to set the task to
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def failed(self) -> bool:
+        """
+        True if task filed during processing
+        :return: Failure state of task
+        """
+        pass
+
+    @failed.setter
+    @abstractmethod
+    def failed(self,
+               s: bool) -> None:
+        """
+        Set the failed status of the task
         :param s: the state to set the task to
         """
         pass

@@ -3,10 +3,10 @@ from state import State
 
 
 class EffortType:
-    __LOW = [1]
-    __HIGH = [6]
-    __MID = [3, 4]
-    __RAND = [1, 2, 3, 4, 5, 6]
+    __LOW = [10]
+    __HIGH = [60]
+    __MID = [30, 40]
+    __RAND = [10, 20, 30, 40, 50, 60]
 
     _v_to_f = {
         1: 'fixed_low',

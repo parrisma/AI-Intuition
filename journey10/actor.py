@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from journey10.task import Task
+from journey10.state import State
 
 
 class Actor(ABC):
@@ -35,5 +36,23 @@ class Actor(ABC):
         """
         Return a task that has finished it's given state or None if no tasks are finished.
         :return: A task that has been processed to end of it's current state or None if no such tasks are ready.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def from_state(self) -> State:
+        """
+        The state the actor expects to receive tasks in
+        :return: from state
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def to_state(self) -> State:
+        """
+        The state the actor will process tasks into
+        :return: to state
         """
         pass

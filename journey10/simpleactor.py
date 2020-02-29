@@ -1,5 +1,6 @@
 from copy import deepcopy
 import queue
+import random
 from journey10.state import State
 from journey10.task import Task
 from journey10.taskexception import TaskException
@@ -11,7 +12,9 @@ class SimpleActor(Actor):
     def __init__(self,
                  name: str,
                  from_state: State,
-                 to_state: State):
+                 to_state: State,
+                 failure_rate: float,
+                 work_capacity: int = 10):
         """
         Actor Constructor.
         :param from_state:
@@ -23,8 +26,25 @@ class SimpleActor(Actor):
         self._queue_in = queue.Queue()
         self._queue_out = queue.Queue()
         self._current_task = None
-        self._work_capacity = 1
+        self._work_capacity = work_capacity
+        self._failure_rate = failure_rate
         return
+
+    @property
+    def from_state(self) -> State:
+        """
+        The state the actor expects to receive tasks in
+        :return: from state
+        """
+        return deepcopy(self._from_state)
+
+    @property
+    def to_state(self) -> State:
+        """
+        The state the actor will process tasks into
+        :return: to state
+        """
+        return deepcopy(self._to_state)
 
     @property
     def done(self) -> bool:
@@ -68,6 +88,8 @@ class SimpleActor(Actor):
         t = None
         if not self._queue_out.empty():
             t = self._queue_out.get_nowait()
+            if random.random() < self._failure_rate:
+                t.failed = True
         return t
 
     def __str__(self) -> str:
@@ -75,6 +97,7 @@ class SimpleActor(Actor):
         Render the actor as a string
         :return: Actor as string
         """
-        return "Actor[{0}] in [{1}] out[{2}]".format(self._name,
-                                                     str(self._queue_in.qsize()),
-                                                     str(self._queue_out.qsize()))
+        return "Actor[{0}] in [{1}] out[{2}] busy[{3}]".format(self._name,
+                                                               str(self._queue_in.qsize()),
+                                                               str(self._queue_out.qsize()),
+                                                               str(self._current_task is not None))
