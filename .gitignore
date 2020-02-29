@@ -5,6 +5,10 @@
 **/*.log
 **/*.csv
 **/*.swp
+**/*.pyc
+**/*.pyo
 **/.ipynb_checkpoints
 **/.ipynb_checkpoints/*.ipynb
 __pycache__
+/archive/
+/venv/
