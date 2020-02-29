@@ -1,3 +1,4 @@
+from copy import deepcopy
 import queue
 from journey10.state import State
 from journey10.task import Task
@@ -25,6 +26,14 @@ class SimpleActor(Actor):
         self._work_capacity = 1
         return
 
+    @property
+    def done(self) -> bool:
+        """
+        The number of tasks remaining to work on
+        :return: Number of remaining tasks
+        """
+        return ((self._queue_in.qsize() + self._queue_out.qsize()) == 0) and (self._current_task is None)
+
     def task_in(self,
                 task: Task) -> None:
         """
@@ -32,7 +41,7 @@ class SimpleActor(Actor):
         Raise a TaskException if the given task is not in the 'from_state'
         :param task: The task to be added to the to do list
         """
-        if task.state == self._from_state:
+        if task.state.value == self._from_state.value:
             self._queue_in.put_nowait(task)
         else:
             err = "Task should be in state [{0}] when given to this Actor".format(str(self._from_state))
@@ -50,6 +59,7 @@ class SimpleActor(Actor):
         if self._current_task is not None:
             remaining_effort = self._current_task.do_work(self._work_capacity)
             if remaining_effort == 0:
+                self._current_task.state = self._to_state
                 self._queue_out.put_nowait(self._current_task)
                 self._current_task = None
         return
@@ -59,3 +69,12 @@ class SimpleActor(Actor):
         if not self._queue_out.empty():
             t = self._queue_out.get_nowait()
         return t
+
+    def __str__(self) -> str:
+        """
+        Render the actor as a string
+        :return: Actor as string
+        """
+        return "Actor[{0}] in [{1}] out[{2}]".format(self._name,
+                                                     str(self._queue_in.qsize()),
+                                                     str(self._queue_out.qsize()))

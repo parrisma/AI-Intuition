@@ -14,9 +14,9 @@ class SimpleTask(Task):
         """
         Constructor
         """
-        self._state = self._start_state
-        self._id = self._global_id
-        self._global_id += 1
+        self._state = SimpleTask._start_state
+        self._id = SimpleTask._global_id
+        SimpleTask._global_id += 1
         self._effort_map = effort_map
         self._remaining_effort = None
         self.state = self._start_state
@@ -45,24 +45,10 @@ class SimpleTask(Task):
         :param s: the state to set the task to
         """
         self._state = deepcopy(s)
-        self._remaining_effort = self._effort_map.effort()
+        self._remaining_effort = 0
+        if s.value != self._terminal_state.value:
+            self._remaining_effort = self._effort_map.effort()
         return
-
-    @property
-    def start_state(self) -> State:
-        """
-        The defined start (reset) state of the Task
-        :return: The Start State
-        """
-        return State.S0
-
-    @property
-    def terminal_state(self) -> State:
-        """
-        The defined terminal (end) state of the Task - i.e. when teh task is done
-        :return: The Terminal (end) state of the task
-        """
-        return State.S9
 
     def do_work(self,
                 work: int) -> int:
@@ -73,7 +59,7 @@ class SimpleTask(Task):
         :param work: The number of units of work to do.
         :return: The remaining units of work, where 0 means the task ne
         """
-        self._remaining_effort = min(0, self._remaining_effort - work)
+        self._remaining_effort = max(0, self._remaining_effort - work)
         return deepcopy(self._remaining_effort)
 
     def __str__(self) -> str:
@@ -81,4 +67,20 @@ class SimpleTask(Task):
         Render the task as a string
         :return: Task as string
         """
-        return "Task id[{0}] in State[{1}]".format(str(self._id), str(self._state))
+        return "Task id[{0}] in State[{1}] @ effort[{2}]".format(str(self._id),
+                                                                 str(self._state),
+                                                                 str(self._remaining_effort))
+
+    @classmethod
+    def process_start_state(cls,
+                            start_state: State = None) -> State:
+        if start_state is not None:
+            cls._start_state = start_state
+        return deepcopy(cls._start_state)
+
+    @classmethod
+    def process_end_state(cls,
+                          end_state: State = None) -> State:
+        if end_state is not None:
+            cls._terminal_state = end_state
+        return deepcopy(cls._terminal_state)

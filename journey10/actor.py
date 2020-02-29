@@ -4,6 +4,15 @@ from journey10.task import Task
 
 class Actor(ABC):
 
+    @property
+    @abstractmethod
+    def done(self) -> bool:
+        """
+        The number of tasks remaining to work on
+        :return: Number of remaining tasks
+        """
+        pass
+
     @abstractmethod
     def task_in(self,
                 task: Task) -> None:
