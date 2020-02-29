@@ -1,8 +1,8 @@
 from typing import List
 from copy import deepcopy
-from AIIntuition.journeys.journey5.cputype import CPUType
-from AIIntuition.journeys.journey5.task import Task
-from AIIntuition.journeys.journey5.taskprofile import TaskProfile
+from journey5.cputype import CPUType
+from journey5.task import Task
+from journey5.taskprofile import TaskProfile
 
 
 class FixedTaskProfile(TaskProfile):

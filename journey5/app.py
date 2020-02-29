@@ -2,11 +2,11 @@ from copy import deepcopy
 from typing import List
 import math
 import numpy as np
-from AIIntuition.journeys.journey5.cputype import CPUType
-from AIIntuition.journeys.journey5.task import Task
-from AIIntuition.journeys.journey5.taskprofile import TaskProfile
-from AIIntuition.journeys.journey5.randomtaskprofile import RandomTaskProfile
-from AIIntuition.journeys.journey5.util import Util
+from journey5.cputype import CPUType
+from journey5.task import Task
+from journey5.taskprofile import TaskProfile
+from journey5.randomtaskprofile import RandomTaskProfile
+from journey5.util import Util
 
 
 class App(Task):

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
-from AIIntuition.journeys.journey5.cputype import CPUType
-from AIIntuition.journeys.journey5.task import Task
+from journey5.cputype import CPUType
+from journey5.task import Task
 
 
 class TaskProfile(ABC):

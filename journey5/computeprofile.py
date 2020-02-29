@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from AIIntuition.journeys.journey5.core import Core
-from AIIntuition.journeys.journey5.memory import Memory
+from journey5.core import Core
+from journey5.memory import Memory
 
 
 class ComputeProfile(ABC):

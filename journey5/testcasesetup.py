@@ -1,9 +1,9 @@
 from typing import Tuple
 from collections.abc import Iterable
 from enum import Enum
-from AIIntuition.journeys.journey5.policy import Policy
-from AIIntuition.journeys.journey5.cases import Cases
-from AIIntuition.journeys.journey5.randomcase import RandomCase
+from journey5.policy import Policy
+from journey5.cases import Cases
+from journey5.randomcase import RandomCase
 
 
 class TestCaseSetUp:

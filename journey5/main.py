@@ -1,6 +1,6 @@
-from AIIntuition.journeys.journey5.scheduler import Scheduler
-from AIIntuition.journeys.journey5.testcasesetup import TestCaseSetUp
-from AIIntuition.journeys.journey5.event import Event
+from journey5.scheduler import Scheduler
+from journey5.testcasesetup import TestCaseSetUp
+from journey5.event import Event
 
 if __name__ == "__main__":
     Scheduler(TestCaseSetUp.TestCase.RANDOM.value).run()

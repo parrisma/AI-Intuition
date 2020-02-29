@@ -1,16 +1,16 @@
 from copy import deepcopy
 from typing import Tuple, Dict
 from collections.abc import Iterable
-from AIIntuition.journeys.journey5.datacenter import DataCenter
-from AIIntuition.journeys.journey5.host import Host
-from AIIntuition.journeys.journey5.app import App
-from AIIntuition.journeys.journey5.infrnditer import InfRndIter
-from AIIntuition.journeys.journey5.policy import Policy
-from AIIntuition.journeys.journey5.randompolicy import RandomPolicy
-from AIIntuition.journeys.journey5.randomhostprofile import RandomHostProfile
-from AIIntuition.journeys.journey5.randomtaskprofile import RandomTaskProfile
-from AIIntuition.journeys.journey5.caseproperty import CaseProperty
-from AIIntuition.journeys.journey5.case import Case
+from journey5.datacenter import DataCenter
+from journey5.host import Host
+from journey5.app import App
+from journey5.infrnditer import InfRndIter
+from journey5.policy import Policy
+from journey5.randompolicy import RandomPolicy
+from journey5.randomhostprofile import RandomHostProfile
+from journey5.randomtaskprofile import RandomTaskProfile
+from journey5.caseproperty import CaseProperty
+from journey5.case import Case
 
 
 class RandomCase(Case):

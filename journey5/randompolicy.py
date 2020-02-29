@@ -1,7 +1,7 @@
 import random
-from AIIntuition.journeys.journey5.compute import Compute
-from AIIntuition.journeys.journey5.policy import Policy
-from AIIntuition.journeys.journey5.task import Task
+from journey5.compute import Compute
+from journey5.policy import Policy
+from journey5.task import Task
 
 
 class RandomPolicy(Policy):

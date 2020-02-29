@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from AI-Intuition.journeys.journey5.cputype import CPUType
+from journey5.cputype import CPUType
 
 
 class CoreProfile(ABC):

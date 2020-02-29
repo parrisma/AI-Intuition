@@ -1,8 +1,8 @@
 from copy import deepcopy
-from AIIntuition.journeys.journey5.core import Core
-from AIIntuition.journeys.journey5.computeprofile import ComputeProfile
-from AIIntuition.journeys.journey5.randomcoreprofile import RandomCoreProfile
-from AIIntuition.journeys.journey5.memory import Memory
+from journey5.core import Core
+from journey5.computeprofile import ComputeProfile
+from journey5.randomcoreprofile import RandomCoreProfile
+from journey5.memory import Memory
 
 
 class RandomHostProfile(ComputeProfile):

@@ -2,7 +2,7 @@ from abc import ABC, abstractclassmethod, abstractmethod
 from typing import List
 from copy import deepcopy
 from random import randint
-from AIIntuition.journeys.journey5.task import Task
+from journey5.task import Task
 
 """
 Abstract Base Class for anything that can supply compute capability.  

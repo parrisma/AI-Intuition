@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
-from AIIntuition.journeys.journey5.cputype import CPUType
-from AIIntuition.journeys.journey5.coreprofile import CoreProfile
+from journey5.cputype import CPUType
+from journey5.coreprofile import CoreProfile
 
 
 class RandomCoreProfile(CoreProfile):

@@ -1,17 +1,17 @@
 from copy import deepcopy
 from typing import List, Tuple
-from AIIntuition.journeys.journey5.datacenter import DataCenter
-from AIIntuition.journeys.journey5.core import Core
-from AIIntuition.journeys.journey5.compute import Compute
-from AIIntuition.journeys.journey5.task import Task
-from AIIntuition.journeys.journey5.infrnditer import InfRndIter
-from AIIntuition.journeys.journey5.OutOfMemoryException import OutOfMemoryException
-from AIIntuition.journeys.journey5.FailedToCompleteException import FailedToCompleteException
-from AIIntuition.journeys.journey5.log import Log
-from AIIntuition.journeys.journey5.event import HostEvent
-from AIIntuition.journeys.journey5.util import Util
-from AIIntuition.journeys.journey5.cputype import CPUType
-from AIIntuition.journeys.journey5.computeprofile import ComputeProfile
+from journey5.datacenter import DataCenter
+from journey5.core import Core
+from journey5.compute import Compute
+from journey5.task import Task
+from journey5.infrnditer import InfRndIter
+from journey5.OutOfMemoryException import OutOfMemoryException
+from journey5.FailedToCompleteException import FailedToCompleteException
+from journey5.log import Log
+from journey5.event import HostEvent
+from journey5.util import Util
+from journey5.cputype import CPUType
+from journey5.computeprofile import ComputeProfile
 
 
 class Host(Compute):
@@ -254,7 +254,7 @@ class Host(Compute):
         )
 
 
-from AIIntuition.journeys.journey5.randomhostprofile import RandomHostProfile
+from journey5.randomhostprofile import RandomHostProfile
 
 if __name__ == "__main__":
     for i in range(0, 100):

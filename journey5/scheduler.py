@@ -1,11 +1,11 @@
-from AIIntuition.journeys.journey5.compute import Compute
-from AIIntuition.journeys.journey5.host import Host
-from AIIntuition.journeys.journey5.OutOfMemoryException import OutOfMemoryException
-from AIIntuition.journeys.journey5.FailedToCompleteException import FailedToCompleteException
-from AIIntuition.journeys.journey5.log import Log
-from AIIntuition.journeys.journey5.event import SchedulerEvent, HostEvent, TaskEvent, FailureEvent
-from AIIntuition.journeys.journey5.case import Case
-from AIIntuition.journeys.journey5.testcasesetup import TestCaseSetUp
+from journey5.compute import Compute
+from journey5.host import Host
+from journey5.OutOfMemoryException import OutOfMemoryException
+from journey5.FailedToCompleteException import FailedToCompleteException
+from journey5.log import Log
+from journey5.event import SchedulerEvent, HostEvent, TaskEvent, FailureEvent
+from journey5.case import Case
+from journey5.testcasesetup import TestCaseSetUp
 
 
 class Scheduler:

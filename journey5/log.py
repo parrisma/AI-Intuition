@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from AIIntuition.journeys.journey5.event import Event, FailureEvent
+from journey5.event import Event, FailureEvent
 
 
 class Log:

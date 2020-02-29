@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import List, Tuple, Callable
-from AIIntuition.journeys.journey5.eventlabels import EventLabels
-from AIIntuition.journeys.journey5.compute import Compute
-from AIIntuition.journeys.journey5.task import Task
-from AIIntuition.journeys.journey5.util import Util
-from AIIntuition.journeys.journey5.seqmap import SeqMap
-from AIIntuition.journeys.journey5.jexception import JException
+from journey5.eventlabels import EventLabels
+from journey5.compute import Compute
+from journey5.task import Task
+from journey5.util import Util
+from journey5.seqmap import SeqMap
+from journey5.jexception import JException
 from enum import Enum, unique
 
 

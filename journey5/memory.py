@@ -1,6 +1,6 @@
 from copy import deepcopy
-from AIIntuition.journeys.journey5.cputype import CPUType
-from AIIntuition.journeys.journey5.core import Core
+from journey5.cputype import CPUType
+from journey5.core import Core
 import numpy as np
 
 

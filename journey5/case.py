@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict
 from collections.abc import Iterable
-from AIIntuition.journeys.journey5.policy import Policy
-from AIIntuition.journeys.journey5.caseproperty import CaseProperty
+from journey5.policy import Policy
+from journey5.caseproperty import CaseProperty
 
 
 class Case(ABC):

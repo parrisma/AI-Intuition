@@ -1,18 +1,18 @@
 from typing import Tuple
 from collections.abc import Iterable
-from AIIntuition.journeys.journey5.datacenter import DataCenter
-from AIIntuition.journeys.journey5.host import Host
-from AIIntuition.journeys.journey5.app import App
-from AIIntuition.journeys.journey5.infrnditer import InfRndIter
-from AIIntuition.journeys.journey5.policy import Policy
-from AIIntuition.journeys.journey5.seqpolicy import SequentialPolicy
-from AIIntuition.journeys.journey5.fixedtaskprofile import FixedTaskProfile
-from AIIntuition.journeys.journey5.fixedhostprofile import FixedHostProfile
-from AIIntuition.journeys.journey5.fixedcoreprofile import FixedCoreProfile
-from AIIntuition.journeys.journey5.cputype import CPUType
-from AIIntuition.journeys.journey5.task import Task
-from AIIntuition.journeys.journey5.core import Core
-from AIIntuition.journeys.journey5.case import Case
+from journey5.datacenter import DataCenter
+from journey5.host import Host
+from journey5.app import App
+from journey5.infrnditer import InfRndIter
+from journey5.policy import Policy
+from journey5.seqpolicy import SequentialPolicy
+from journey5.fixedtaskprofile import FixedTaskProfile
+from journey5.fixedhostprofile import FixedHostProfile
+from journey5.fixedcoreprofile import FixedCoreProfile
+from journey5.cputype import CPUType
+from journey5.task import Task
+from journey5.core import Core
+from journey5.case import Case
 
 
 class Cases:

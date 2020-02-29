@@ -1,11 +1,11 @@
 from datetime import datetime
 from copy import deepcopy
-from AIIntuition.journeys.journey5.task import Task
-from AIIntuition.journeys.journey5.compute import Compute
-from AIIntuition.journeys.journey5.errorcode import ErrorCode
-from AIIntuition.journeys.journey5.log import Log
-from AIIntuition.journeys.journey5.event import FailureEvent
-from AIIntuition.journeys.journey5.jexception import JException
+from journey5.task import Task
+from journey5.compute import Compute
+from journey5.errorcode import ErrorCode
+from journey5.log import Log
+from journey5.event import FailureEvent
+from journey5.jexception import JException
 
 
 class FailedToCompleteException(JException):
