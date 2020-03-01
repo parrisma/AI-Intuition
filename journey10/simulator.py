@@ -19,7 +19,7 @@ def sim(fr: float,
     done = False
     while not done:
         debug = False
-        if cycle > 5000:
+        if cycle > 8000:
             debug = True
 
         done = True
@@ -58,10 +58,10 @@ def sim(fr: float,
 
 if __name__ == "__main__":
 
-    scenario = SimpleScenario(50, StateEffortMap.RANDOM)
+    scenario = SimpleScenario(100, StateEffortMap.FIXED_MID)
     res = Results()
-    num_steps = 20
-    num_tests = 2
+    num_steps = 50
+    num_tests = 10
 
     for j in range(0, num_tests):
         fr = 0.0
