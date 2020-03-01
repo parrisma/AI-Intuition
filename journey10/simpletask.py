@@ -18,10 +18,22 @@ class SimpleTask(Task):
         self._id = SimpleTask._global_id
         SimpleTask._global_id += 1
         self._effort_map = effort_map
+        self._state_orig = self._process_start_state
+        # Things with mutable state
         self._remaining_effort = None
-        self.state = self._process_start_state
+        self._failed = None
+        self._lead_time = None
+        self.state = self._state_orig
+
+    def reset(self) -> None:
+        """
+        Return the Actor to the same state at which it was constructed
+        """
+        self._remaining_effort = 0
         self._failed = False
-        self._lead_time = 0
+        self._lead_time = float(0)
+        self.state = self._state_orig
+        return
 
     @property
     def id(self) -> int:

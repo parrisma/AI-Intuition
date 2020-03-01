@@ -14,6 +14,15 @@ class Actor(ABC):
         """
         pass
 
+    @property
+    @abstractmethod
+    def capacity(self) -> int:
+        """
+        The current work capacity of the actor.
+        :return: Current work capacity as int
+        """
+        pass
+
     @abstractmethod
     def task_in(self,
                 task: Task) -> None:
@@ -54,5 +63,31 @@ class Actor(ABC):
         """
         The state the actor will process tasks into
         :return: to state
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def failure_rate(self) -> float:
+        """
+        The rate at which completed tasks fail.
+        :return: Failure state of the actor
+        """
+        pass
+
+    @failure_rate.setter
+    @abstractmethod
+    def failure_rate(self,
+                     f: bool) -> None:
+        """
+        The rate at which completed tasks fail.
+        :param f: the failure state of the actor
+        """
+        pass
+
+    @abstractmethod
+    def reset(self) -> None:
+        """
+        Return the Actor to the same state at which it was constructed
         """
         pass

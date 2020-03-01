@@ -1,10 +1,11 @@
-from copy import deepcopy
+from copy import deepcopy, copy
 import queue
 import random
 from journey10.state import State
 from journey10.task import Task
 from journey10.taskexception import TaskException
 from journey10.actor import Actor
+from journey10.capacity import Capacity
 
 
 class SimpleActor(Actor):
@@ -14,7 +15,7 @@ class SimpleActor(Actor):
                  from_state: State,
                  to_state: State,
                  failure_rate: float,
-                 work_capacity: int = 10):
+                 capacity: Capacity):
         """
         Actor Constructor.
         :param from_state:
@@ -23,12 +24,54 @@ class SimpleActor(Actor):
         self._name = name
         self._to_state = to_state
         self._from_state = from_state
+        self._capacity = capacity
+        self._work_capacity_orig = self._capacity.capacity()
+        self._work_capacity = self._work_capacity_orig
+        self._failure_rate_orig = failure_rate
+        self._failure_rate = self._failure_rate_orig
+        # This with mutable state
+        self._queue_in = None
+        self._queue_out = None
+        self._current_task = None
+        self.reset()
+        return
+
+    def reset(self) -> None:
+        """
+        Return the Actor to the same state at which it was constructed
+        """
         self._queue_in = queue.Queue()
         self._queue_out = queue.Queue()
         self._current_task = None
-        self._work_capacity = work_capacity
-        self._failure_rate = failure_rate
-        return
+        self._work_capacity = self._work_capacity_orig
+        self._failure_rate = self._failure_rate_orig
+
+    @property
+    def capacity(self) -> int:
+        """
+        The current work capacity of the actor.
+        :return: Current work capacity as int
+        """
+        curr_capacity = copy(self._work_capacity)
+        self._work_capacity = self._capacity.capacity()
+        return curr_capacity
+
+    @property
+    def failure_rate(self) -> float:
+        """
+        The rate at which completed tasks fail.
+        :return: Failure state of the actor
+        """
+        return deepcopy(self._failure_rate)
+
+    @failure_rate.setter
+    def failure_rate(self,
+                     f: bool) -> None:
+        """
+        The rate at which completed tasks fail.
+        :param f: the failure state of the actor
+        """
+        self._failure_rate = deepcopy(f)
 
     @property
     def from_state(self) -> State:
@@ -77,7 +120,7 @@ class SimpleActor(Actor):
                 self._current_task = self._queue_in.get_nowait()
 
         if self._current_task is not None:
-            remaining_effort = self._current_task.do_work(self._work_capacity)
+            remaining_effort = self._current_task.do_work(self.capacity)
             if remaining_effort == 0:
                 self._current_task.state = self._to_state
                 self._queue_out.put_nowait(self._current_task)
