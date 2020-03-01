@@ -24,6 +24,7 @@ class SimpleTask(Task):
         self._failed = None
         self._lead_time = None
         self.state = self._state_orig
+        self.reset()
 
     def reset(self) -> None:
         """
