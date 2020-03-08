@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-from journey10.actor import Actor
+from interface.actor import Actor
 
 
 class Scenario(ABC):

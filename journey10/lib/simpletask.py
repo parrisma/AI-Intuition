@@ -1,7 +1,7 @@
 from copy import deepcopy
-from journey10.task import Task
-from state import State
-from journey10.stateeffortmap import StateEffortMap
+from interface.task import Task
+from lib.state import State
+from lib.stateeffortmap import StateEffortMap
 
 
 class SimpleTask(Task):

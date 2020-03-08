@@ -1,5 +1,5 @@
 import random
-from state import State
+from lib.state import State
 
 
 class EffortType:

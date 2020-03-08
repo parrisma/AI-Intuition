@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from journey10.task import Task
-from journey10.state import State
+from interface.task import Task
+from lib.state import State
 
 
 class Actor(ABC):

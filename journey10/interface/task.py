@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from journey10.state import State
+from lib.state import State
 
 
 class Task(ABC):

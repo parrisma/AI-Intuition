@@ -1,11 +1,11 @@
 from copy import deepcopy, copy
 import queue
 import random
-from journey10.state import State
-from journey10.task import Task
-from journey10.taskexception import TaskException
-from journey10.actor import Actor
-from journey10.capacity import Capacity
+from lib.state import State
+from interface.task import Task
+from exceptions.taskexception import TaskException
+from interface.actor import Actor
+from interface.capacity import Capacity
 
 
 class SimpleActor(Actor):

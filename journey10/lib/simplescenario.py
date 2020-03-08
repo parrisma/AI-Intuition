@@ -1,12 +1,12 @@
 from typing import List
 
-from journey10.actor import Actor
-from journey10.state import State
-from journey10.simpletask import SimpleTask
-from journey10.simpleactor import SimpleActor
-from journey10.scenario import Scenario
-from journey10.variablecapacity import VariableCapacity
-from journey10.stateeffortmap import StateEffortMap
+from interface.actor import Actor
+from lib.state import State
+from lib.simpletask import SimpleTask
+from lib.simpleactor import SimpleActor
+from interface.scenario import Scenario
+from lib.variablecapacity import VariableCapacity
+from lib.stateeffortmap import StateEffortMap
 
 
 class SimpleScenario(Scenario):

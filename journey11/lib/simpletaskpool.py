@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterable, List
 import threading
-from journey10.task import Task
+from interface.task import Task
 
 
 class SimpleTaskPool(ABC):

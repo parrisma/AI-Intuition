@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import List
-from journey10.task import Task
-from journey10.simpletask import SimpleTask
-from journey10.state import State
-from journey10.stateeffortmap import StateEffortMap
+from interface.task import Task
+from lib.simpletask import SimpleTask
+from lib.state import State
+from lib.stateeffortmap import StateEffortMap
 
 
 class SimpleScenario(ABC):

@@ -1,10 +1,9 @@
 from typing import Tuple, List
 import random
-import numpy as np
-from journey10.actor import Actor
-from journey10.simplescenario import SimpleScenario
-from journey10.stateeffortmap import StateEffortMap
-from journey10.results import Results
+from interface.actor import Actor
+from lib.simplescenario import SimpleScenario
+from lib.stateeffortmap import StateEffortMap
+from lib.results import Results
 
 random.seed(42)
 

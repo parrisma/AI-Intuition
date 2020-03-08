@@ -1,5 +1,5 @@
 from copy import copy
-from journey10.capacity import Capacity
+from interface.capacity import Capacity
 
 
 class FixedCapacity(Capacity):

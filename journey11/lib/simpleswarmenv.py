@@ -1,4 +1,4 @@
-from actor import Actor
+from interface.actor import Actor
 from journey11.interface.swarmenv import SwarmEnv
 from journey11.interface.taskpool import TaskPool
 

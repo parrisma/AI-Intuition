@@ -1,7 +1,6 @@
 from typing import List
 import numpy as np
-from copy import copy
-from journey10.capacity import Capacity
+from interface.capacity import Capacity
 
 
 class VariableCapacity(Capacity):

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-from journey10.task import Task
+from interface.task import Task
 
 
 class Scenario(ABC):

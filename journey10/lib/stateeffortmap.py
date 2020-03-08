@@ -1,5 +1,5 @@
 from enum import Enum
-from journey10.efforttype import EffortType
+from lib.efforttype import EffortType
 
 
 class StateEffortMap(Enum):
