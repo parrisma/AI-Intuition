@@ -1,16 +1,19 @@
-from abc import ABC, abstractmethod
 from typing import Iterable, List
 import threading
-from interface.task import Task
+from journey11.interface.taskpool import TaskPool
+from journey10.interface.task import Task
 
 
-class SimpleTaskPool(ABC):
+class SimpleTaskPool(TaskPool):
 
-    def __init__(self):
+    def __init__(self,
+                 tasks: Iterable[Task] = None):
         self._tasks = list()
         self._task_lock = threading.Lock()
+        if tasks is not None:
+            self.add(tasks)
+        return
 
-    @abstractmethod
     def add(self,
             tasks: Iterable[Task]) -> None:
         """
@@ -24,7 +27,6 @@ class SimpleTaskPool(ABC):
                         self._tasks.append(t)
         return
 
-    @abstractmethod
     def match(self,
               pattern: str) -> List[Task]:
         """

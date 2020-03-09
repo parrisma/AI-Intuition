@@ -7,11 +7,9 @@ if __name__ == "__main__":
 
     ss = SimpleScenario(StateEffortMap.RANDOM)
 
-    stp = SimpleTaskPool()
-    stp.add(ss.tasks())
-
-    for _ in range(0, 10):
+    stp = SimpleTaskPool(ss.tasks())
 
     sse = SimpleSwarmEnv(stp)
+
     for i in range(0, 5):
         sse.associate()

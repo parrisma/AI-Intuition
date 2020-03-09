@@ -1,22 +1,23 @@
-from abc import ABC, abstractmethod
-from typing import List
-from interface.task import Task
-from lib.simpletask import SimpleTask
-from lib.state import State
-from lib.stateeffortmap import StateEffortMap
+from typing import Iterable
+from journey10.interface.task import Task
+from journey10.lib.simpletask import SimpleTask
+from journey10.lib.state import State
+from journey10.lib.stateeffortmap import StateEffortMap
+from journey11.interface.scenario import Scenario
+from journey11.interface.agent import Agent
 
 
-class SimpleScenario(ABC):
+class SimpleScenario(Scenario):
 
     def __init__(self,
                  effort_map: StateEffortMap):
         self._num_tasks = 10
         self._effort_map = effort_map
         self._tasks = None
-        pass
+        self._agents = None
+        return
 
-    @abstractmethod
-    def tasks(self) -> List[Task]:
+    def tasks(self) -> Iterable[Task]:
         """
         Return the tasks defined for this scenario.
         :return: a scenario
@@ -30,7 +31,13 @@ class SimpleScenario(ABC):
                 self._tasks.append(t)
         return self._tasks
 
-    @abstractmethod
+    def agents(self) -> Iterable[Agent]:
+        """
+        Return the agents that will do work.
+        :return: a iterable of agents
+        """
+        return self._agents
+
     def reset(self) -> None:
         """
         Reset the Scenario to it's initial state
