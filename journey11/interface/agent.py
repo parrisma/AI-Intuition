@@ -1,16 +1,32 @@
 from abc import ABC, abstractmethod
 from journey10.lib.state import State
+from pubsub import pub
 from journey11.interface.taskpool import TaskPool
 
 
 class Agent(ABC):
+    class AgentPubExceptionHandler(pub.IListenerExcHandler):
+        def __call__(self, listener_id, topic_obj):
+            print("Agent Id [{}] raised an exception".format(listener_id))
+            return
+
+    def __init__(self):
+        # Register PubSub exception handler.
+        pub.setListenerExcHandler(Agent.AgentPubExceptionHandler())
+
+        # Check child class implements callable with correct signature as is required to be a subscription
+        # target
+        cl = getattr(self, "__call__", None)
+        if not callable(cl):
+            raise NotImplemented("Must implement __call__(self, arg1)")
+        return
 
     @abstractmethod
-    def do_work(self) -> None:
-        """
-        Work on the current task & pass it to the task out queue when finished.
-        """
-        pass
+    def __call__(self, arg1):
+        if self._id == "3":
+            raise Exception("Test Exception")
+        print("Listener [{}] - Message: {}".format(self._id, arg1))
+        return
 
     @abstractmethod
     def reset(self) -> None:

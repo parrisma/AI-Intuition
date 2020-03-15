@@ -1,0 +1,13 @@
+def must_implement(*attrs):
+    def class_rebuilder(cls):
+        class NewClass(cls):
+            def __init__(self):
+                print("\nMust Implement Decorator Init")
+                cl = getattr(self, "__call__", None)
+                if not callable(cl):
+                    raise NotImplementedError("Class must implement __call__(self, arg1)".format(""))
+                super().__init__()
+
+        return NewClass
+
+    return class_rebuilder

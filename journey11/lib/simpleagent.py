@@ -22,6 +22,7 @@ class SimpleAgent(Agent):
         :param failure_rate: The rate at which processing of Tasks fails.
         :param capacity: The capacity to do work on a task
         """
+        super().__init__()
         self._name = name
         self._to_state = to_state
         self._from_state = from_state
