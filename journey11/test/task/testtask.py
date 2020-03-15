@@ -8,15 +8,18 @@ class TestTask(Task):
     _process_terminal_state = State.S9
     _global_id = 0
 
-    def __init__(self):
+    def __init__(self,
+                 effort: int):
         """
         Constructor
+        :param effort: The amount of effort needed to complete the task
         """
         self._state = TestTask._process_start_state
         self._id = TestTask._global_id
         TestTask._global_id += 1
         self._state_orig = self._process_start_state
         # Things with mutable state
+        self._inital_effort = effort
         self._remaining_effort = None
         self._failed = None
         self._lead_time = None
@@ -27,7 +30,7 @@ class TestTask(Task):
         """
         Return the Actor to the same state at which it was constructed
         """
-        self._remaining_effort = 0
+        self._remaining_effort = self._inital_effort
         self._failed = False
         self._lead_time = float(0)
         self.state = self._state_orig
@@ -39,7 +42,7 @@ class TestTask(Task):
         The globally unique id of the task
         :return: Globally Unique id of the task
         """
-        return deepcopy(self._id)
+        return self._id
 
     @property
     def lead_time(self) -> State:
@@ -47,7 +50,7 @@ class TestTask(Task):
         The lead time between task starting and task finishing
         :return: Lead Time
         """
-        return deepcopy(self._lead_time)
+        return self._lead_time
 
     @property
     def state(self) -> State:
@@ -55,7 +58,7 @@ class TestTask(Task):
         Current State of the task.
         :return: Current State
         """
-        return deepcopy(self._state)
+        return self._state
 
     @state.setter
     def state(self,
@@ -67,7 +70,7 @@ class TestTask(Task):
         self._state = deepcopy(s)
         self._remaining_effort = 0
         if s.value != self._process_terminal_state.value:
-            self._remaining_effort = 1
+            self._remaining_effort = self._inital_effort
         return
 
     @property
@@ -76,7 +79,7 @@ class TestTask(Task):
         True if task filed during processing
         :return: Failure state of task
         """
-        return deepcopy(self._failed)
+        return self._failed
 
     @failed.setter
     def failed(self,
@@ -85,7 +88,7 @@ class TestTask(Task):
         Set the failed status of the task
         :param s: the state to set the task to
         """
-        self._failed = deepcopy(s)
+        self._failed = s
 
     def do_work(self,
                 work: int) -> int:
@@ -98,7 +101,7 @@ class TestTask(Task):
         """
         self._remaining_effort = max(0, self._remaining_effort - work)
         self._lead_time += 1
-        return deepcopy(self._remaining_effort)
+        return self._remaining_effort
 
     def __str__(self) -> str:
         """
@@ -115,11 +118,11 @@ class TestTask(Task):
                             start_state: State = None) -> State:
         if start_state is not None:
             cls._process_start_state = start_state
-        return deepcopy(cls._process_start_state)
+        return cls._process_start_state
 
     @classmethod
     def process_end_state(cls,
                           end_state: State = None) -> State:
         if end_state is not None:
             cls._process_terminal_state = end_state
-        return deepcopy(cls._process_terminal_state)
+        return cls._process_terminal_state

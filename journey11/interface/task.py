@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
+from journey11.lib.purevirtual import purevirtual
 from journey10.lib.state import State
 
 
 class Task(ABC):
     @property
     @abstractmethod
+    @purevirtual
     def id(self) -> int:
         """
         The globally unique id of the task.
@@ -14,6 +16,7 @@ class Task(ABC):
 
     @property
     @abstractmethod
+    @purevirtual
     def lead_time(self) -> State:
         """
         The lead time between task starting and task finishing
@@ -23,6 +26,7 @@ class Task(ABC):
 
     @property
     @abstractmethod
+    @purevirtual
     def state(self) -> State:
         """
         Current State of the Task
@@ -32,6 +36,7 @@ class Task(ABC):
 
     @state.setter
     @abstractmethod
+    @purevirtual
     def state(self,
               s: State) -> None:
         """
@@ -42,6 +47,7 @@ class Task(ABC):
 
     @property
     @abstractmethod
+    @purevirtual
     def failed(self) -> bool:
         """
         True if task filed during processing
@@ -51,6 +57,7 @@ class Task(ABC):
 
     @failed.setter
     @abstractmethod
+    @purevirtual
     def failed(self,
                s: bool) -> None:
         """
@@ -60,6 +67,7 @@ class Task(ABC):
         pass
 
     @abstractmethod
+    @purevirtual
     def do_work(self,
                 work: int) -> int:
         """
@@ -73,17 +81,20 @@ class Task(ABC):
 
     @classmethod
     @abstractmethod
+    @purevirtual
     def process_start_state(cls,
                             start_state: State = None) -> State:
         pass
 
     @classmethod
     @abstractmethod
+    @purevirtual
     def process_end_state(cls,
                           end_state: State = None) -> State:
         pass
 
     @abstractmethod
+    @purevirtual
     def reset(self) -> None:
         """
         Return the Task to the same state at which it was constructed
