@@ -1,4 +1,5 @@
 from copy import deepcopy
+import threading
 from journey11.interface.task import Task
 from journey11.lib.state import State
 
@@ -6,7 +7,7 @@ from journey11.lib.state import State
 class TestTask(Task):
     _process_start_state = State.S0
     _process_terminal_state = State.S9
-    _global_id = 0
+    _global_id = 1
 
     def __init__(self,
                  effort: int):
@@ -23,6 +24,7 @@ class TestTask(Task):
         self._remaining_effort = None
         self._failed = None
         self._lead_time = None
+        self._lock = threading.RLock()
         self.state = self._state_orig
         self.reset()
 
@@ -34,6 +36,11 @@ class TestTask(Task):
         self._failed = False
         self._lead_time = float(0)
         self.state = self._state_orig
+        if self._lock is not None:
+            try:
+                self._lock.release()
+            except RuntimeError:
+                pass  # Ignore error id lock i snot already aquired
         return
 
     @property
@@ -50,7 +57,9 @@ class TestTask(Task):
         The lead time between task starting and task finishing
         :return: Lead Time
         """
-        return self._lead_time
+        with self._lock:
+            lt = self._lead_time
+        return lt
 
     @property
     def state(self) -> State:
@@ -67,10 +76,30 @@ class TestTask(Task):
         Set the tasks new state
         :param s: the state to set the task to
         """
-        self._state = deepcopy(s)
-        self._remaining_effort = 0
-        if s.value != self._process_terminal_state.value:
-            self._remaining_effort = self._inital_effort
+        with self._lock:
+            self._state = deepcopy(s)
+            self._remaining_effort = 0
+            if s.value != self._process_terminal_state.value:
+                self._remaining_effort = self._inital_effort
+        return
+
+    @property
+    def effort(self) -> int:
+        """
+        Current residual effort to complete current state
+        :return: residual effort for current state
+        """
+        return self._remaining_effort
+
+    @effort.setter
+    def effort(self,
+               e: int) -> None:
+        """
+        Set the residual effort.
+        :param e: the residual effort
+        """
+        with self._lock:
+            self._remaining_effort = e
         return
 
     @property
@@ -99,8 +128,10 @@ class TestTask(Task):
         :param work: The number of units of work to do.
         :return: The remaining units of work, where 0 means the task ne
         """
-        self._remaining_effort = max(0, self._remaining_effort - work)
-        self._lead_time += 1
+        with self._lock:
+            self._remaining_effort = max(0, self._remaining_effort - work)
+            self._lead_time += 1
+            print("Task {} - Lead Time {}".format(self._id, self.lead_time))
         return self._remaining_effort
 
     def __str__(self) -> str:

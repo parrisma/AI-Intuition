@@ -8,17 +8,17 @@ from journey11.lib.simpleworknotification import SimpleWorkNotification
 
 class TestAgent(Agent):
     FAIL_RATE = float(0)
-    CAPACITY = int(1)
 
     def __init__(self,
                  agent_name: str,
                  start_state: State,
-                 end_state: State):
+                 end_state: State,
+                 capacity: int):
         """
         """
         super().__init__()
         self._fail_rate = TestAgent.FAIL_RATE
-        self._capacity = TestAgent.CAPACITY
+        self._capacity = capacity
         self._work = Queue()
         self._agent_name = agent_name
         self._start_state = start_state
@@ -32,7 +32,8 @@ class TestAgent(Agent):
         task pool and work on it or ignore it.
         :param task_notification: The notification event for task requiring attention
         """
-        print("{} do_notification for task {}".format(self._agent_name, task_notification.task.id))
+        print("{} do_notification for task {} effort {}".format(self._agent_name, task_notification.task.id,
+                                                                task_notification.task.effort))
         self._add_work_item_to_queue(SimpleWorkNotification(task_notification.task, task_notification.task_pool))
         return
 
@@ -72,7 +73,11 @@ class TestAgent(Agent):
             print("{} work_to_do - nothing to do".format(self._agent_name))
         return wtd
 
-    # ----- P R O P E R T I E S -----
+    def test_wait_until_done(self) -> None:
+        self._work.join()
+        return
+
+        # ----- P R O P E R T I E S -----
 
     @property
     def capacity(self) -> int:
