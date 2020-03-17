@@ -75,7 +75,17 @@ class Task(ABC):
         for the task. If the number of work units is greater than the residual then the difference of work
         units is 'lost' as the task will absorb any additional.
         :param work: The number of units of work to do.
-        :return: The remaining units of work, where 0 means the task ne
+        :return: The remaining units of work, where 0 means the task is complete in it's current state.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    @purevirtual
+    def work_in_state_remaining(self) -> int:
+        """
+        The units of work required to complete the current state
+        :return: The units of work remaining in the current state
         """
         pass
 

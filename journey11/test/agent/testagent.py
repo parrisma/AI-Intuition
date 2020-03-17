@@ -33,7 +33,7 @@ class TestAgent(Agent):
         :param task_notification: The notification event for task requiring attention
         """
         print("{} do_notification for task {} effort {}".format(self._agent_name, task_notification.task.id,
-                                                                task_notification.task.effort))
+                                                                task_notification.task.work_in_state_remaining))
         self._add_work_item_to_queue(SimpleWorkNotification(task_notification.task, task_notification.task_pool))
         return
 
@@ -42,10 +42,20 @@ class TestAgent(Agent):
         """
         Process any out standing tasks associated with the agent.
         """
-        print("{} do_work for task {}".format(self._agent_name, work_notification.task.id))
         self._work.task_done()
-        if work_notification.task.do_work(self.capacity) > 0:
-            self._add_work_item_to_queue(work_notification)
+        if work_notification.task.work_in_state_remaining > 0:
+            print("{} do_work for task {}".format(self._agent_name, work_notification.task.id))
+            if work_notification.task.do_work(self.capacity) > 0:
+                print("{} do_work for task {} - task rescheduled with {} work remaining in state {}".format(
+                    self._agent_name, work_notification.task.id,
+                    work_notification.task.work_in_state_remaining,
+                    work_notification.task.state))
+                self._add_work_item_to_queue(work_notification)
+        else:
+            print("{} do_work nothing left to do for task {} in state {}".format(self._agent_name,
+                                                                                 work_notification.task.id,
+                                                                                 work_notification.task.state))
+
         return
 
     def _add_work_item_to_queue(self,

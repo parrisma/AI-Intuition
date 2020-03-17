@@ -14,5 +14,8 @@ class State(Enum):
     S8 = 8
     S9 = 9
 
+    def id(self):
+        return self.value
+
     def __str__(self) -> str:
         return str(self.value)

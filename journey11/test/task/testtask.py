@@ -10,7 +10,8 @@ class TestTask(Task):
     _global_id = 1
 
     def __init__(self,
-                 effort: int):
+                 effort: int,
+                 start_state: State = None):
         """
         Constructor
         :param effort: The amount of effort needed to complete the task
@@ -18,7 +19,10 @@ class TestTask(Task):
         self._state = TestTask._process_start_state
         self._id = TestTask._global_id
         TestTask._global_id += 1
-        self._state_orig = self._process_start_state
+        if start_state is None:
+            self._state_orig = self._process_start_state
+        else:
+            self._state_orig = start_state
         # Things with mutable state
         self._inital_effort = effort
         self._remaining_effort = None
@@ -84,23 +88,12 @@ class TestTask(Task):
         return
 
     @property
-    def effort(self) -> int:
+    def work_in_state_remaining(self) -> int:
         """
-        Current residual effort to complete current state
-        :return: residual effort for current state
+        The units of work required to complete the current state
+        :return: The units of work remaining in the current state
         """
         return self._remaining_effort
-
-    @effort.setter
-    def effort(self,
-               e: int) -> None:
-        """
-        Set the residual effort.
-        :param e: the residual effort
-        """
-        with self._lock:
-            self._remaining_effort = e
-        return
 
     @property
     def failed(self) -> bool:
@@ -129,9 +122,12 @@ class TestTask(Task):
         :return: The remaining units of work, where 0 means the task ne
         """
         with self._lock:
-            self._remaining_effort = max(0, self._remaining_effort - work)
-            self._lead_time += 1
-            print("Task {} - Lead Time {}".format(self._id, self.lead_time))
+            if self.work_in_state_remaining > 0:
+                self._remaining_effort = max(0, self.work_in_state_remaining - work)
+                self._lead_time += 1
+                print("Task {} - Lead Time {}".format(self._id, self.lead_time))
+            else:
+                print("Task {} done in state {}".format(self._id, self.state))
         return self._remaining_effort
 
     def __str__(self) -> str:

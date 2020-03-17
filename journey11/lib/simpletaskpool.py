@@ -1,85 +1,88 @@
-from typing import Iterable, List
 import threading
+from pubsub import pub
 from journey11.interface.taskpool import TaskPool
-from journey11.interface.agent import Agent
-from journey10.interface.task import Task
+from journey11.interface.task import Task
+from journey11.lib.state import State
+from journey11.lib.simpletasknotification import SimpleTaskNotification
 
 
 class SimpleTaskPool(TaskPool):
-    # inner class.
-
-    class TaskAllocation:
-        def __init__(self,
-                     task: Task,
-                     agent: Agent):
-            self._task = task
-            self._agent = agent
-            return
-
-        @property
-        def task(self) -> Task:
-            return self._task
-
-        @property
-        def agent(self) -> Agent:
-            return self._agent
-
-    # Class Methods
 
     def __init__(self,
-                 tasks: Iterable[Task] = None):
-        self._tasks = list()
-        self._update_lock = threading.Lock()
-        if tasks is not None:
-            self.add(tasks)
+                 name: str):
+        self._task_pools = dict()
+        self._pool_lock = threading.Lock()
+        self._len = 0
+        self._name = name
+
+    def add_task(self,
+                 task: Task) -> None:
+        """
+        Add a task to the task pool which will cause it to be advertised via the relevant topic unless the task
+        is in it's terminal state.
+        :param task: The task to be added
+        """
+        topic = self.topic_for_state(task.state)
+        if topic not in self._task_pools:
+            with self._pool_lock:
+                self._task_pools[topic] = [dict(), threading.Lock()]
+
+        pool, lock = self._task_pools[topic]
+        with lock:
+            if task.id not in pool:
+                pool[task.id] = task
+                self._len += 1
+
+        pub.sendMessage(topicName=topic, arg1=SimpleTaskNotification(task, self))
+
         return
 
-    def add(self,
-            tasks: Iterable[Task]) -> None:
+    def get_task(self,
+                 task: Task) -> Task:
         """
-        Add a task to the task pool
-        :param tasks: The tasks to be added.
+        Pull a task out of the pool so it can be processed
+        :param task: The task to get, None is returned if the task cannot be found (no longer in the pool)
         """
-        if tasks is not None:
-            for t in tasks:
-                if t is not None:
-                    with self._update_lock:
-                        self._tasks.append(t)
-        return
+        task_result = None
+        for topic in self._task_pools.keys():
+            pool, lock = self._task_pools[topic]
+            if task.id in pool:
+                with lock:
+                    task_result = pool[task.id]
+                    del pool[task.id]
+                    self._len -= 1
+        return task_result
 
-    def subscribe(self,
-                  pattern: str) -> List[Task]:
+    def topic_for_state(self,
+                        state: State) -> str:
         """
-        Return tasks from the task pool that match the given patter
-        :param pattern: The pattern that tasks should match to be returned
-        :return: List of matching tasks.
+        The topic string on which tasks needing work in that state are published on
+        :param state: The state for which the topic is required
+        :return: The topic string for the given state
         """
-        tl = list()
-        with self._update_lock:
-            if len(self._tasks) > 0:
-                tl.append(self._tasks.pop())
-        return tl
+        return "topic-{}".format(str(state.id()))
 
-    def grab_task(self,
-                  agent: Agent,
-                  task_to_allocate: Task) -> bool:
+    def __str__(self) -> str:
         """
-        Exclusively allocate the task to the given agent such that the agent can operate on the task. The agent
-        must release the task when it is done processing it. If the task is already allocated to the agent then
-        no action is taken.
-        :param agent: The agent requesting the allocation.
-        :param task_to_allocate:
-        :return: True if the task was allocated; false means another agent is already allocated to the task
+        String dump of the current pool state
+        :return: A string representation of teh task pool.
         """
-        pass
 
-    def release_task(self,
-                     agent: Agent,
-                     task_to_release: Task) -> None:
+        # Use locks so we see a consistent view of the task_pool
+        #
+        s = "Task Pool [{}]\n".format(self._name)
+        with self._pool_lock:
+            for topic in self._task_pools.keys():
+                s += "   Topic ({})\n".format(topic)
+                pool, lock = self._task_pools[topic]
+                with lock:
+                    for task in pool:
+                        s += "       Task <{}>\n".format(str(task))
+        return s
+
+    def __len__(self):
         """
-        Release the task. If the task is not allocated no action is taken.
-        :param agent: The agent releasing the task
-        :param task_to_release: the task to release
-        Exception is thrown if the agent requesting release is not the agent that was allocated the task
+        The number of tasks currently in the pool
+        :return: The number of tasks in the pool
         """
-        pass
+        return self._len
