@@ -34,7 +34,15 @@ class TestAgent(Agent):
         """
         print("{} do_notification for task {} effort {}".format(self._agent_name, task_notification.task.id,
                                                                 task_notification.task.work_in_state_remaining))
-        self._add_work_item_to_queue(SimpleWorkNotification(task_notification.task, task_notification.task_pool))
+        if task_notification.task_pool is not None:
+            if task_notification.task_pool.get_task(task_notification.task) is not None:
+                self._add_work_item_to_queue(
+                    SimpleWorkNotification(task_notification.task, task_notification.task_pool))
+                print("{} grabbed task {} OK from pool {}".format(self._agent_name, task_notification.task.id,
+                                                                  task_notification.task_pool.name))
+            else:
+                print("{} grabbed task {} FAILED from pool {}".format(self._agent_name, task_notification.task.id,
+                                                                      task_notification.task_pool.name))
         return
 
     def do_work(self,
@@ -56,6 +64,16 @@ class TestAgent(Agent):
                                                                                  work_notification.task.id,
                                                                                  work_notification.task.state))
 
+        # If work remaining is zero, need to transition to next state and post the task back to the
+        # pool to be processed
+        #
+        if work_notification.task.work_in_state_remaining == 0:
+            work_notification.task.state = self.to_state
+            if work_notification.task_pool is not None:
+                work_notification.task_pool.put_task(work_notification.task)
+                print("{} put task {} to pool {} in state {}".format(self._agent_name, work_notification.task.id,
+                                                                     work_notification.task_pool.name,
+                                                                     work_notification.task.state))
         return
 
     def _add_work_item_to_queue(self,

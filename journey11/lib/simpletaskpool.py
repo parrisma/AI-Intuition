@@ -15,7 +15,15 @@ class SimpleTaskPool(TaskPool):
         self._len = 0
         self._name = name
 
-    def add_task(self,
+    @property
+    def name(self) -> str:
+        """
+        The name of the task pool
+        :return: The name of the task pool as string
+        """
+        return self._name
+
+    def put_task(self,
                  task: Task) -> None:
         """
         Add a task to the task pool which will cause it to be advertised via the relevant topic unless the task

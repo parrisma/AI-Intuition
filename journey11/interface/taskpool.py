@@ -8,7 +8,7 @@ class TaskPool(ABC):
 
     @purevirtual
     @abstractmethod
-    def add_task(self,
+    def put_task(self,
                  task: Task) -> None:
         """
         Add a task to the task pool which will cause it to be advertised via the relevant topic unless the task
@@ -35,5 +35,15 @@ class TaskPool(ABC):
         The topic string on which tasks needing work in that state are published on
         :param state: The state for which the topic is required
         :return: The topic string for the given state
+        """
+        pass
+
+    @property
+    @abstractmethod
+    @purevirtual
+    def name(self) -> str:
+        """
+        The name of the task pool
+        :return: The name of the task pool as string
         """
         pass
