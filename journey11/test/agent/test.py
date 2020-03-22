@@ -14,7 +14,7 @@ class TestTheAgent(unittest.TestCase):
         test_task = TestTask(effort=effort)
         test_agent = TestAgent('agent 1', start_state=State.S0, end_state=State.S1, capacity=capacity)
         test_notification = SimpleTaskNotification(test_task, None)
-        test_agent.do_notification(test_notification)
+        test_agent._do_notification(test_notification)
 
         time.sleep(1)
         test_agent.test_wait_until_done()  # Wait for all worker thread in Agent to complete

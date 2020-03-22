@@ -1,17 +1,18 @@
 from abc import ABC, abstractmethod
+from enum import Enum, unique
 from journey11.interface.srcsink import SrcSink
 from journey11.lib.purevirtual import purevirtual
 from journey11.interface.taskmetadata import TaskMetaData
 
 
-class TaskNotification(ABC):
+class WorkRequest(ABC):
     @property
     @abstractmethod
     @purevirtual
-    def task_meta(self) -> TaskMetaData:
+    def task_meta_data(self) -> TaskMetaData:
         """
-        The task the notification event relates to
-        :return: The task
+        The task being requested from the SrcSink
+        :return: The task id being requested
         """
         pass
 
@@ -20,7 +21,7 @@ class TaskNotification(ABC):
     @purevirtual
     def src_sink(self) -> SrcSink:
         """
-        The SrcSink participant that originated the Notification.
-        :return: The originating SrcSink
+        The SrcSink participant that originating (sender) the request
+        :return: The originating (sender) SrcSink of teh request
         """
         pass

@@ -3,11 +3,12 @@ import inspect
 import threading
 from journey11.lib.purevirtual import purevirtual
 from journey11.lib.state import State
+from journey11.interface.srcsink import SrcSink
 from journey11.interface.tasknotification import TaskNotification
 from journey11.interface.worknotification import WorkNotification
 
 
-class Agent(ABC):
+class Agent(SrcSink):
     WORK_TIMER = float(0.05)
 
     _running = True
@@ -55,9 +56,9 @@ class Agent(ABC):
         :param arg1: Either a TaskNotification or a WorkNotification
         """
         if isinstance(arg1, TaskNotification):
-            self.do_notification(arg1)
+            self._do_notification(arg1)
         elif isinstance(arg1, WorkNotification):
-            self.do_work(arg1)
+            self._do_work(arg1)
         else:
             raise ValueError("Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__))
         return
@@ -83,8 +84,8 @@ class Agent(ABC):
 
     @abstractmethod
     @purevirtual
-    def do_notification(self,
-                        task_notification: TaskNotification):
+    def _do_notification(self,
+                         task_notification: TaskNotification):
         """
         callback to Notify agent of a task that needs attention. The agent can optionally grab the task from the
         task pool and work on it or ignore it.
@@ -94,8 +95,8 @@ class Agent(ABC):
 
     @abstractmethod
     @purevirtual
-    def do_work(self,
-                work_notification: WorkNotification) -> None:
+    def _do_work(self,
+                 work_notification: WorkNotification) -> None:
         """
         Process any out standing tasks associated with the agent.
         """

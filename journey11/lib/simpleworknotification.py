@@ -20,7 +20,7 @@ class SimpleWorkNotification(WorkNotification):
         return self._task
 
     @property
-    def task_pool(self) -> TaskPool:
+    def src_sink(self) -> TaskPool:
         """
         The task_pool the notification event relates to
         :return: The task pool

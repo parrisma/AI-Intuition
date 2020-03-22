@@ -38,8 +38,8 @@ class Scheduler:
                         try:
                             hst.run_next_task(gmt_hour_of_day)
                         except (OutOfMemoryException, FailedToCompleteException) as e:
-                            Log.log_event(FailureEvent(exception=e, compute=e.compute, task=e.task))
-                            self._policy.select_optimal_compute(e.task).associate_task(e.task)  # re schedule
+                            Log.log_event(FailureEvent(exception=e, compute=e.compute, task=e.task_meta_data))
+                            self._policy.select_optimal_compute(e.task_meta_data).associate_task(e.task_meta_data)  # re schedule
             for h in Host.all_hosts():
                 Log.log_event(HostEvent(HostEvent.HostEventType.STATUS, h))
                 for t in h.all_tasks():

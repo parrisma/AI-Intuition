@@ -120,7 +120,7 @@ class SimpleActor(Actor):
                 self._current_task = self._queue_in.get_nowait()
 
         if self._current_task is not None:
-            remaining_effort = self._current_task.do_work(self.capacity)
+            remaining_effort = self._current_task._do_work(self.capacity)
             if remaining_effort == 0:
                 self._current_task.state = self._to_state
                 self._queue_out.put_nowait(self._current_task)

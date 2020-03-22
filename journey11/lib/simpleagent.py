@@ -38,7 +38,7 @@ class SimpleAgent(Agent):
         self.reset()
         return
 
-    def do_work(self) -> None:
+    def _do_work(self) -> None:
         """
         Work on the current task & pass it to the task out queue when finished.
         """
@@ -47,7 +47,7 @@ class SimpleAgent(Agent):
                 self._current_task = self._queue_in.get_nowait()
 
         if self._current_task is not None:
-            remaining_effort = self._current_task.do_work(self.capacity)
+            remaining_effort = self._current_task._do_work(self.capacity)
             if remaining_effort == 0:
                 self._current_task.state = self._to_state
                 self._queue_out.put_nowait(self._current_task)

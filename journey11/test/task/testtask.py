@@ -9,6 +9,10 @@ class TestTask(Task):
     _process_terminal_state = State.S9
     _global_id = 1
 
+    _global_sync = 0
+    _global_lock = None
+    _global_trigger = None
+
     def __init__(self,
                  effort: int,
                  start_state: State = None):
@@ -29,8 +33,58 @@ class TestTask(Task):
         self._failed = None
         self._lead_time = None
         self._lock = threading.RLock()
-        self.state = self._state_orig
+        self._state = None
+        self._trans = None
         self.reset()
+        TestTask.global_sync_inc()
+
+    @classmethod
+    def global_sync_reset(cls) -> None:
+        """
+        Reset the Class sync status - this allows testing where the test needs to wait for all tasks
+        to reach their terminal state before concluding
+        :return:
+        """
+        cls._global_sync = 0
+        cls._global_lock = threading.Lock()
+        cls._global_trigger = threading.Semaphore()
+        with cls._global_lock:
+            cls._global_trigger.acquire()
+        return
+
+    @classmethod
+    def global_sync_inc_wait(cls) -> None:
+        """
+        Block until master trigger is released
+        :return:
+        """
+        print("sync count B {}".format(cls._global_sync))
+        cls._global_trigger.acquire()
+        print("sync count A {}".format(cls._global_sync))
+        return
+
+    @classmethod
+    def global_sync_inc(cls) -> None:
+        """
+        Task being constructed increments count
+        :return:
+        """
+        with cls._global_lock:
+            cls._global_sync += 1
+        return
+
+    @classmethod
+    def global_sync_dec(cls) -> None:
+        """
+        Class moving into terminal process state decrements count. If all tasks have reached terminal state
+        then release mater lock.
+        :return:
+        """
+        with cls._global_lock:
+            cls._global_sync -= 1
+            if cls._global_sync == 0:
+                cls._global_trigger.release()
+        return
 
     def reset(self) -> None:
         """
@@ -39,12 +93,13 @@ class TestTask(Task):
         self._remaining_effort = self._inital_effort
         self._failed = False
         self._lead_time = float(0)
-        self.state = self._state_orig
+        self._state = self._state_orig
+        self._trans = list()
         if self._lock is not None:
             try:
                 self._lock.release()
             except RuntimeError:
-                pass  # Ignore error id lock i snot already aquired
+                pass  # Ignore error id lock is not already acquired
         return
 
     @property
@@ -61,9 +116,7 @@ class TestTask(Task):
         The lead time between task starting and task finishing
         :return: Lead Time
         """
-        with self._lock:
-            lt = self._lead_time
-        return lt
+        return self._lead_time
 
     @property
     def state(self) -> State:
@@ -81,10 +134,14 @@ class TestTask(Task):
         :param s: the state to set the task to
         """
         with self._lock:
+            self._trans.append(self._state)
             self._state = deepcopy(s)
             self._remaining_effort = 0
             if s.value != self._process_terminal_state.value:
                 self._remaining_effort = self._inital_effort
+            else:
+                # Terminal process state
+                TestTask.global_sync_dec()
         return
 
     @property
@@ -125,6 +182,8 @@ class TestTask(Task):
             if self.work_in_state_remaining > 0:
                 self._remaining_effort = max(0, self.work_in_state_remaining - work)
                 self._lead_time += 1
+                if self._lead_time > 17:
+                    print("&*& {}".format(self._trans))
                 print("Task {} - Lead Time {}".format(self._id, self.lead_time))
             else:
                 print("Task {} done in state {}".format(self._id, self.state))

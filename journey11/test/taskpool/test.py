@@ -8,40 +8,37 @@ from journey11.interface.taskpool import TaskPool
 from journey11.test.task.testtask import TestTask
 from journey11.lib.state import State
 from journey11.lib.simpletaskpool import SimpleTaskPool
+from journey11.lib.simpleworkinitiate import SimpleWorkInitiate
 from journey11.test.agent.testagent import TestAgent
 
 
 class TestTheTaskPool(unittest.TestCase):
 
     def test_simple(self) -> None:
-        return
         """
         Add a singls task to pool and then get it.
         Verify the task count on the pool at all stages and ensure that the task returned is the same as the
         task injected.
         """
+        TestTask.global_sync_reset()
+
         test_task1 = TestTask(effort=1, start_state=State.S0)
 
         task_pool = SimpleTaskPool('Task Pool 1')
 
-        res0 = task_pool.get_task(test_task1)
-        self.assertIsNone(res0)
-        self.assertEqual(len(task_pool), 0)
+        TestTask.process_start_state(State.S0)
+        TestTask.process_end_state(State.S1)
 
-        task_pool.put_task(test_task1)
-        self.assertEqual(len(task_pool), 1)
+        agent = TestAgent(agent_name='Agent 1', start_state=State.S0, end_state=State.S1, capacity=1)
+        pub.subscribe(agent, task_pool.topic_for_state(State.S0))
 
-        res1 = task_pool.get_task(test_task1)
-
-        res2 = task_pool.get_task(test_task1)
-        self.assertEqual(id(test_task1), id(res1))
-        self.assertIsNone(res2)
-        self.assertEqual(len(task_pool), 0)
+        work_initiate_for_task = SimpleWorkInitiate(test_task1)
+        pub.sendMessage(topicName=task_pool.topic, arg1=work_initiate_for_task)
 
         return
 
+    @unittest.skip
     def test_multi_task_multi_state(self) -> None:
-        return
         """
         add multiple tasks in different states and then get them
         Verify the the task pool count at all stages and that the tasks returned in the gat are the same
@@ -114,8 +111,8 @@ class TestTheTaskPool(unittest.TestCase):
 
             pass
 
+    @unittest.skip
     def test_threaded_test(self) -> None:
-        return
         """
         Verify the behaviour and integrity of the pool when in an async threaded set-up.
         Add 100 tasks of random states to the pool aor each task create a timer action with a random 0 to 1 sec
@@ -156,6 +153,7 @@ class TestTheTaskPool(unittest.TestCase):
             self.assertIsNone(res)
         return
 
+    @unittest.skip
     def test_pub_sub_state_chain(self) -> None:
         """
         Test the pub/sub cycle where tasks advance through a state sequence
@@ -173,24 +171,65 @@ class TestTheTaskPool(unittest.TestCase):
         10. Agent does work to get task from S-n to S-terminal-state
         11. Tasks in S-terminal-state are noted to the pool and process ends.
         """
-        task_pool = SimpleTaskPool('Task Pool 4')
 
-        capcacity = 1
-        agents = [[TestAgent("agent 1", State.S0, State.S1, capacity=capcacity), [task_pool.topic_for_state(State.S0)]],
-                  [TestAgent("agent 2", State.S1, State.S2, capacity=capcacity), [task_pool.topic_for_state(State.S1)]],
-                  [TestAgent("agent 3", State.S2, State.S3, capacity=capcacity), [task_pool.topic_for_state(State.S2)]],
-                  [TestAgent("agent 4", State.S3, State.S4, capacity=capcacity), [task_pool.topic_for_state(State.S3)]],
-                  [TestAgent("agent 5", State.S4, State.S5, capacity=capcacity), [task_pool.topic_for_state(State.S4)]]]
+        # Scenario
+        #
+        pool_name = "Task Pool 4"
 
-        for agent, topics in agents:
-            for topic in topics:
-                pub.subscribe(agent, topic)
+        # Agent: [From State, To State],[Num agents per State (topic), Agent Capacity (to do work)]
+        test_agents = [[[State.S0, State.S1], [10, 1]],
+                       [[State.S1, State.S2], [10, 2]],
+                       [[State.S2, State.S3], [10, 1]],
+                       [[State.S3, State.S4], [1, 4]],
+                       [[State.S4, State.S5], [1, 1]],
+                       [[State.S5, State.S6], [1, 2]]
+                       ]
+        te = 4  # Task Effort
+        test_tasks = [500, te, State.S0, (te / 1 + te / 2 + te / 1 + te / 4 + te / 1 + te / 2)]
 
-        t = TestTask(effort=1, start_state=State.S0)
-        task_pool.put_task(t)
+        # Set overall start end terminal states
+        #
+        TestTask.process_start_state(test_agents[0][0][1])
+        TestTask.process_end_state(test_agents[-1][0][-1])
 
-        for _ in range(3):
-            time.sleep(1)
+        # Create the task pool
+        #
+        task_pool = SimpleTaskPool(pool_name)
+
+        # Create agents
+        #
+        agents = list()
+        for state, agent_settings in test_agents:
+            num_agents_per_state, capacity = agent_settings
+            for i in range(num_agents_per_state):
+                agent_name = "Agent-{}-{}".format(str(state[0]), i)
+                agent = TestAgent(agent_name=agent_name, start_state=state[0], end_state=state[1], capacity=capacity)
+                agents.append(agent)
+                pub.subscribe(agent, task_pool.topic_for_state(state[0]))
+
+        TestTask.global_sync_reset()
+
+        tasks = list()
+        num_tasks, task_effort, start_st, expected_lead_time = test_tasks
+        for _ in range(num_tasks):
+            t = TestTask(effort=task_effort, start_state=start_st)
+            task_pool.put_task(t)
+            tasks.append(t)
+
+        TestTask.global_sync_inc_wait()
+        time.sleep(5)
+
+        print(task_pool)
+
+        # Check all tasks have expected lead time
+        for t in tasks:
+            self.assertEqual(expected_lead_time, t.lead_time)
+
+        # Check task pool is empty
+        self.assertEqual(len(task_pool), 0)
+        for t in tasks:
+            res = task_pool.get_task(t)
+            self.assertIsNone(res)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from journey11.interface.task import Task
-from journey11.interface.taskpool import TaskPool
+from journey11.interface.srcsink import SrcSink
 from journey11.lib.purevirtual import purevirtual
 
 
@@ -18,9 +18,9 @@ class WorkNotification(ABC):
     @property
     @abstractmethod
     @purevirtual
-    def task_pool(self) -> TaskPool:
+    def src_sink(self) -> SrcSink:
         """
-        The task_pool the work task is associated with
-        :return: The task pool
+        The SrcSink that orinated the notification
+        :return: The SrcSink originator
         """
         pass

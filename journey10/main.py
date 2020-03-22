@@ -30,7 +30,7 @@ def sim(fr: float,
             print('--')
 
         for ap, _, _ in scenario:
-            ap.do_work()
+            ap._do_work()
 
         for ap, an, af in scenario:
             td = ap.task_out()

@@ -1,13 +1,18 @@
 from queue import Queue
+from pubsub import pub
 from journey11.interface.agent import Agent
 from journey11.lib.state import State
 from journey11.interface.tasknotification import TaskNotification
 from journey11.interface.worknotification import WorkNotification
 from journey11.lib.simpleworknotification import SimpleWorkNotification
+from journey11.lib.simpleworkrequest import SimpleWorkRequest
+from journey11.lib.uniquetopic import UniqueTopic
 
 
 class TestAgent(Agent):
     FAIL_RATE = float(0)
+
+    AGENT_TOPIC_PREFIX = "agent"
 
     def __init__(self,
                  agent_name: str,
@@ -23,34 +28,58 @@ class TestAgent(Agent):
         self._agent_name = agent_name
         self._start_state = start_state
         self._end_state = end_state
+
+        self._unique_topic = None
+        self._create_topic_and_subscription()
         return
 
-    def do_notification(self,
-                        task_notification: TaskNotification):
+    def _create_topic_and_subscription(self) -> None:
         """
-        callback to Notify agent of a task that needs attention. The agent can optionally grab the task from the
-        task pool and work on it or ignore it.
+        Create the unique topic for the agent that it will listen on for work (task) deliveries that it has
+        requested from the task-pool
+        """
+        self._unique_topic = UniqueTopic().topic(TestAgent.AGENT_TOPIC_PREFIX)
+        pub.subscribe(self, self._unique_topic)
+        return
+
+    @property
+    def name(self) -> str:
+        """
+        The unique name of the SrcSink
+        :return: The SrcSink name
+        """
+        return self._agent_name
+
+    @property
+    def topic(self) -> str:
+        """
+        The unique topic name that SrcSink listens on for activity specific to it.
+        :return: The unique SrcSink listen topic name
+        """
+        return self._unique_topic
+
+    def _do_notification(self,
+                         task_notification: TaskNotification):
+        """
+        callback to Notify agent of a task that needs attention. The agent can request the task be sent to it for
+        processing but there is no guarantee as another agent may have already requested the task.
         :param task_notification: The notification event for task requiring attention
         """
-        print("{} do_notification for task {} effort {}".format(self._agent_name, task_notification.task.id,
-                                                                task_notification.task.work_in_state_remaining))
-        if task_notification.task_pool is not None:
-            if task_notification.task_pool.get_task(task_notification.task) is not None:
-                self._add_work_item_to_queue(
-                    SimpleWorkNotification(task_notification.task, task_notification.task_pool))
-                print("{} grabbed task {} OK from pool {}".format(self._agent_name, task_notification.task.id,
-                                                                  task_notification.task_pool.name))
-            else:
-                print("{} grabbed task {} FAILED from pool {}".format(self._agent_name, task_notification.task.id,
-                                                                      task_notification.task_pool.name))
+        print("{} do_notification for task id {}".format(self._agent_name, task_notification.task_meta.task_id))
+        if task_notification.src_sink is not None:
+            # request the task ot be sent as work.
+            work_request = SimpleWorkRequest(task_notification.task_meta, self)
+            pub.sendMessage(topicName=task_notification.src_sink.topic, arg1=work_request)
+            print("{} sent request for task {} OK from pool {}".format(self._agent_name,
+                                                                       task_notification.task_meta.task_id,
+                                                                       task_notification.src_sink.name))
         return
 
-    def do_work(self,
-                work_notification: WorkNotification) -> None:
+    def _do_work(self,
+                 work_notification: WorkNotification) -> None:
         """
         Process any out standing tasks associated with the agent.
         """
-        self._work.task_done()
         if work_notification.task.work_in_state_remaining > 0:
             print("{} do_work for task {}".format(self._agent_name, work_notification.task.id))
             if work_notification.task.do_work(self.capacity) > 0:
@@ -69,11 +98,18 @@ class TestAgent(Agent):
         #
         if work_notification.task.work_in_state_remaining == 0:
             work_notification.task.state = self.to_state
-            if work_notification.task_pool is not None:
-                work_notification.task_pool.put_task(work_notification.task)
-                print("{} put task {} to pool {} in state {}".format(self._agent_name, work_notification.task.id,
-                                                                     work_notification.task_pool.name,
-                                                                     work_notification.task.state))
+            if work_notification.task.state != work_notification.task.process_end_state():
+                if work_notification.src_sink is not None:
+                    work_notification.src_sink.put_task(work_notification.task)
+                    print("{} put task {} to pool {} in state {}".format(self._agent_name, work_notification.task.id,
+                                                                         work_notification.src_sink.name,
+                                                                         work_notification.task.state))
+            else:
+                print("{} completed task {} in pool {} with terminal state {}".format
+                      (self._agent_name,
+                       work_notification.task.id,
+                       work_notification.src_sink.name,
+                       work_notification.task.state))
         return
 
     def _add_work_item_to_queue(self,
@@ -96,7 +132,7 @@ class TestAgent(Agent):
         wtd = SimpleWorkNotification(None, None)
         if not self._work.empty():
             wtd = self._work.get()
-            print("{} work_to_do for task {}".format(self._agent_name, wtd.task.id))
+            print("{} work_to_do for task {}".format(self._agent_name, wtd.task_meta_data.id))
         else:
             print("{} work_to_do - nothing to do".format(self._agent_name))
         return wtd
@@ -149,3 +185,10 @@ class TestAgent(Agent):
         if r < 0.0 or r > 1.0:
             raise ValueError("Failure rate for Agent must be between 0.0 and 1.0")
         self._fail_rate = r
+
+    def __str__(self):
+        s = "Agent [{}] from state {} to state {}".format(self._agent_name,
+                                                          str(self._start_state),
+                                                          str(self._end_state)
+                                                          )
+        return s
