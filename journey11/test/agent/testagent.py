@@ -6,6 +6,7 @@ from journey11.interface.tasknotification import TaskNotification
 from journey11.interface.worknotification import WorkNotification
 from journey11.lib.simpleworknotification import SimpleWorkNotification
 from journey11.lib.simpleworkrequest import SimpleWorkRequest
+from journey11.lib.simpleworkinitiate import SimpleWorkInitiate
 from journey11.lib.uniquetopic import UniqueTopic
 
 
@@ -100,10 +101,12 @@ class TestAgent(Agent):
             work_notification.task.state = self.to_state
             if work_notification.task.state != work_notification.task.process_end_state():
                 if work_notification.src_sink is not None:
-                    work_notification.src_sink.put_task(work_notification.task)
-                    print("{} put task {} to pool {} in state {}".format(self._agent_name, work_notification.task.id,
-                                                                         work_notification.src_sink.name,
-                                                                         work_notification.task.state))
+                    work_initiate_for_task = SimpleWorkInitiate(work_notification.task)
+                    pub.sendMessage(topicName=work_notification.src_sink.topic, arg1=work_initiate_for_task)
+                    print("{} send task {} to pool {} in state {}".format(self._agent_name,
+                                                                          work_notification.task.id,
+                                                                          work_notification.src_sink.name,
+                                                                          work_notification.task.state))
             else:
                 print("{} completed task {} in pool {} with terminal state {}".format
                       (self._agent_name,
@@ -132,7 +135,7 @@ class TestAgent(Agent):
         wtd = SimpleWorkNotification(None, None)
         if not self._work.empty():
             wtd = self._work.get()
-            print("{} work_to_do for task {}".format(self._agent_name, wtd.task_meta_data.id))
+            print("{} work_to_do for task {}".format(self._agent_name, wtd.task.id))
         else:
             print("{} work_to_do - nothing to do".format(self._agent_name))
         return wtd

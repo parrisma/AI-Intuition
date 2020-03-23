@@ -12,6 +12,6 @@ class SimpleWorkInitiate(WorkInitiate):
     def task(self) -> Task:
         """
         The task to be initiated
-        :return: The task being injected yo be worked on.
+        :return: The task being injected to be worked on.
         """
         return self._task

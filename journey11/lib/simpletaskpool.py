@@ -68,6 +68,8 @@ class SimpleTaskPool(TaskPool):
 
         pub.sendMessage(topicName=topic, arg1=SimpleTaskNotification(SimpleTaskMetaData(work_initiate.task.id), self))
 
+        print("{} stored & advertised task {} on {}".format(self.name, work_initiate.task.id, topic))
+
         return
 
     def _get_task(self,
@@ -76,6 +78,9 @@ class SimpleTaskPool(TaskPool):
         Send the requested task to the consumer if the task has not already been sent to a consumer
         :param work_request: The details of the task and the consumer
         """
+        print("{} received request for task {} from {}".format(self.name,
+                                                               work_request.task_meta_data.task_id,
+                                                               work_request.src_sink.name))
         task_result = None
         for topic in self._task_pools.keys():
             pool, lock = self._task_pools[topic]
@@ -86,6 +91,14 @@ class SimpleTaskPool(TaskPool):
                     self._len -= 1
                     pub.sendMessage(topicName=work_request.src_sink.topic,
                                     arg1=SimpleWorkNotification(task_result, self))
+                    print("{} sent task {} to {}".format(self.name,
+                                                         work_request.task_meta_data.task_id,
+                                                         work_request.src_sink.name))
+            else:
+                print("{} had NO task {} to send to {}".format(self.name,
+                                                               work_request.task_meta_data.task_id,
+                                                               work_request.src_sink.name))
+
         return task_result
 
     def topic_for_state(self,

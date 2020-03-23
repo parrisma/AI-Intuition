@@ -22,7 +22,7 @@ class TestTheTaskPool(unittest.TestCase):
         """
         TestTask.global_sync_reset()
 
-        test_task1 = TestTask(effort=1, start_state=State.S0)
+        test_task1 = TestTask(effort=3, start_state=State.S0)
 
         task_pool = SimpleTaskPool('Task Pool 1')
 
@@ -34,6 +34,8 @@ class TestTheTaskPool(unittest.TestCase):
 
         work_initiate_for_task = SimpleWorkInitiate(test_task1)
         pub.sendMessage(topicName=task_pool.topic, arg1=work_initiate_for_task)
+
+        time.sleep(2)
 
         return
 
