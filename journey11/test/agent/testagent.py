@@ -30,6 +30,9 @@ class TestAgent(Agent):
         self._start_state = start_state
         self._end_state = end_state
 
+        self._num_notification = 0
+        self._num_work = 0
+
         self._unique_topic = None
         self._create_topic_and_subscription()
         return
@@ -66,6 +69,7 @@ class TestAgent(Agent):
         processing but there is no guarantee as another agent may have already requested the task.
         :param task_notification: The notification event for task requiring attention
         """
+        self._num_notification += 1
         print("{} do_notification for task id {}".format(self._agent_name, task_notification.task_meta.task_id))
         if task_notification.src_sink is not None:
             # request the task ot be sent as work.
@@ -81,6 +85,7 @@ class TestAgent(Agent):
         """
         Process any out standing tasks associated with the agent.
         """
+        self._num_work += 1
         if work_notification.task.work_in_state_remaining > 0:
             print("{} do_work for task {}".format(self._agent_name, work_notification.task.id))
             if work_notification.task.do_work(self.capacity) > 0:
@@ -195,3 +200,19 @@ class TestAgent(Agent):
                                                           str(self._end_state)
                                                           )
         return s
+
+    @property
+    def num_notification(self) -> int:
+        """
+        Hoe many task notifications did teh agent get
+        :return: num notifications
+        """
+        return self._num_notification
+
+    @property
+    def num_work(self) -> int:
+        """
+        Hoe many tasks did the agent work on
+        :return: num tasks worked on
+        """
+        return self._num_work

@@ -12,30 +12,108 @@ from journey11.lib.simpleworkinitiate import SimpleWorkInitiate
 from journey11.test.agent.testagent import TestAgent
 
 
+class Listener:
+    _id = 0
+
+    def __init__(self):
+        self.name = str(Listener._id)
+        Listener._id += 1
+
+    def __call__(self, arg1):
+        print("{} Rx Msg {}".format(self.name, type(arg1)))
+        return
+
+
 class TestTheTaskPool(unittest.TestCase):
 
-    def test_simple(self) -> None:
+    def test_single_task_scenarios(self):
+
+        # [task_effort, agent_capacity, num_tasks, num_agents]
+        scenarios = [[1, 1, 1, 1],
+                     [2, 1, 1, 1],
+                     [2, 2, 1, 1],
+                     [2, 4, 1, 1],
+                     [4, 2, 25, 1],
+                     [8, 2, 33, 10],
+                     [100, 1, 1, 1]]
+
+        case_num = 1
+        for task_effort, agent_capacity, num_tasks, num_agents in scenarios:
+            case_description = "Case {}: Effort={}, Capacity={}, Tasks={}, Agents={}".format(case_num,
+                                                                                             task_effort,
+                                                                                             agent_capacity,
+                                                                                             num_tasks,
+                                                                                             num_agents)
+            self.single_task_scenarios(case_description,
+                                       task_effort,
+                                       agent_capacity,
+                                       num_tasks,
+                                       num_agents)
+            case_num += 1
+        return
+
+    def single_task_scenarios(self,
+                              case_descr: str,
+                              task_effort: int,
+                              agent_capacity: int,
+                              num_tasks: int,
+                              num_agents: int) -> None:
         """
         Add a singls task to pool and then get it.
         Verify the task count on the pool at all stages and ensure that the task returned is the same as the
         task injected.
         """
+
+        print("\n* * * * * * S T A R T: {} * * * * * * \n".format(case_descr))
+
         TestTask.global_sync_reset()
 
-        test_task1 = TestTask(effort=3, start_state=State.S0)
-
-        task_pool = SimpleTaskPool('Task Pool 1')
-
+        # Tasks: Single state transition
         TestTask.process_start_state(State.S0)
         TestTask.process_end_state(State.S1)
 
-        agent = TestAgent(agent_name='Agent 1', start_state=State.S0, end_state=State.S1, capacity=1)
-        pub.subscribe(agent, task_pool.topic_for_state(State.S0))
+        # Init task pool
+        task_pool = SimpleTaskPool('Task Pool 1')
 
-        work_initiate_for_task = SimpleWorkInitiate(test_task1)
-        pub.sendMessage(topicName=task_pool.topic, arg1=work_initiate_for_task)
+        # Create Agents
+        state_topic = task_pool.topic_for_state(TestTask.process_start_state())
+        agents = list()
+        for i in range(num_agents):
+            agent = TestAgent(agent_name="Agent {}".format(i),
+                              start_state=State.S0,
+                              end_state=State.S1,
+                              capacity=agent_capacity)
+            agents.append(agent)
 
-        time.sleep(2)
+        # Must create all agents *before* subscription - otherwise odd effect where only last agent listens.
+        for agent in agents:
+            pub.subscribe(agent, topicName=state_topic)
+
+        # Create tasks
+        tasks = list()
+        work_init = list()
+        for _ in range(num_tasks):
+            t = TestTask(effort=task_effort, start_state=State.S0)
+            tasks.append(t)
+            work_init.append(SimpleWorkInitiate(t))
+
+        for w in work_init:
+            pub.sendMessage(topicName=task_pool.topic, arg1=w)
+
+        # Wait for all tasks to report arrival in terminal state
+        TestTask.global_sync_wait()
+
+        # Validate behaviours for this test case
+        #
+        self.assertEqual(0, len(task_pool))
+        for t in tasks:
+            self.assertEqual(State.S1, t.state)
+            self.assertEqual(max(1, int(task_effort / agent_capacity)), t.lead_time)
+
+        for agent in agents:
+            self.assertEqual(num_tasks, agent.num_notification)
+
+        print("\n* * * * * * E N D : {} * * * * * * \n".format(case_descr))
 
         return
 
@@ -218,7 +296,7 @@ class TestTheTaskPool(unittest.TestCase):
             task_pool.put_task(t)
             tasks.append(t)
 
-        TestTask.global_sync_inc_wait()
+        TestTask.global_sync_wait()
         time.sleep(5)
 
         print(task_pool)

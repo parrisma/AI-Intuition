@@ -56,8 +56,10 @@ class Agent(SrcSink):
         :param arg1: Either a TaskNotification or a WorkNotification
         """
         if isinstance(arg1, TaskNotification):
+            print("{} Rx TaskNotification".format(self.name))
             self._do_notification(arg1)
         elif isinstance(arg1, WorkNotification):
+            print("{} Rx WorkNotification".format(self.name))
             self._do_work(arg1)
         else:
             raise ValueError("Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__))

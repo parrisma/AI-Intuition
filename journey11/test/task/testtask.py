@@ -47,20 +47,19 @@ class TestTask(Task):
         """
         cls._global_sync = 0
         cls._global_lock = threading.Lock()
-        cls._global_trigger = threading.Semaphore()
         with cls._global_lock:
-            cls._global_trigger.acquire()
+            cls._global_trigger = threading.Event()
         return
 
     @classmethod
-    def global_sync_inc_wait(cls) -> None:
+    def global_sync_wait(cls) -> None:
         """
         Block until master trigger is released
         :return:
         """
-        print("sync count B {}".format(cls._global_sync))
-        cls._global_trigger.acquire()
-        print("sync count A {}".format(cls._global_sync))
+        print("Waiting for global task completion Event")
+        cls._global_trigger.wait()
+        print("Global task completion Event done")
         return
 
     @classmethod
@@ -83,7 +82,7 @@ class TestTask(Task):
         with cls._global_lock:
             cls._global_sync -= 1
             if cls._global_sync == 0:
-                cls._global_trigger.release()
+                cls._global_trigger.set()
         return
 
     def reset(self) -> None:
@@ -182,8 +181,6 @@ class TestTask(Task):
             if self.work_in_state_remaining > 0:
                 self._remaining_effort = max(0, self.work_in_state_remaining - work)
                 self._lead_time += 1
-                if self._lead_time > 17:
-                    print("&*& {}".format(self._trans))
                 print("Task {} - Lead Time {}".format(self._id, self.lead_time))
             else:
                 print("Task {} done in state {}".format(self._id, self.state))
