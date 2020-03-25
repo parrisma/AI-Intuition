@@ -26,3 +26,10 @@ class SimpleWorkNotification(WorkNotification):
         :return: The task pool
         """
         return self._task_pool
+
+    def __str__(self):
+        """
+        Render as string
+        :return: String rendering of class instance
+        """
+        return "Work Notification for task id: {} from SrcSink".format(self._task.id, self._task_pool.name)

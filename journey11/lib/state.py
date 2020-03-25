@@ -18,4 +18,4 @@ class State(Enum):
         return self.value
 
     def __str__(self) -> str:
-        return str(self.value)
+        return "State:{}".format(self.value)

@@ -8,7 +8,7 @@ class SimpleWorkRequest(WorkRequest):
     def __init__(self,
                  notification_task_id: TaskMetaData,
                  notification_src_sink: SrcSink):
-        self._task = notification_task_id
+        self._task_meta = notification_task_id
         self._src_sink = notification_src_sink
 
     @property
@@ -17,7 +17,7 @@ class SimpleWorkRequest(WorkRequest):
         The task id the notification event relates to
         :return: The task id
         """
-        return self._task
+        return self._task_meta
 
     @property
     def src_sink(self) -> SrcSink:
@@ -26,3 +26,10 @@ class SimpleWorkRequest(WorkRequest):
         :return: The task pool
         """
         return self._src_sink
+
+    def __str__(self):
+        """
+        Render as string
+        :return: String rendering of class instance
+        """
+        return "Work Request for task id: {} from SrcSink".format(self._task_meta.task_id, self._src_sink.name)

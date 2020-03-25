@@ -29,26 +29,33 @@ class TestTheTaskPool(unittest.TestCase):
     def test_single_task_scenarios(self):
 
         # [task_effort, agent_capacity, num_tasks, num_agents]
-        scenarios = [[1, 1, 1, 1],
-                     [2, 1, 1, 1],
-                     [2, 2, 1, 1],
-                     [2, 4, 1, 1],
-                     [4, 2, 25, 1],
-                     [8, 2, 33, 10],
-                     [100, 1, 1, 1]]
+        scenarios = [[1, 1, 1, 1, State.S0, State.S1],
+                     [2, 1, 1, 1, State.S0, State.S1],
+                     [2, 2, 1, 1, State.S0, State.S1],
+                     [2, 4, 1, 1, State.S0, State.S1],
+                     [4, 2, 25, 1, State.S0, State.S1],
+                     [8, 2, 33, 10, State.S0, State.S1],
+                     [100, 1, 1, 1, State.S0, State.S1]]
+
+        scenarios = [[5, 1, 1, 1, State.S0, State.S1]]
 
         case_num = 1
-        for task_effort, agent_capacity, num_tasks, num_agents in scenarios:
-            case_description = "Case {}: Effort={}, Capacity={}, Tasks={}, Agents={}".format(case_num,
-                                                                                             task_effort,
-                                                                                             agent_capacity,
-                                                                                             num_tasks,
-                                                                                             num_agents)
+        for task_effort, agent_capacity, num_tasks, num_agents, start_state, end_state in scenarios:
+            case_description \
+                = "Case {}: Effort={}, Capacity={}, Tasks={}, Agents={} Start={}, End={}".format(case_num,
+                                                                                                 task_effort,
+                                                                                                 agent_capacity,
+                                                                                                 num_tasks,
+                                                                                                 num_agents,
+                                                                                                 start_state,
+                                                                                                 end_state)
             self.single_task_scenarios(case_description,
                                        task_effort,
                                        agent_capacity,
                                        num_tasks,
-                                       num_agents)
+                                       num_agents,
+                                       start_state,
+                                       end_state)
             case_num += 1
         return
 
@@ -57,7 +64,9 @@ class TestTheTaskPool(unittest.TestCase):
                               task_effort: int,
                               agent_capacity: int,
                               num_tasks: int,
-                              num_agents: int) -> None:
+                              num_agents: int,
+                              start_state: State,
+                              end_state: State) -> None:
         """
         Add a singls task to pool and then get it.
         Verify the task count on the pool at all stages and ensure that the task returned is the same as the
@@ -69,8 +78,8 @@ class TestTheTaskPool(unittest.TestCase):
         TestTask.global_sync_reset()
 
         # Tasks: Single state transition
-        TestTask.process_start_state(State.S0)
-        TestTask.process_end_state(State.S1)
+        TestTask.process_start_state(start_state)
+        TestTask.process_end_state(end_state)
 
         # Init task pool
         task_pool = SimpleTaskPool('Task Pool 1')
@@ -80,8 +89,8 @@ class TestTheTaskPool(unittest.TestCase):
         agents = list()
         for i in range(num_agents):
             agent = TestAgent(agent_name="Agent {}".format(i),
-                              start_state=State.S0,
-                              end_state=State.S1,
+                              start_state=start_state,
+                              end_state=end_state,
                               capacity=agent_capacity)
             agents.append(agent)
 
@@ -112,6 +121,8 @@ class TestTheTaskPool(unittest.TestCase):
 
         for agent in agents:
             self.assertEqual(num_tasks, agent.num_notification)
+
+        task_pool.terminate_all()
 
         print("\n* * * * * * E N D : {} * * * * * * \n".format(case_descr))
 

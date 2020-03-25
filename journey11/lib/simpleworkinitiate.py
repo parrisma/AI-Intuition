@@ -15,3 +15,10 @@ class SimpleWorkInitiate(WorkInitiate):
         :return: The task being injected to be worked on.
         """
         return self._task
+
+    def __str__(self):
+        """
+        Render as string
+        :return: String rendering of class instance
+        """
+        return "Work Initiation for task id: {}".format(self._task.id)

@@ -1,5 +1,6 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import inspect
+import threading
 from journey11.lib.purevirtual import purevirtual
 from journey11.lib.state import State
 from journey11.interface.srcsink import SrcSink
@@ -8,12 +9,16 @@ from journey11.interface.workinitiate import WorkInitiate
 
 
 class TaskPool(SrcSink):
+    class PubNotification:
+        pass
 
     def __init__(self):
         """
         Check this or child class has correctly implemented callable __call__ as needed to handle both the
         PubSub listener events and the work timer events.
         """
+        self._call_lock = threading.Lock()
+
         cl = getattr(self, "__call__", None)
         if not callable(cl):
             raise NotImplemented("Must implement __call__(self, arg1)")
@@ -22,6 +27,13 @@ class TaskPool(SrcSink):
             sig = inspect.signature(cl)
             if 'arg1' not in sig.parameters:
                 raise NotImplemented("Must implement __call__(self, arg1)")
+        return
+
+    def __del__(self):
+        try:
+            self._call_lock.release()
+        except:
+            pass
         return
 
     def __call__(self, arg1) -> None:
@@ -38,8 +50,11 @@ class TaskPool(SrcSink):
             self._get_task(arg1)
         elif isinstance(arg1, WorkInitiate):
             self._put_task(arg1)
+        elif isinstance(arg1, TaskPool.PubNotification):
+            self._do_pub(arg1)
         else:
-            raise ValueError("Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__))
+            raise ValueError(
+                "Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__))
         return
 
     @purevirtual
@@ -61,8 +76,17 @@ class TaskPool(SrcSink):
         Send the requested task to the consumer if the task has not already been sent to a consumer
         :param work_request: The details of the task and the consumer
         """
+        pass
 
-    pass
+    @purevirtual
+    @abstractmethod
+    def _do_pub(self,
+                pub_notification: 'TaskPool.PubNotification') -> None:
+        """
+        Check for any pending tasks and advertise or re-advertise them on the relevant topic
+        :param pub_notification: The publication notification closure
+        """
+        pass
 
     @purevirtual
     @abstractmethod

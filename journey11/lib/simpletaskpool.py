@@ -22,6 +22,24 @@ class SimpleTaskPool(TaskPool):
         self._name = name
         self._unique_topic = None
         self._create_topic_and_subscription()
+
+        self._pub_timer_wait_in_seconds = 0.1
+        self._running = True
+        self.pub_timer_reset()
+        return
+
+    def __del__(self):
+        """
+        Set running False, which will stop timer resets etc.
+        """
+        super().__del__()
+        self._running = False
+
+    def terminate_all(self) -> None:
+        """
+        Terminate all activity, locks, threads, timers etc
+        """
+        self.__del__()
         return
 
     def _create_topic_and_subscription(self) -> None:
@@ -65,11 +83,6 @@ class SimpleTaskPool(TaskPool):
             if work_initiate.task.id not in pool:
                 pool[work_initiate.task.id] = work_initiate.task
                 self._len += 1
-
-        pub.sendMessage(topicName=topic, arg1=SimpleTaskNotification(SimpleTaskMetaData(work_initiate.task.id), self))
-
-        print("{} stored & advertised task {} on {}".format(self.name, work_initiate.task.id, topic))
-
         return
 
     def _get_task(self,
@@ -81,6 +94,7 @@ class SimpleTaskPool(TaskPool):
         print("{} received request for task {} from {}".format(self.name,
                                                                work_request.task_meta_data.task_id,
                                                                work_request.src_sink.name))
+        to_pub = list()
         task_result = None
         for topic in self._task_pools.keys():
             pool, lock = self._task_pools[topic]
@@ -89,17 +103,43 @@ class SimpleTaskPool(TaskPool):
                     task_result = pool[work_request.task_meta_data.task_id]
                     del pool[work_request.task_meta_data.task_id]
                     self._len -= 1
-                    pub.sendMessage(topicName=work_request.src_sink.topic,
-                                    arg1=SimpleWorkNotification(task_result, self))
-                    print("{} sent task {} to {}".format(self.name,
-                                                         work_request.task_meta_data.task_id,
-                                                         work_request.src_sink.name))
-            else:
-                print("{} had NO task {} to send to {}".format(self.name,
-                                                               work_request.task_meta_data.task_id,
-                                                               work_request.src_sink.name))
+                    to_pub.append([work_request.src_sink.topic,
+                                   SimpleWorkNotification(task_result, self)])
 
+        if len(to_pub) > 0:
+            for topic, arg1 in to_pub:
+                pub.sendMessage(topicName=topic, arg1=arg1)
+                print("{} sent task {} to {}".format(self.name,
+                                                     work_request.task_meta_data.task_id,
+                                                     work_request.src_sink.name))
+        else:
+            print("{} had NO task {} to send to {}".format(self.name,
+                                                           work_request.task_meta_data.task_id,
+                                                           work_request.src_sink.name))
         return task_result
+
+    def _do_pub(self,
+                pub_notification: TaskPool.PubNotification) -> None:
+        """
+        Check for any pending tasks and advertise or re-advertise them on the relevant topic
+        :param pub_notification: The publication notification closure
+        """
+        to_pub = list()
+        with self._pool_lock:
+            for topic in self._task_pools.keys():
+                pool, lock = self._task_pools[topic]
+                with lock:
+                    for task_id, task in pool.items():
+                        topic = self.topic_for_state(task.state)
+                        to_pub.append([topic, SimpleTaskNotification(SimpleTaskMetaData(task.id), self), task.id])
+
+        for pub_event in to_pub:
+            topic, arg1, task_id = pub_event
+            pub.sendMessage(topicName=topic, arg1=arg1)
+            print("{} stored & advertised task {} on {}".format(self.name, task_id, topic))
+
+        self.pub_timer_reset()
+        return
 
     def topic_for_state(self,
                         state: State) -> str:
@@ -109,6 +149,15 @@ class SimpleTaskPool(TaskPool):
         :return: The topic string for the given state
         """
         return "topic-{}".format(str(state.id()))
+
+    def pub_timer_reset(self) -> None:
+        """
+        Reset the timer that calls _do_pub() method which in turn is responsible for sending notification
+        event for any un claimed tasks.
+        """
+        if self._running:
+            threading.Timer(self._pub_timer_wait_in_seconds, self, [TaskPool.PubNotification()]).start()
+        return
 
     def __str__(self) -> str:
         """
