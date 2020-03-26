@@ -70,14 +70,14 @@ class TestAgent(Agent):
         :param task_notification: The notification event for task requiring attention
         """
         self._num_notification += 1
-        print("{} do_notification for task id {}".format(self._agent_name, task_notification.task_meta.task_id))
+        print("{} do_notification for work ref {}".format(self._agent_name, task_notification.work_ref.id))
         if task_notification.src_sink is not None:
             # request the task ot be sent as work.
-            work_request = SimpleWorkRequest(task_notification.task_meta, self)
+            work_request = SimpleWorkRequest(task_notification.work_ref, self)
             pub.sendMessage(topicName=task_notification.src_sink.topic, arg1=work_request)
-            print("{} sent request for task {} OK from pool {}".format(self._agent_name,
-                                                                       task_notification.task_meta.task_id,
-                                                                       task_notification.src_sink.name))
+            print("{} sent request for work ref {} OK from pool {}".format(self._agent_name,
+                                                                           task_notification.work_ref.id,
+                                                                           task_notification.src_sink.name))
         return
 
     def _do_work(self,

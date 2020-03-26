@@ -1,23 +1,24 @@
 from journey11.interface.srcsink import SrcSink
 from journey11.interface.workrequest import WorkRequest
+from journey11.lib.uniqueworkref import UniqueWorkRef
 from journey11.interface.taskmetadata import TaskMetaData
 
 
 class SimpleWorkRequest(WorkRequest):
 
     def __init__(self,
-                 notification_task_id: TaskMetaData,
+                 unique_work_ref: UniqueWorkRef,
                  notification_src_sink: SrcSink):
-        self._task_meta = notification_task_id
+        self._work_ref = unique_work_ref
         self._src_sink = notification_src_sink
 
     @property
-    def task_meta_data(self) -> TaskMetaData:
+    def work_ref(self) -> UniqueWorkRef:
         """
-        The task id the notification event relates to
-        :return: The task id
+        The unique work reference for this notification
+        :return: The work reference
         """
-        return self._task_meta
+        return self._work_ref
 
     @property
     def src_sink(self) -> SrcSink:

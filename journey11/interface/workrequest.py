@@ -1,18 +1,17 @@
 from abc import ABC, abstractmethod
-from enum import Enum, unique
 from journey11.interface.srcsink import SrcSink
 from journey11.lib.purevirtual import purevirtual
-from journey11.interface.taskmetadata import TaskMetaData
+from journey11.lib.uniqueworkref import UniqueWorkRef
 
 
 class WorkRequest(ABC):
     @property
     @abstractmethod
     @purevirtual
-    def task_meta_data(self) -> TaskMetaData:
+    def work_ref(self) -> UniqueWorkRef:
         """
-        The task being requested from the SrcSink
-        :return: The task id being requested
+        The unique work reference for this notification
+        :return: The work reference
         """
         pass
 

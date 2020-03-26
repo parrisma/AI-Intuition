@@ -6,6 +6,7 @@ from journey11.lib.simpletasknotification import SimpleTaskNotification
 from journey11.interface.workrequest import WorkRequest
 from journey11.interface.workinitiate import WorkInitiate
 from journey11.lib.uniquetopic import UniqueTopic
+from journey11.lib.uniqueworkref import UniqueWorkRef
 from journey11.lib.simpletaskmetadata import SimpleTaskMetaData
 from journey11.lib.simpleworknotification import SimpleWorkNotification
 
@@ -16,7 +17,7 @@ class SimpleTaskPool(TaskPool):
     def __init__(self,
                  name: str):
         super().__init__()
-        self._task_pools = dict()
+        self._task_pool = dict()
         self._pool_lock = threading.Lock()
         self._len = 0
         self._name = name
@@ -26,6 +27,9 @@ class SimpleTaskPool(TaskPool):
         self._pub_timer_wait_in_seconds = 0.1
         self._running = True
         self.pub_timer_reset()
+
+        self._get_sem = threading.Semaphore()
+
         return
 
     def __del__(self):
@@ -73,16 +77,10 @@ class SimpleTaskPool(TaskPool):
         is in it's terminal state.
         :param work_initiate: The task to be added
         """
-        topic = self.topic_for_state(work_initiate.task.state)
-        if topic not in self._task_pools:
-            with self._pool_lock:
-                self._task_pools[topic] = [dict(), threading.Lock()]
-
-        pool, lock = self._task_pools[topic]
-        with lock:
-            if work_initiate.task.id not in pool:
-                pool[work_initiate.task.id] = work_initiate.task
-                self._len += 1
+        with self._pool_lock:
+            ref = UniqueWorkRef()
+            self._task_pool[ref.id] = [ref, work_initiate.task]
+            self._len += 1
         return
 
     def _get_task(self,
@@ -91,32 +89,33 @@ class SimpleTaskPool(TaskPool):
         Send the requested task to the consumer if the task has not already been sent to a consumer
         :param work_request: The details of the task and the consumer
         """
-        print("{} received request for task {} from {}".format(self.name,
-                                                               work_request.task_meta_data.task_id,
-                                                               work_request.src_sink.name))
-        to_pub = list()
-        task_result = None
-        for topic in self._task_pools.keys():
-            pool, lock = self._task_pools[topic]
-            if work_request.task_meta_data.task_id in pool:
-                with lock:
-                    task_result = pool[work_request.task_meta_data.task_id]
-                    del pool[work_request.task_meta_data.task_id]
-                    self._len -= 1
-                    to_pub.append([work_request.src_sink.topic,
-                                   SimpleWorkNotification(task_result, self)])
+        self._get_sem.acquire()
 
-        if len(to_pub) > 0:
-            for topic, arg1 in to_pub:
-                pub.sendMessage(topicName=topic, arg1=arg1)
-                print("{} sent task {} to {}".format(self.name,
-                                                     work_request.task_meta_data.task_id,
-                                                     work_request.src_sink.name))
+        print("{} received request for work ref {} from {}".format(self.name,
+                                                                   work_request.work_ref.id,
+                                                                   work_request.src_sink.name))
+        to_pub = None
+        with self._pool_lock:
+            if work_request.work_ref.id in self._task_pool:
+                ref, task = self._task_pool[work_request.work_ref.id]
+                del self._task_pool[work_request.work_ref.id]
+                self._len -= 1
+                to_pub = [work_request.src_sink.topic, SimpleWorkNotification(task, self)]
+
+        if to_pub is not None:
+            topic, arg1 = to_pub
+            pub.sendMessage(topicName=topic, arg1=arg1)
+            print("{} sent task {} to {}".format(self.name,
+                                                 arg1.task.id,
+                                                 work_request.src_sink.name))
         else:
             print("{} had NO task {} to send to {}".format(self.name,
-                                                           work_request.task_meta_data.task_id,
+                                                           work_request.work_ref.id,
                                                            work_request.src_sink.name))
-        return task_result
+
+        self._get_sem.release()
+
+        return
 
     def _do_pub(self,
                 pub_notification: TaskPool.PubNotification) -> None:
@@ -126,17 +125,18 @@ class SimpleTaskPool(TaskPool):
         """
         to_pub = list()
         with self._pool_lock:
-            for topic in self._task_pools.keys():
-                pool, lock = self._task_pools[topic]
-                with lock:
-                    for task_id, task in pool.items():
-                        topic = self.topic_for_state(task.state)
-                        to_pub.append([topic, SimpleTaskNotification(SimpleTaskMetaData(task.id), self), task.id])
+            for ref in self._task_pool.keys():
+                work_ref, task = self._task_pool[ref]
+                topic = self.topic_for_state(task.state)
+                stn = SimpleTaskNotification(unique_work_ref=work_ref,
+                                             task_meta=SimpleTaskMetaData(task.id),
+                                             notification_src_sink=self)
+                to_pub.append([work_ref, topic, stn, task.id])
 
         for pub_event in to_pub:
-            topic, arg1, task_id = pub_event
+            ref, topic, arg1, task_id = pub_event
             pub.sendMessage(topicName=topic, arg1=arg1)
-            print("{} stored & advertised task {} on {}".format(self.name, task_id, topic))
+            print("{} stored & advertised task {} on {} = {}".format(self.name, task_id, topic, ref.id))
 
         self.pub_timer_reset()
         return
@@ -169,9 +169,9 @@ class SimpleTaskPool(TaskPool):
         #
         s = "Task Pool [{}]\n".format(self._name)
         with self._pool_lock:
-            for topic in self._task_pools.keys():
+            for topic in self._task_pool.keys():
                 s += "   Topic ({})\n".format(topic)
-                pool, lock = self._task_pools[topic]
+                pool, lock = self._task_pool[topic]
                 with lock:
                     for task in pool:
                         s += "       Task <{}>\n".format(str(task))

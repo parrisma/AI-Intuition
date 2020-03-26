@@ -37,7 +37,7 @@ class TestTheTaskPool(unittest.TestCase):
                      [8, 2, 33, 10, State.S0, State.S1],
                      [100, 1, 1, 1, State.S0, State.S1]]
 
-        scenarios = [[5, 1, 1, 1, State.S0, State.S1]]
+        scenarios = [[1, 1, 1, 5, State.S0, State.S8]]
 
         case_num = 1
         for task_effort, agent_capacity, num_tasks, num_agents, start_state, end_state in scenarios:
@@ -49,7 +49,7 @@ class TestTheTaskPool(unittest.TestCase):
                                                                                                  num_agents,
                                                                                                  start_state,
                                                                                                  end_state)
-            self.single_task_scenarios(case_description,
+            self.test_scenario_execute(case_description,
                                        task_effort,
                                        agent_capacity,
                                        num_tasks,
@@ -59,7 +59,7 @@ class TestTheTaskPool(unittest.TestCase):
             case_num += 1
         return
 
-    def single_task_scenarios(self,
+    def test_scenario_execute(self,
                               case_descr: str,
                               task_effort: int,
                               agent_capacity: int,
@@ -85,18 +85,22 @@ class TestTheTaskPool(unittest.TestCase):
         task_pool = SimpleTaskPool('Task Pool 1')
 
         # Create Agents
-        state_topic = task_pool.topic_for_state(TestTask.process_start_state())
         agents = list()
-        for i in range(num_agents):
-            agent = TestAgent(agent_name="Agent {}".format(i),
-                              start_state=start_state,
-                              end_state=end_state,
-                              capacity=agent_capacity)
-            agents.append(agent)
+        st = start_state
+        i = 1
+        for es in State.range(start_state, end_state)[1:]:
+            for _ in range(num_agents):
+                agent = TestAgent(agent_name="Agent {}".format(i),
+                                  start_state=st,
+                                  end_state=es,
+                                  capacity=agent_capacity)
+                agents.append(agent)
+                i += 1
+            st = es
 
         # Must create all agents *before* subscription - otherwise odd effect where only last agent listens.
         for agent in agents:
-            pub.subscribe(agent, topicName=state_topic)
+            pub.subscribe(agent, topicName=task_pool.topic_for_state(agent.from_state))
 
         # Create tasks
         tasks = list()
@@ -114,13 +118,14 @@ class TestTheTaskPool(unittest.TestCase):
 
         # Validate behaviours for this test case
         #
-        self.assertEqual(0, len(task_pool))
-        for t in tasks:
-            self.assertEqual(State.S1, t.state)
-            self.assertEqual(max(1, int(task_effort / agent_capacity)), t.lead_time)
-
         for agent in agents:
             self.assertEqual(num_tasks, agent.num_notification)
+
+        num_transitions = len(State.range(start_state, end_state)) - 1
+        self.assertEqual(0, len(task_pool))
+        for t in tasks:
+            self.assertEqual(end_state, t.state)
+            self.assertEqual(max(1, int(task_effort / agent_capacity) * num_transitions), t.lead_time)
 
         task_pool.terminate_all()
 
