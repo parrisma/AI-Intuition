@@ -43,3 +43,28 @@ class State(Enum):
 
     def __str__(self) -> str:
         return "State:{}".format(self.value)
+
+    def __add__(self, other):
+        if not isinstance(other, int):
+            raise ValueError("State arithmetic only with integer offsets")
+
+        res = None
+        if other == 0:
+            res = self
+        elif other > 0:
+            rng = self.range(self, State.S9)
+            if other > len(rng) - 1:
+                res = State.S9
+            else:
+                res = rng[other]
+        else:
+            rng = self.range(State.S0, self)[::-1]
+            other = abs(other)
+            if other > len(rng) - 1:
+                res = State.S0
+            else:
+                res = rng[other]
+        return res
+
+    def __radd__(self, other):
+        return self.__add__(other)

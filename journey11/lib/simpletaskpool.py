@@ -28,8 +28,6 @@ class SimpleTaskPool(TaskPool):
         self._running = True
         self.pub_timer_reset()
 
-        self._get_sem = threading.Semaphore()
-
         return
 
     def __del__(self):
@@ -78,7 +76,7 @@ class SimpleTaskPool(TaskPool):
         :param work_initiate: The task to be added
         """
         with self._pool_lock:
-            ref = UniqueWorkRef()
+            ref = UniqueWorkRef(pool_name=self.name, task_id=work_initiate.task.id)
             self._task_pool[ref.id] = [ref, work_initiate.task]
             self._len += 1
         return
@@ -89,18 +87,19 @@ class SimpleTaskPool(TaskPool):
         Send the requested task to the consumer if the task has not already been sent to a consumer
         :param work_request: The details of the task and the consumer
         """
-        self._get_sem.acquire()
-
         print("{} received request for work ref {} from {}".format(self.name,
                                                                    work_request.work_ref.id,
                                                                    work_request.src_sink.name))
         to_pub = None
         with self._pool_lock:
-            if work_request.work_ref.id in self._task_pool:
-                ref, task = self._task_pool[work_request.work_ref.id]
-                del self._task_pool[work_request.work_ref.id]
+            ref_id = work_request.work_ref.id
+            if ref_id in self._task_pool:
+                ref, task = self._task_pool[ref_id]
+                del self._task_pool[ref_id]
                 self._len -= 1
-                to_pub = [work_request.src_sink.topic, SimpleWorkNotification(task, self)]
+                to_pub = [work_request.src_sink.topic, SimpleWorkNotification(unique_work_ref=work_request.work_ref,
+                                                                              task=task,
+                                                                              task_pool=self)]
 
         if to_pub is not None:
             topic, arg1 = to_pub
@@ -112,8 +111,6 @@ class SimpleTaskPool(TaskPool):
             print("{} had NO task {} to send to {}".format(self.name,
                                                            work_request.work_ref.id,
                                                            work_request.src_sink.name))
-
-        self._get_sem.release()
 
         return
 
@@ -139,6 +136,14 @@ class SimpleTaskPool(TaskPool):
             print("{} stored & advertised task {} on {} = {}".format(self.name, task_id, topic, ref.id))
 
         self.pub_timer_reset()
+        return
+
+    def wait_until_empty(self):
+        """
+        Wait on a semaphore until the pool is empty
+        """
+        if self._empty_sem is not None:
+            self._empty_sem.acquire()
         return
 
     def topic_for_state(self,

@@ -1,15 +1,26 @@
 from journey11.interface.task import Task
 from journey11.interface.taskpool import TaskPool
 from journey11.interface.worknotification import WorkNotification
+from journey11.lib.uniqueworkref import UniqueWorkRef
 
 
 class SimpleWorkNotification(WorkNotification):
 
     def __init__(self,
-                 notification_task: Task,
-                 notification_task_pool: TaskPool):
-        self._task = notification_task
-        self._task_pool = notification_task_pool
+                 unique_work_ref: UniqueWorkRef,
+                 task: Task,
+                 task_pool: TaskPool):
+        self._work_ref = unique_work_ref
+        self._task = task
+        self._task_pool = task_pool
+
+    @property
+    def work_ref(self) -> UniqueWorkRef:
+        """
+        The unique work reference for this notification
+        :return: The work reference
+        """
+        return self._work_ref
 
     @property
     def task(self) -> Task:

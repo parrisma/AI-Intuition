@@ -31,6 +31,30 @@ class TestState(unittest.TestCase):
             i += 1
         return
 
+    def test_state_add(self):
+        scenarios = [[State.S0, 1, State.S1],
+                     [State.S0, 0, State.S0],
+                     [State.S0, 9, State.S9],
+                     [State.S0, 10, State.S9],
+                     [State.S0, -1, State.S0],
+                     [State.S1, -1, State.S0],
+                     [State.S9, -9, State.S0],
+                     [State.S9, -10, State.S0]
+                     ]
+
+        for p1, p2, expected in scenarios:
+            s = p1 + p2
+            self.assertEqual(s, expected)
+
+        for p1, p2, expected in scenarios:
+            s = p2 + p1
+            self.assertEqual(s, expected)
+
+        self.assertRaises(ValueError, State.__add__, State.S0, str(1))
+        self.assertRaises(ValueError, State.__add__, str(1), State.S0)
+
+        return
+
 
 if __name__ == '__main__':
     unittest.main()

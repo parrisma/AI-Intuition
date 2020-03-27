@@ -49,8 +49,8 @@ class TestAgent(Agent):
     @property
     def name(self) -> str:
         """
-        The unique name of the SrcSink
-        :return: The SrcSink name
+        The unique name of the Agent
+        :return: The Agent name
         """
         return self._agent_name
 
@@ -87,9 +87,9 @@ class TestAgent(Agent):
         """
         self._num_work += 1
         if work_notification.task.work_in_state_remaining > 0:
-            print("{} do_work for task {}".format(self._agent_name, work_notification.task.id))
+            print("{} do_work for work_ref {}".format(self._agent_name, work_notification.work_ref.id))
             if work_notification.task.do_work(self.capacity) > 0:
-                print("{} do_work for task {} - task rescheduled with {} work remaining in state {}".format(
+                print("{} do_work for task id {} - task rescheduled with {} work remaining in state {}".format(
                     self._agent_name, work_notification.task.id,
                     work_notification.task.work_in_state_remaining,
                     work_notification.task.state))
@@ -137,10 +137,10 @@ class TestAgent(Agent):
         Are there any tasks associated with the Agent that need working on ?
         :return: A WorkNotification event or None if there is no work to do
         """
-        wtd = SimpleWorkNotification(None, None)
+        wtd = None
         if not self._work.empty():
             wtd = self._work.get()
-            print("{} work_to_do for task {}".format(self._agent_name, wtd.task.id))
+            print("{} work_to_do for task ref {}".format(self._agent_name, wtd.work_ref.id))
         else:
             print("{} work_to_do - nothing to do".format(self._agent_name))
         return wtd

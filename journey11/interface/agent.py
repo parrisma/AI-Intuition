@@ -43,6 +43,8 @@ class Agent(SrcSink):
         self._work_timer = Agent.WORK_TIMER
         self._timer = None
 
+        self._activity = list()
+
         return
 
     def __call__(self, arg1) -> None:
@@ -56,10 +58,14 @@ class Agent(SrcSink):
         :param arg1: Either a TaskNotification or a WorkNotification
         """
         if isinstance(arg1, TaskNotification):
-            print("{} Rx TaskNotification".format(self.name))
+            msg = "{} Rx TaskNotification {}".format(self.name, arg1.work_ref.id)
+            self._activity.append(msg)
+            print(msg)
             self._do_notification(arg1)
         elif isinstance(arg1, WorkNotification):
-            print("{} Rx WorkNotification".format(self.name))
+            msg = "{} Rx WorkNotification {}".format(self.name, arg1.work_ref.id)
+            self._activity.append(msg)
+            print(msg)
             self._do_work(arg1)
         else:
             raise ValueError("Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__))
@@ -122,6 +128,16 @@ class Agent(SrcSink):
         pass
 
     # ----- P R O P E R T I E S -----
+
+    @property
+    @abstractmethod
+    @purevirtual
+    def name(self) -> str:
+        """
+        The unique name of the Agent
+        :return: The Agent name
+        """
+        pass
 
     @property
     @abstractmethod

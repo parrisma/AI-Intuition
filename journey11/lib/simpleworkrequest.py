@@ -1,7 +1,6 @@
 from journey11.interface.srcsink import SrcSink
 from journey11.interface.workrequest import WorkRequest
 from journey11.lib.uniqueworkref import UniqueWorkRef
-from journey11.interface.taskmetadata import TaskMetaData
 
 
 class SimpleWorkRequest(WorkRequest):
@@ -11,6 +10,7 @@ class SimpleWorkRequest(WorkRequest):
                  notification_src_sink: SrcSink):
         self._work_ref = unique_work_ref
         self._src_sink = notification_src_sink
+        return
 
     @property
     def work_ref(self) -> UniqueWorkRef:
@@ -33,4 +33,4 @@ class SimpleWorkRequest(WorkRequest):
         Render as string
         :return: String rendering of class instance
         """
-        return "Work Request for task id: {} from SrcSink".format(self._task_meta.task_id, self._src_sink.name)
+        return "Work Request {} from SrcSink {}".format(self._work_ref.id, self._src_sink.name)
