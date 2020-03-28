@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from journey11.lib.purevirtual import purevirtual
 
@@ -8,7 +9,9 @@ def must_implement(*attrs):
             def __init__(self):
                 cl = getattr(self, "__call__", None)
                 if not callable(cl):
-                    raise NotImplementedError("Class must implement __call__(self, arg1)".format(""))
+                    msg = "Class must implement __call__(self, arg1)".format("")
+                    logging.critical(msg)
+                    raise NotImplementedError(msg)
                 super().__init__()
 
         return NewClass
@@ -19,7 +22,7 @@ def must_implement(*attrs):
 class A(ABC):
 
     def __init__(self):
-        print("\nA Init")
+        logging.info("\nA Init")
         # cl = getattr(self, "__call__", None)
         # if not callable(cl):
         #    raise NotImplementedError("Must implement __call__(self, arg1)")
@@ -27,7 +30,7 @@ class A(ABC):
 
     @abstractmethod
     def a(self):
-        print("A call a()")
+        logging.info("A call a()")
 
     @abstractmethod
     @purevirtual
@@ -40,14 +43,14 @@ class B(A):
 
     def __init__(self):
         super().__init__()
-        print("B Init")
+        logging.info("B Init")
 
     def __call__(self, arg1):
-        print("B.__call__")
+        logging.info("B.__call__")
         return
 
     def a(self):
-        print("B call a()")
+        logging.info("B call a()")
 
     def b(self):
         super().b()
@@ -58,13 +61,13 @@ class C(A):
 
     def __init__(self):
         super().__init__()
-        print("C Init")
+        logging.info("C Init")
 
     def a(self):
-        print("C call a()")
+        logging.info("C call a()")
 
     def b(self):
-        print("B call b()")
+        logging.info("B call b()")
 
 
 if __name__ == "__main__":
@@ -75,11 +78,11 @@ if __name__ == "__main__":
         c = C()
         AssertionError("NotImplementedError expected")
     except NotImplementedError as e:
-        print("Expected exception Ok")
+        logging.info("Expected exception Ok")
         print(e)
 
     try:
         b.b()
     except NotImplementedError as e:
-        print("OK, Expected NotImplemented for Pure Virtual")
+        logging.info("OK, Expected NotImplemented for Pure Virtual")
         print(e)

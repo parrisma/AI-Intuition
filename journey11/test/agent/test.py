@@ -1,5 +1,6 @@
 import unittest
 import time
+import logging
 from pubsub import pub
 from journey11.test.agent.testagent import TestAgent
 from journey11.test.task.testtask import TestTask
@@ -49,22 +50,22 @@ class TestTheAgent(unittest.TestCase):
             task1_list.append(test_task1)
             task2_list.append(test_task2)
 
-        print("Waiting for all agents to complete")
+        logging.info("Waiting for all agents to complete")
         for agent, _ in agents:
             agent.test_wait_until_done()
         time.sleep(2)
-        print("Done, All agents to complete")
+        logging.info("Done, All agents to complete")
 
         # The 'same' task is processed by many agents as such no matter how many agents the lead time is the
         # task effort / agent capacity.
         task1_expected_lead_time = (task1_effort / topic1_capacity)
         task2_expected_lead_time = (task2_effort / topic2_capacity)
         for task in task1_list:
-            print("Task {} lead time {}".format(task.id, task.lead_time))
+            logging.info("Task {} lead time {}".format(task.id, task.lead_time))
             self.assertEqual(task.lead_time, task1_expected_lead_time)
 
         for task in task2_list:
-            print("Task {} lead time {}".format(task.id, task.lead_time))
+            logging.info("Task {} lead time {}".format(task.id, task.lead_time))
             self.assertEqual(task.lead_time, task2_expected_lead_time)
 
         return

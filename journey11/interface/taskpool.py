@@ -1,11 +1,12 @@
 from abc import abstractmethod
 import inspect
 import threading
-from journey11.lib.purevirtual import purevirtual
-from journey11.lib.state import State
+import logging
 from journey11.interface.srcsink import SrcSink
 from journey11.interface.workrequest import WorkRequest
 from journey11.interface.workinitiate import WorkInitiate
+from journey11.lib.purevirtual import purevirtual
+from journey11.lib.state import State
 
 
 class TaskPool(SrcSink):
@@ -21,12 +22,16 @@ class TaskPool(SrcSink):
 
         cl = getattr(self, "__call__", None)
         if not callable(cl):
-            raise NotImplemented("Must implement __call__(self, arg1)")
+            msg = "Must implement __call__(self, arg1)"
+            logging.critical("Must implement __call__(self, arg1)")
+            raise NotImplemented(msg)
         else:
             # Check signature
             sig = inspect.signature(cl)
             if 'arg1' not in sig.parameters:
-                raise NotImplemented("Must implement __call__(self, arg1)")
+                msg = "Must implement __call__(self, arg1)"
+                logging.critical(msg)
+                raise NotImplemented(msg)
         return
 
     def __del__(self):
@@ -53,8 +58,9 @@ class TaskPool(SrcSink):
         elif isinstance(arg1, TaskPool.PubNotification):
             self._do_pub(arg1)
         else:
-            raise ValueError(
-                "Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__))
+            msg = "Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__)
+            logging.critical(msg)
+            raise ValueError(msg)
         return
 
     @purevirtual

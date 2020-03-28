@@ -1,10 +1,10 @@
+import logging
 from queue import Queue
 from pubsub import pub
 from journey11.interface.agent import Agent
 from journey11.lib.state import State
 from journey11.interface.tasknotification import TaskNotification
 from journey11.interface.worknotification import WorkNotification
-from journey11.lib.simpleworknotification import SimpleWorkNotification
 from journey11.lib.simpleworkrequest import SimpleWorkRequest
 from journey11.lib.simpleworkinitiate import SimpleWorkInitiate
 from journey11.lib.uniquetopic import UniqueTopic
@@ -70,14 +70,14 @@ class TestAgent(Agent):
         :param task_notification: The notification event for task requiring attention
         """
         self._num_notification += 1
-        print("{} do_notification for work ref {}".format(self._agent_name, task_notification.work_ref.id))
+        logging.info("{} do_notification for work ref {}".format(self._agent_name, task_notification.work_ref.id))
         if task_notification.src_sink is not None:
             # request the task ot be sent as work.
             work_request = SimpleWorkRequest(task_notification.work_ref, self)
             pub.sendMessage(topicName=task_notification.src_sink.topic, arg1=work_request)
-            print("{} sent request for work ref {} OK from pool {}".format(self._agent_name,
-                                                                           task_notification.work_ref.id,
-                                                                           task_notification.src_sink.name))
+            logging.info("{} sent request for work ref {} OK from pool {}".format(self._agent_name,
+                                                                                  task_notification.work_ref.id,
+                                                                                  task_notification.src_sink.name))
         return
 
     def _do_work(self,
@@ -87,17 +87,17 @@ class TestAgent(Agent):
         """
         self._num_work += 1
         if work_notification.task.work_in_state_remaining > 0:
-            print("{} do_work for work_ref {}".format(self._agent_name, work_notification.work_ref.id))
+            logging.info("{} do_work for work_ref {}".format(self._agent_name, work_notification.work_ref.id))
             if work_notification.task.do_work(self.capacity) > 0:
-                print("{} do_work for task id {} - task rescheduled with {} work remaining in state {}".format(
+                logging.info("{} do_work for task id {} - task rescheduled with {} work remaining in state {}".format(
                     self._agent_name, work_notification.task.id,
                     work_notification.task.work_in_state_remaining,
                     work_notification.task.state))
                 self._add_work_item_to_queue(work_notification)
         else:
-            print("{} do_work nothing left to do for task {} in state {}".format(self._agent_name,
-                                                                                 work_notification.task.id,
-                                                                                 work_notification.task.state))
+            logging.info("{} do_work nothing left to do for task {} in state {}".format(self._agent_name,
+                                                                                        work_notification.task.id,
+                                                                                        work_notification.task.state))
 
         # If work remaining is zero, need to transition to next state and post the task back to the
         # pool to be processed
@@ -108,16 +108,16 @@ class TestAgent(Agent):
                 if work_notification.src_sink is not None:
                     work_initiate_for_task = SimpleWorkInitiate(work_notification.task)
                     pub.sendMessage(topicName=work_notification.src_sink.topic, arg1=work_initiate_for_task)
-                    print("{} send task {} to pool {} in state {}".format(self._agent_name,
-                                                                          work_notification.task.id,
-                                                                          work_notification.src_sink.name,
-                                                                          work_notification.task.state))
+                    logging.info("{} send task {} to pool {} in state {}".format(self._agent_name,
+                                                                                 work_notification.task.id,
+                                                                                 work_notification.src_sink.name,
+                                                                                 work_notification.task.state))
             else:
-                print("{} completed task {} in pool {} with terminal state {}".format
-                      (self._agent_name,
-                       work_notification.task.id,
-                       work_notification.src_sink.name,
-                       work_notification.task.state))
+                logging.info("{} completed task {} in pool {} with terminal state {}".format
+                             (self._agent_name,
+                              work_notification.task.id,
+                              work_notification.src_sink.name,
+                              work_notification.task.state))
         return
 
     def _add_work_item_to_queue(self,
@@ -140,9 +140,9 @@ class TestAgent(Agent):
         wtd = None
         if not self._work.empty():
             wtd = self._work.get()
-            print("{} work_to_do for task ref {}".format(self._agent_name, wtd.work_ref.id))
+            logging.info("{} work_to_do for task ref {}".format(self._agent_name, wtd.work_ref.id))
         else:
-            print("{} work_to_do - nothing to do".format(self._agent_name))
+            logging.info("{} work_to_do - nothing to do".format(self._agent_name))
         return wtd
 
     def test_wait_until_done(self) -> None:

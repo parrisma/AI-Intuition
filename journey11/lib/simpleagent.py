@@ -3,7 +3,6 @@ import queue
 from journey11.interface.agent import Agent
 from journey10.lib.state import State
 from journey10.interface.capacity import Capacity
-from journey11.interface.taskpool import TaskPool
 
 
 class SimpleAgent(Agent):

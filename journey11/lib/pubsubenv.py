@@ -1,3 +1,4 @@
+import logging
 from pubsub import pub
 
 
@@ -6,7 +7,7 @@ class PubSubEnv:
 
     class PubSubEnvExceptionHandler(pub.IListenerExcHandler):
         def __call__(self, listener_id, topic_obj):
-            print("Listener Id [{}] raised an exception".format(listener_id))
+            logging.info("Listener Id [{}] raised an exception".format(listener_id))
             return
 
     def __init__(self):

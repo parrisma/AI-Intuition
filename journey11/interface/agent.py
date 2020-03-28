@@ -1,11 +1,14 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import inspect
 import threading
-from journey11.lib.purevirtual import purevirtual
-from journey11.lib.state import State
+import logging
 from journey11.interface.srcsink import SrcSink
 from journey11.interface.tasknotification import TaskNotification
 from journey11.interface.worknotification import WorkNotification
+from journey11.interface.taskconsumptionpolicy import TaskConsumptionPolicy
+from journey11.lib.purevirtual import purevirtual
+from journey11.lib.state import State
+from journey11.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
 
 
 class Agent(SrcSink):
@@ -33,17 +36,21 @@ class Agent(SrcSink):
         """
         cl = getattr(self, "__call__", None)
         if not callable(cl):
-            raise NotImplemented("Must implement __call__(self, arg1)")
+            msg = "Must implement __call__(self, arg1)"
+            logging.critical("Must implement __call__(self, arg1)")
+            raise NotImplemented(msg)
         else:
             # Check signature
             sig = inspect.signature(cl)
             if 'arg1' not in sig.parameters:
-                raise NotImplemented("Must implement __call__(self, arg1)")
+                msg = "Must implement __call__(self, arg1)"
+                logging.critical("Must implement __call__(self, arg1)")
+                raise NotImplemented(msg)
 
         self._work_timer = Agent.WORK_TIMER
         self._timer = None
 
-        self._activity = list()
+        self._task_consumption_policy = GreedyTaskConsumptionPolicy()
 
         return
 
@@ -58,17 +65,37 @@ class Agent(SrcSink):
         :param arg1: Either a TaskNotification or a WorkNotification
         """
         if isinstance(arg1, TaskNotification):
-            msg = "{} Rx TaskNotification {}".format(self.name, arg1.work_ref.id)
-            self._activity.append(msg)
-            print(msg)
-            self._do_notification(arg1)
+            self._handle_task_notification(arg1)
         elif isinstance(arg1, WorkNotification):
-            msg = "{} Rx WorkNotification {}".format(self.name, arg1.work_ref.id)
-            self._activity.append(msg)
-            print(msg)
-            self._do_work(arg1)
+            self._handle_work_notification(arg1)
         else:
-            raise ValueError("Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__))
+            msg = "Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__)
+            logging.critical("Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__))
+            raise ValueError(msg)
+        return
+
+    def _handle_task_notification(self,
+                                  task_notification: TaskNotification) -> None:
+        """
+        Process a task notification event.
+        :param task_notification: The task notification that is to be processed
+        """
+        logging.info("{} Rx TaskNotification {}".format(self.name, task_notification.work_ref.id))
+        if self._task_consumption_policy.process_task(task_notification.task_meta):
+            self._do_notification(task_notification)
+        else:
+            logging.info("{} Rx TaskNotification Ignored by Consumption Policy{}".format(self.name,
+                                                                                         task_notification.work_ref.id))
+        return
+
+    def _handle_work_notification(self,
+                                  work_notification: WorkNotification) -> None:
+        """
+        Process a work notification event.
+        :param work_notification: The work notification that is to be processed
+        """
+        logging.info("{} Rx WorkNotification {}".format(self.name, work_notification.work_ref.id))
+        self._do_work(work_notification)
         return
 
     def work_notification(self) -> None:
@@ -89,6 +116,22 @@ class Agent(SrcSink):
             self._timer.cancel()
             self._timer = None
         pass
+
+    @property
+    def task_consumption_policy(self) -> TaskConsumptionPolicy:
+        """
+        Get the policy that the agent uses to decide to process (or not) the task based on tasks meta data
+        :return: The consumption policy
+        """
+        return self._task_consumption_policy
+
+    @task_consumption_policy.setter
+    def task_consumption_policy(self,
+                                p: TaskConsumptionPolicy) -> None:
+        """
+        Set the policy that the agent uses to decide to process (or not) the task based on tasks meta data
+        """
+        self._task_consumption_policy = p
 
     @abstractmethod
     @purevirtual
@@ -208,5 +251,7 @@ class Agent(SrcSink):
         if t is None:
             self._work_timer = Agent.WORK_TIMER
         elif t <= float(0):
-            raise ValueError("Work timer must not be greater than or equal to zero")
+            msg = "Work timer must not be greater than or equal to zero"
+            logging.critical(msg)
+            raise ValueError(msg)
         self._timer = float(t)

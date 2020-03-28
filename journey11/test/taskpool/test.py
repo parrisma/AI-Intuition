@@ -1,15 +1,13 @@
+import logging
 import unittest
-import threading
-import random
 import time
 import math
 from pubsub import pub
-from journey11.interface.task import Task
-from journey11.interface.taskpool import TaskPool
 from journey11.test.task.testtask import TestTask
 from journey11.lib.state import State
 from journey11.lib.simpletaskpool import SimpleTaskPool
 from journey11.lib.simpleworkinitiate import SimpleWorkInitiate
+from journey11.lib.loggingsetup import LoggingSetup
 from journey11.test.agent.testagent import TestAgent
 
 
@@ -21,11 +19,15 @@ class Listener:
         Listener._id += 1
 
     def __call__(self, arg1):
-        print("{} Rx Msg {}".format(self.name, type(arg1)))
+        logging.info("{} Rx Msg {}".format(self.name, type(arg1)))
         return
 
 
 class TestTheTaskPool(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        LoggingSetup()
 
     def test_scenario_runner(self):
 
@@ -75,7 +77,7 @@ class TestTheTaskPool(unittest.TestCase):
         task injected.
         """
 
-        print("\n* * * * * * S T A R T: {} * * * * * * \n".format(case_descr))
+        logging.info("\n* * * * * * S T A R T: {} * * * * * * \n".format(case_descr))
 
         TestTask.global_sync_reset()
 
@@ -132,9 +134,10 @@ class TestTheTaskPool(unittest.TestCase):
 
         task_pool.terminate_all()
 
-        print("\n* * * * * * E N D : {} * * * * * * \n".format(case_descr))
+        logging.info("\n* * * * * * E N D : {} * * * * * * \n".format(case_descr))
 
         return
+
 
 if __name__ == "__main__":
     unittest.main()

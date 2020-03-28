@@ -1,3 +1,5 @@
+import logging
+
 """
 Decorator to throw exception for all abstract methods with no intended implementation
 """
@@ -5,7 +7,8 @@ Decorator to throw exception for all abstract methods with no intended implement
 
 def purevirtual(func):
     def wrapper():
-        raise NotImplementedError(
-            "{} is a pure virtual function and must be implemented by child class".format(func.__name__))
+        msg = "{} is a pure virtual function and must be implemented by child class".format(func.__name__)
+        logging.critical(msg)
+        raise NotImplementedError(msg)
 
     return wrapper

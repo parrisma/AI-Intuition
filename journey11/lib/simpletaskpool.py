@@ -1,4 +1,5 @@
 import threading
+import logging
 from pubsub import pub
 from journey11.interface.taskpool import TaskPool
 from journey11.lib.state import State
@@ -87,9 +88,9 @@ class SimpleTaskPool(TaskPool):
         Send the requested task to the consumer if the task has not already been sent to a consumer
         :param work_request: The details of the task and the consumer
         """
-        print("{} received request for work ref {} from {}".format(self.name,
-                                                                   work_request.work_ref.id,
-                                                                   work_request.src_sink.name))
+        logging.info("{} received request for work ref {} from {}".format(self.name,
+                                                                          work_request.work_ref.id,
+                                                                          work_request.src_sink.name))
         to_pub = None
         with self._pool_lock:
             ref_id = work_request.work_ref.id
@@ -104,13 +105,13 @@ class SimpleTaskPool(TaskPool):
         if to_pub is not None:
             topic, arg1 = to_pub
             pub.sendMessage(topicName=topic, arg1=arg1)
-            print("{} sent task {} to {}".format(self.name,
-                                                 arg1.task.id,
-                                                 work_request.src_sink.name))
+            logging.info("{} sent task {} to {}".format(self.name,
+                                                        arg1.task.id,
+                                                        work_request.src_sink.name))
         else:
-            print("{} had NO task {} to send to {}".format(self.name,
-                                                           work_request.work_ref.id,
-                                                           work_request.src_sink.name))
+            logging.info("{} had NO task {} to send to {}".format(self.name,
+                                                                  work_request.work_ref.id,
+                                                                  work_request.src_sink.name))
 
         return
 
@@ -133,17 +134,9 @@ class SimpleTaskPool(TaskPool):
         for pub_event in to_pub:
             ref, topic, arg1, task_id = pub_event
             pub.sendMessage(topicName=topic, arg1=arg1)
-            print("{} stored & advertised task {} on {} = {}".format(self.name, task_id, topic, ref.id))
+            logging.info("{} stored & advertised task {} on {} = {}".format(self.name, task_id, topic, ref.id))
 
         self.pub_timer_reset()
-        return
-
-    def wait_until_empty(self):
-        """
-        Wait on a semaphore until the pool is empty
-        """
-        if self._empty_sem is not None:
-            self._empty_sem.acquire()
         return
 
     def topic_for_state(self,

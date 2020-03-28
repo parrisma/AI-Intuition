@@ -1,3 +1,4 @@
+import logging
 from typing import List
 from enum import Enum, unique
 
@@ -46,7 +47,9 @@ class State(Enum):
 
     def __add__(self, other):
         if not isinstance(other, int):
-            raise ValueError("State arithmetic only with integer offsets")
+            msg = ""
+            logging.critical(msg)
+            raise ValueError(msg)
 
         res = None
         if other == 0:

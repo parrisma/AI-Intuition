@@ -1,3 +1,4 @@
+import logging
 import threading
 import random
 import time
@@ -19,13 +20,13 @@ class ThreadTestClass:
     def inc_counter(self):
         with self.lock:
             self.res += 1
-            print("Counter updated {}".format(self.res))
+            logging.info("Counter updated {}".format(self.res))
         return
 
     def __call__(self, thread_id):
-        print("Start work for thread {}".format(thread_id))
+        logging.info("Start work for thread {}".format(thread_id))
         self.inc_counter()
-        print("Done work for thread {}".format(thread_id))
+        logging.info("Done work for thread {}".format(thread_id))
 
     @property
     def counter(self) -> int:

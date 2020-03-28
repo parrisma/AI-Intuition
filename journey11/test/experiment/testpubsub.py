@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 from pubsub import pub
@@ -55,26 +56,28 @@ class Listener:
         elif isinstance(arg1, TimerPayload):
             self.do_timer_event(arg1.msg)
         else:
-            raise ValueError("Unexpected type passed to {}.__call__ [{}]".format(self.__class__.__name__, type(arg1)))
+            msg = "Unexpected type passed to {}.__call__ [{}]".format(self.__class__.__name__, type(arg1))
+            logging.info(msg)
+            raise ValueError(msg)
         return
 
     def do_listen_event(self,
                         msg: str):
         if self._id == "3":
             raise Exception("Test Exception")
-        print("Listener [{}] - Message: {}".format(self._id, msg))
+        logging.info("Listener [{}] - Message: {}".format(self._id, msg))
         return
 
     def do_timer_event(self,
                        msg: str):
-        print("Timer Message: {}".format(msg))
+        logging.info("Timer Message: {}".format(msg))
         self.__timer_reset()
         return
 
 
 class ListenerExceptionHandler(pub.IListenerExcHandler):
     def __call__(self, listener_id, topic_obj):
-        print("Listener [{}] raised an exception".format(listener_id))
+        logging.info("Listener [{}] raised an exception".format(listener_id))
 
 
 pub.setListenerExcHandler(ListenerExceptionHandler())

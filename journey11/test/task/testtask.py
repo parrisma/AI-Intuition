@@ -1,5 +1,6 @@
-from copy import deepcopy
+import logging
 import threading
+from copy import deepcopy
 from journey11.interface.task import Task
 from journey11.lib.state import State
 
@@ -28,7 +29,7 @@ class TestTask(Task):
         else:
             self._state_orig = start_state
         # Things with mutable state
-        self._inital_effort = effort
+        self._initial_effort = effort
         self._remaining_effort = None
         self._failed = None
         self._lead_time = None
@@ -57,9 +58,9 @@ class TestTask(Task):
         Block until master trigger is released
         :return:
         """
-        print("Waiting for global task completion Event")
+        logging.info("Waiting for global task completion Event")
         cls._global_trigger.wait()
-        print("Global task completion Event done")
+        logging.info("Global task completion Event done")
         return
 
     @classmethod
@@ -89,7 +90,7 @@ class TestTask(Task):
         """
         Return the Actor to the same state at which it was constructed
         """
-        self._remaining_effort = self._inital_effort
+        self._remaining_effort = self._initial_effort
         self._failed = False
         self._lead_time = float(0)
         self._state = self._state_orig
@@ -137,7 +138,7 @@ class TestTask(Task):
             self._state = deepcopy(s)
             self._remaining_effort = 0
             if s.value != self._process_terminal_state.value:
-                self._remaining_effort = self._inital_effort
+                self._remaining_effort = self._initial_effort
             else:
                 # Terminal process state
                 TestTask.global_sync_dec()
@@ -181,9 +182,9 @@ class TestTask(Task):
             if self.work_in_state_remaining > 0:
                 self._remaining_effort = max(0, self.work_in_state_remaining - work)
                 self._lead_time += 1
-                print("Task {} - Lead Time {}".format(self._id, self.lead_time))
+                logging.info("Task {} - Lead Time {}".format(self._id, self.lead_time))
             else:
-                print("Task {} done in state {}".format(self._id, self.state))
+                logging.info("Task {} done in state {}".format(self._id, self.state))
         return self._remaining_effort
 
     def __str__(self) -> str:
