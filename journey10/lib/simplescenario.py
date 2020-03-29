@@ -32,8 +32,8 @@ class SimpleScenario(Scenario):
 
     def get(self) -> List[List[Actor]]:
         """
-        A reference to a scenario that can be passed to a simulator
-        :return: a scenario
+        A reference to a scenariofactory that can be passed to a simulator
+        :return: a scenariofactory
         """
         return self._team
 
@@ -55,7 +55,7 @@ class SimpleScenario(Scenario):
 
     def _inject_tasks(self) -> None:
         """
-        Add the scenario tasks to the in queue of the primary actor in the tea,
+        Add the scenariofactory tasks to the in queue of the primary actor in the tea,
         :return:
         """
         primary_actor = self._a1
@@ -65,7 +65,7 @@ class SimpleScenario(Scenario):
 
     def _create_actors(self) -> None:
         """
-        Create the six actors required for this scenario
+        Create the six actors required for this scenariofactory
         :return: List of Actors.
         """
 

@@ -10,3 +10,6 @@ class GreedyTaskConsumptionPolicy(TaskConsumptionPolicy):
         :return: True, always process task.
         """
         return True
+
+    def __str__(self) -> str:
+        return "Greedy Consmptn @ 100%"

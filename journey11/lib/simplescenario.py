@@ -19,8 +19,8 @@ class SimpleScenario(Scenario):
 
     def tasks(self) -> Iterable[Task]:
         """
-        Return the tasks defined for this scenario.
-        :return: a scenario
+        Return the tasks defined for this scenariofactory.
+        :return: a scenariofactory
         """
         if self._tasks is None:
             SimpleTask.process_start_state(State.S0)

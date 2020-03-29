@@ -9,7 +9,7 @@ class Scenario(ABC):
     @purevirtual
     def tasks(self) -> Iterable[Task]:
         """
-        Return the tasks defined for this scenario.
+        Return the tasks defined for this scenariofactory.
         :return: a iterable of tasks
         """
         pass

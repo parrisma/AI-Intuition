@@ -50,8 +50,6 @@ class Agent(SrcSink):
         self._work_timer = Agent.WORK_TIMER
         self._timer = None
 
-        self._task_consumption_policy = GreedyTaskConsumptionPolicy()
-
         return
 
     def __call__(self, arg1) -> None:
@@ -81,11 +79,7 @@ class Agent(SrcSink):
         :param task_notification: The task notification that is to be processed
         """
         logging.info("{} Rx TaskNotification {}".format(self.name, task_notification.work_ref.id))
-        if self._task_consumption_policy.process_task(task_notification.task_meta):
-            self._do_notification(task_notification)
-        else:
-            logging.info("{} Rx TaskNotification Ignored by Consumption Policy{}".format(self.name,
-                                                                                         task_notification.work_ref.id))
+        self._do_notification(task_notification)
         return
 
     def _handle_work_notification(self,

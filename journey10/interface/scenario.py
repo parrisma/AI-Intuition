@@ -7,8 +7,8 @@ class Scenario(ABC):
     @abstractmethod
     def get(self) -> List[List[Actor]]:
         """
-        A reference to a scenario that can be passed to a simulator
-        :return: a scenario
+        A reference to a scenariofactory that can be passed to a simulator
+        :return: a scenariofactory
         """
         pass
 

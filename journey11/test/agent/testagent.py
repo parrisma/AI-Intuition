@@ -2,9 +2,10 @@ import logging
 from queue import Queue
 from pubsub import pub
 from journey11.interface.agent import Agent
-from journey11.lib.state import State
 from journey11.interface.tasknotification import TaskNotification
 from journey11.interface.worknotification import WorkNotification
+from journey11.interface.taskconsumptionpolicy import TaskConsumptionPolicy
+from journey11.lib.state import State
 from journey11.lib.simpleworkrequest import SimpleWorkRequest
 from journey11.lib.simpleworkinitiate import SimpleWorkInitiate
 from journey11.lib.uniquetopic import UniqueTopic
@@ -19,7 +20,8 @@ class TestAgent(Agent):
                  agent_name: str,
                  start_state: State,
                  end_state: State,
-                 capacity: int):
+                 capacity: int,
+                 task_consumption_policy: TaskConsumptionPolicy):
         """
         """
         super().__init__()
@@ -35,6 +37,8 @@ class TestAgent(Agent):
 
         self._unique_topic = None
         self._create_topic_and_subscription()
+
+        self._task_consumption_policy = task_consumption_policy
         return
 
     def _create_topic_and_subscription(self) -> None:
@@ -69,15 +73,25 @@ class TestAgent(Agent):
         processing but there is no guarantee as another agent may have already requested the task.
         :param task_notification: The notification event for task requiring attention
         """
-        self._num_notification += 1
         logging.info("{} do_notification for work ref {}".format(self._agent_name, task_notification.work_ref.id))
-        if task_notification.src_sink is not None:
-            # request the task ot be sent as work.
-            work_request = SimpleWorkRequest(task_notification.work_ref, self)
-            pub.sendMessage(topicName=task_notification.src_sink.topic, arg1=work_request)
-            logging.info("{} sent request for work ref {} OK from pool {}".format(self._agent_name,
-                                                                                  task_notification.work_ref.id,
-                                                                                  task_notification.src_sink.name))
+        self._num_notification += 1
+        if self._task_consumption_policy.process_task(task_notification.task_meta):
+            if task_notification.src_sink is not None:
+                # request the task ot be sent as work.
+                work_request = SimpleWorkRequest(task_notification.work_ref, self)
+                pub.sendMessage(topicName=task_notification.src_sink.topic, arg1=work_request)
+                logging.info("{} sent request for work ref {} OK from pool {}".format(self._agent_name,
+                                                                                      task_notification.work_ref.id,
+                                                                                      task_notification.src_sink.name))
+            else:
+                logging.info("{} notification IGNORED by policy for work ref {} OK from pool {}".format(
+                    self._agent_name,
+                    task_notification.work_ref.id,
+                    task_notification.src_sink.name))
+        else:
+            self._num_notification -= 1
+            logging.info("{} Rx TaskNotification Ignored by Consumption Policy{}".format(self.name,
+                                                                                         task_notification.work_ref.id))
         return
 
     def _do_work(self,
