@@ -16,3 +16,6 @@ class UniqueTopic:
         else:
             sep = '.'
         return "{}{}{}".format(prefix, sep, str(uuid.uuid4()).replace('-', ''))
+
+    def __str__(self):
+        return self.topic()

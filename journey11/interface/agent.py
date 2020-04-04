@@ -8,7 +8,6 @@ from journey11.interface.worknotification import WorkNotification
 from journey11.interface.taskconsumptionpolicy import TaskConsumptionPolicy
 from journey11.lib.purevirtual import purevirtual
 from journey11.lib.state import State
-from journey11.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
 
 
 class Agent(SrcSink):

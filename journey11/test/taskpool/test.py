@@ -9,7 +9,6 @@ from journey11.lib.simpletaskpool import SimpleTaskPool
 from journey11.lib.simpleworkinitiate import SimpleWorkInitiate
 from journey11.lib.loggingsetup import LoggingSetup
 from journey11.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
-from journey11.lib.randomtaskconsumptionpolicy import RandomTaskConsumptionPolicy
 from journey11.test.agent.testagent import TestAgent
 from journey11.test.task.testtask import TestTask
 
@@ -80,9 +79,8 @@ class TestTheTaskPool(unittest.TestCase):
                               end_state: State,
                               cons_policy: TaskConsumptionPolicy) -> None:
         """
-        Add a singls task to pool and then get it.
-        Verify the task count on the pool at all stages and ensure that the task returned is the same as the
-        task injected.
+        Execute the given scenario and then verify Agent & Task completion status is consistent with scenario
+        parameters.
         """
 
         logging.info("\n* * * * * * S T A R T: {} * * * * * * \n".format(case_descr))
@@ -116,6 +114,7 @@ class TestTheTaskPool(unittest.TestCase):
             pub.subscribe(agent, topicName=task_pool.topic_for_state(agent.from_state))
 
         # Create tasks
+        # TODO: Agent should inject work and work only done when agent is notified of all tasks being finsihed.
         tasks = list()
         work_init = list()
         for _ in range(num_tasks):

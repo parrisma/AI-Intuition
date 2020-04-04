@@ -1,5 +1,5 @@
 from journey11.interface.task import Task
-from journey11.interface.taskpool import TaskPool
+from journey11.interface.srcsink import SrcSink
 from journey11.interface.worknotification import WorkNotification
 from journey11.lib.uniqueworkref import UniqueWorkRef
 
@@ -9,7 +9,7 @@ class SimpleWorkNotification(WorkNotification):
     def __init__(self,
                  unique_work_ref: UniqueWorkRef,
                  task: Task,
-                 task_pool: TaskPool):
+                 task_pool: SrcSink):
         self._work_ref = unique_work_ref
         self._task = task
         self._task_pool = task_pool
@@ -31,7 +31,7 @@ class SimpleWorkNotification(WorkNotification):
         return self._task
 
     @property
-    def src_sink(self) -> TaskPool:
+    def src_sink(self) -> SrcSink:
         """
         The task_pool the notification event relates to
         :return: The task pool

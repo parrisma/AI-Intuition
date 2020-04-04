@@ -3,7 +3,7 @@ from journey11.lib.purevirtual import purevirtual
 from journey11.interface.taskmetadata import TaskMetaData
 
 
-class TaskConsumptionPolicy:
+class TaskConsumptionPolicy(ABC):
     @purevirtual
     @abstractmethod
     def process_task(self,
