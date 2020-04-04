@@ -1,5 +1,4 @@
 from abc import abstractmethod
-import inspect
 import threading
 import logging
 from journey11.src.interface.srcsink import SrcSink
@@ -33,18 +32,7 @@ class Agent(SrcSink):
         Check this or child class has correctly implemented callable __call__ as needed to handle both the
         PubSub listener events and the work timer events.
         """
-        cl = getattr(self, "__call__", None)
-        if not callable(cl):
-            msg = "Must implement __call__(self, arg1)"
-            logging.critical("Must implement __call__(self, arg1)")
-            raise NotImplemented(msg)
-        else:
-            # Check signature
-            sig = inspect.signature(cl)
-            if 'arg1' not in sig.parameters:
-                msg = "Must implement __call__(self, arg1)"
-                logging.critical("Must implement __call__(self, arg1)")
-                raise NotImplemented(msg)
+        super().__init__()
 
         self._work_timer = Agent.WORK_TIMER
         self._timer = None
@@ -241,17 +229,6 @@ class Agent(SrcSink):
         """
         The rate at which completed tasks fail.
         :return: Failure state of the actor
-        """
-        pass
-
-    @abstractmethod
-    @purevirtual
-    @failure_rate.setter
-    def failure_rate(self,
-                     r: float) -> None:
-        """
-        The rate at which completed tasks fail.
-        :param r: the failure state of the actor
         """
         pass
 

@@ -170,6 +170,12 @@ class TestAgent(Agent):
             logging.info("{} work_to_do - nothing to do".format(self._agent_name))
         return wtd
 
+    def work_initiate(self, work_notification: WorkNotification) -> None:
+        """
+        Initiate the given work item with the agent as the owner of the work.
+        """
+        raise NotImplementedError("work_initiate missing")
+
     def test_wait_until_done(self) -> None:
         self._work_in_progress.join()
         return
