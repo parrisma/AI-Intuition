@@ -5,7 +5,7 @@ import logging
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.workrequest import WorkRequest
 from journey11.src.interface.worknotification import WorkNotification
-from journey11.src.lib import purevirtual
+from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
 
 

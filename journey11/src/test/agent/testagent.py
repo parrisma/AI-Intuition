@@ -1,4 +1,5 @@
 import logging
+import threading
 from queue import Queue
 from pubsub import pub
 from journey11.src.interface.agent import Agent
@@ -26,7 +27,10 @@ class TestAgent(Agent):
         super().__init__()
         self._fail_rate = TestAgent.FAIL_RATE
         self._capacity = capacity
-        self._work = Queue()
+        self._work_lock = threading.Lock()
+        self._work_pending = Queue()
+        self._work_in_progress = Queue()
+        self._work_done = Queue()
         self._agent_name = agent_name
         self._start_state = start_state
         self._end_state = end_state
@@ -60,8 +64,8 @@ class TestAgent(Agent):
     @property
     def topic(self) -> str:
         """
-        The unique topic name that SrcSink listens on for activity specific to it.
-        :return: The unique SrcSink listen topic name
+        The unique topic name that agent listens on for activity specific to it.
+        :return: The unique agent listen topic name
         """
         return self._unique_topic
 
@@ -126,9 +130,26 @@ class TestAgent(Agent):
 
     def _add_work_item_to_queue(self,
                                 work_notification: WorkNotification) -> None:
-        self._work.put(work_notification)
-        super().work_notification()
+        self._work_in_progress.put(work_notification)
+        super()._work_notification()
         return
+
+    def _do_work_initiate(self,
+                          work_notification: WorkNotification) -> None:
+        """
+        Handle the initiation the given work item from this agent
+        """
+        with self._work_lock:
+            self._work_pending.put(work_notification)
+        pass
+
+    def _do_work_finalise(self,
+                          work_notification: WorkNotification) -> None:
+        """
+        Take receipt of the given completed work item that was initiated from this agent and do any
+        final processing.
+        """
+        pass
 
     def reset(self) -> None:
         """
@@ -136,21 +157,21 @@ class TestAgent(Agent):
         """
         return
 
-    def work_to_do(self) -> WorkNotification:
+    def _work_to_do(self) -> WorkNotification:
         """
         Are there any tasks associated with the Agent that need working on ?
         :return: A WorkNotification event or None if there is no work to do
         """
         wtd = None
-        if not self._work.empty():
-            wtd = self._work.get()
+        if not self._work_in_progress.empty():
+            wtd = self._work_in_progress.get()
             logging.info("{} work_to_do for task ref {}".format(self._agent_name, wtd.work_ref.id))
         else:
             logging.info("{} work_to_do - nothing to do".format(self._agent_name))
         return wtd
 
     def test_wait_until_done(self) -> None:
-        self._work.join()
+        self._work_in_progress.join()
         return
 
         # ----- P R O P E R T I E S -----

@@ -48,6 +48,7 @@ class Agent(SrcSink):
 
         self._work_timer = Agent.WORK_TIMER
         self._timer = None
+        self._task_consumption_policy = None
 
         return
 
@@ -91,40 +92,15 @@ class Agent(SrcSink):
         self._do_work(work_notification)
         return
 
-    def work_notification(self) -> None:
+    def _work_notification(self) -> None:
         """
         If there is work to do then reset the work notification timer for the outstanding work.
         """
         if Agent.running():
-            to_do = self.work_to_do()
+            to_do = self._work_to_do()
             if to_do is not None:
                 self._timer = threading.Timer(self._work_timer, self, args=[to_do]).start()
         return
-
-    def __del__(self):
-        """
-        Clean up timer
-        """
-        if self._timer is not None:
-            self._timer.cancel()
-            self._timer = None
-        pass
-
-    @property
-    def task_consumption_policy(self) -> TaskConsumptionPolicy:
-        """
-        Get the policy that the agent uses to decide to process (or not) the task based on tasks meta data
-        :return: The consumption policy
-        """
-        return self._task_consumption_policy
-
-    @task_consumption_policy.setter
-    def task_consumption_policy(self,
-                                p: TaskConsumptionPolicy) -> None:
-        """
-        Set the policy that the agent uses to decide to process (or not) the task based on tasks meta data
-        """
-        self._task_consumption_policy = p
 
     @abstractmethod
     @purevirtual
@@ -148,18 +124,71 @@ class Agent(SrcSink):
 
     @abstractmethod
     @purevirtual
-    def reset(self) -> None:
+    def _do_work_initiate(self,
+                          work_notification: WorkNotification) -> None:
         """
-        Return the Actor to the same state at which it was constructed
+        Handle the initiation the given work item from this agent
         """
         pass
 
     @abstractmethod
     @purevirtual
-    def work_to_do(self) -> WorkNotification:
+    def _do_work_finalise(self,
+                          work_notification: WorkNotification) -> None:
+        """
+        Take receipt of the given completed work item that was initiated from this agent and do any
+        final processing.
+        """
+        pass
+
+    @abstractmethod
+    @purevirtual
+    def _work_to_do(self) -> WorkNotification:
         """
         Are there any tasks associated with the Agent that need working on ?
         :return: A WorkNotification event or None if there is no work to do
+        """
+        pass
+
+    def __del__(self):
+        """
+        Clean up timer
+        """
+        if self._timer is not None:
+            self._timer.cancel()
+            self._timer = None
+        pass
+
+    @abstractmethod
+    @purevirtual
+    def work_initiate(self,
+                      work_notification: WorkNotification) -> None:
+        """
+        Initiate the given work item with the agent as the owner of the work.
+        """
+        pass
+
+    @property
+    def task_consumption_policy(self) -> TaskConsumptionPolicy:
+        """
+        Get the policy that the agent uses to decide to process (or not) the task based on tasks meta data
+        :return: The consumption policy
+        """
+        return self._task_consumption_policy
+
+    @task_consumption_policy.setter
+    def task_consumption_policy(self,
+                                p: TaskConsumptionPolicy) -> None:
+        """
+        Set the policy that the agent uses to decide to process (or not) the task based on tasks meta data
+        """
+        self._task_consumption_policy = p
+
+    @abstractmethod
+    @purevirtual
+    def reset(self) -> None:
+        """
+        Return the Actor to the same state at which it was constructed
         """
         pass
 
@@ -195,9 +224,9 @@ class Agent(SrcSink):
         """
         pass
 
-    @property
     @abstractmethod
     @purevirtual
+    @property
     def to_state(self) -> State:
         """
         The state the actor will process tasks into
@@ -205,9 +234,9 @@ class Agent(SrcSink):
         """
         pass
 
-    @property
     @abstractmethod
     @purevirtual
+    @property
     def failure_rate(self) -> float:
         """
         The rate at which completed tasks fail.
@@ -215,9 +244,9 @@ class Agent(SrcSink):
         """
         pass
 
-    @failure_rate.setter
     @abstractmethod
     @purevirtual
+    @failure_rate.setter
     def failure_rate(self,
                      r: float) -> None:
         """
@@ -244,7 +273,7 @@ class Agent(SrcSink):
         if t is None:
             self._work_timer = Agent.WORK_TIMER
         elif t <= float(0):
-            msg = "Work timer must not be greater than or equal to zero"
+            msg = "Work timer must not be greater than or equal to zero, value given {}".format(t)
             logging.critical(msg)
             raise ValueError(msg)
         self._timer = float(t)
