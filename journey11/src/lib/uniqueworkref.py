@@ -23,3 +23,9 @@ class UniqueWorkRef:
         return "{}-{}-{}".format(str(self._originator_id).replace(' ', ''),
                                  str(uuid.uuid4()).replace('-', ''),
                                  str(self._task_id))
+
+    def __str__(self):
+        return self._ref
+
+    def __repr__(self):
+        return str(self)

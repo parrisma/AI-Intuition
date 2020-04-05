@@ -29,3 +29,9 @@ class TestWorkNotification(WorkNotification):
     @property
     def originator(self) -> SrcSink:
         return None
+
+    def __str__(self):
+        return "{} - ref: {}".format(self.__class__.__name__, str(self._unique_sig))
+
+    def __repr__(self):
+        return str(self)

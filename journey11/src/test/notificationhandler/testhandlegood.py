@@ -8,14 +8,17 @@ from journey11.src.lib.notificationhandler import NotificationHandler
 class TestHandleGood(SrcSink):
 
     def __init__(self,
-                 with_handler: bool = False):
-        super().__init__()
+                 with_handler: bool = False,
+                 throw_unhandled: bool = False):
         self._name = "name:{}".format(str(uuid.uuid4()).replace('-', ''))
         self._topic = "topic:{}".format(str(uuid.uuid4()).replace('-', ''))
+        super().__init__()
 
         self._handler = None
         if with_handler:
-            self._handler = NotificationHandler(object_to_be_handler_for=self)
+            self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=throw_unhandled)
+            self._handler.register_handler(self._do_notification, TaskNotification)
+            self._handler.register_handler(self._do_work, WorkNotification)
 
         self.task_notif_sig = None
         self.work_notif_sig = None

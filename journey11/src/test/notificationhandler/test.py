@@ -8,17 +8,28 @@ from journey11.src.test.notificationhandler.testworknotification import TestWork
 
 
 class TestNotificationHandler(unittest.TestCase):
+    _case = 1
 
     @classmethod
     def setUpClass(cls):
         LoggingSetup()
 
+    def setUp(self) -> None:
+        print("\n\n- - - - - - C A S E {} - - - - - - - - \n\n".format(TestNotificationHandler._case))
+        TestNotificationHandler._case += 1
+
     def test_sig_checker_no_errors(self):
         try:
             thg = TestHandleGood()
-            _ = NotificationHandler(thg)  # Normally this would be in the class __init__, but here just for testing
+            _ = NotificationHandler(object_to_be_handler_for=thg)
         except Exception as e:
             self.fail("Unexpected exception : [{}]".format(str(e)))
+
+    def test_unregistered_type_err(self):
+        thg = TestHandleGood(with_handler=True, throw_unhandled=True)
+        self.assertRaises(NotImplementedError,
+                          thg.__call__,
+                          [float(0)])
 
     def test_routing(self):
         ths = list()

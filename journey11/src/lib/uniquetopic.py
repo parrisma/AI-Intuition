@@ -19,3 +19,6 @@ class UniqueTopic:
 
     def __str__(self):
         return self.topic()
+
+    def __repr__(self):
+        return str(self)

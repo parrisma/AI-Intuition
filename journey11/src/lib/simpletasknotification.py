@@ -43,4 +43,6 @@ class SimpleTaskNotification(TaskNotification):
         Render as string
         :return: String rendering of class instance
         """
-        return "Task Notification for task id: {} from SrcSink {}".format(self._task_meta.task_id, self.originator.name)
+        return "Task Notification for task id: {} from SrcSink {} ref {}".format(self._task_meta.task_id,
+                                                                                 self.originator.name,
+                                                                                 self.work_ref.id)
