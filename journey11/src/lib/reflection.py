@@ -5,6 +5,7 @@ import inspect
 
 class Reflection:
     no_params = [type(None)]
+    no_annotation = inspect._empty
 
     @classmethod
     def check_method_exists(cls,

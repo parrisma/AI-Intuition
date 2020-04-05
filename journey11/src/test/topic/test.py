@@ -1,6 +1,7 @@
 import unittest
 import random
 import re
+from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.uniquetopic import UniqueTopic
 
 
@@ -30,6 +31,10 @@ class TestTopic(unittest.TestCase):
 
     pattern_no_prefix = re.compile("^[A-Za-z0-9]+$")
     pattern_with_prefix = re.compile("^[A-Za-z0-9]+.[A-Za-z0-9]+$")
+
+    @classmethod
+    def setUpClass(cls):
+        LoggingSetup()
 
     def test_no_prefix(self):
         ut = UniqueTopic().topic()

@@ -1,8 +1,13 @@
 import unittest
 from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.lib.loggingsetup import LoggingSetup
 
 
 class TestCapability(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        LoggingSetup()
 
     def test_simple(self):
         capability_name = "DummyCapability1"

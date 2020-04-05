@@ -2,6 +2,7 @@ import logging
 import threading
 import time
 from pubsub import pub
+from journey11.src.lib.loggingsetup import LoggingSetup
 
 
 class ListenPayload:
@@ -83,6 +84,8 @@ class ListenerExceptionHandler(pub.IListenerExcHandler):
 pub.setListenerExcHandler(ListenerExceptionHandler())
 
 if __name__ == "__main__":
+
+    LoggingSetup()
 
     topic1 = "Topic1"
     topic2 = "Topic2"

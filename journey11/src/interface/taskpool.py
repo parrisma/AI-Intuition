@@ -18,20 +18,8 @@ class TaskPool(SrcSink):
         Check this or child class has correctly implemented callable __call__ as needed to handle both the
         PubSub listener events and the work timer events.
         """
+        super().__init__()
         self._call_lock = threading.Lock()
-
-        cl = getattr(self, "__call__", None)
-        if not callable(cl):
-            msg = "Must implement __call__(self, arg1)"
-            logging.critical("Must implement __call__(self, arg1)")
-            raise NotImplemented(msg)
-        else:
-            # Check signature
-            sig = inspect.signature(cl)
-            if 'arg1' not in sig.parameters:
-                msg = "Must implement __call__(self, arg1)"
-                logging.critical(msg)
-                raise NotImplemented(msg)
         return
 
     def __del__(self):

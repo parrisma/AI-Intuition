@@ -1,0 +1,27 @@
+from journey11.src.interface.srcsink import SrcSink
+from journey11.src.interface.taskmetadata import TaskMetaData
+from journey11.src.interface.tasknotification import TaskNotification
+from journey11.src.lib.uniqueworkref import UniqueWorkRef
+
+
+class TestTaskNotification(TaskNotification):
+    _task_id = 1
+    _src = 1
+
+    def __init__(self):
+        self._unique_sig = UniqueWorkRef(task_id=str(TestTaskNotification._task_id),
+                                         originator_id=str(TestTaskNotification._src))
+        TestTaskNotification._task_id += 1
+        TestTaskNotification._src += 1
+
+    @property
+    def work_ref(self) -> UniqueWorkRef:
+        return self._unique_sig
+
+    @property
+    def task_meta(self) -> TaskMetaData:
+        return None
+
+    @property
+    def originator(self) -> SrcSink:
+        return None

@@ -40,46 +40,6 @@ class Agent(SrcSink):
 
         return
 
-    def __call__(self, arg1) -> None:
-        """
-        The agent is callable two contexts
-        1. As the sink for PubSub in which case a TaskNotification will be passed
-        2. As the handler for it's own timer to check if work needs to be done in which case WorkNotification is passed
-
-        Other types for arg1 trigger a ValueError exception
-
-        :param arg1: Either a TaskNotification or a WorkNotification
-        """
-        if isinstance(arg1, TaskNotification):
-            self._handle_task_notification(arg1)
-        elif isinstance(arg1, WorkNotification):
-            self._handle_work_notification(arg1)
-        else:
-            msg = "Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__)
-            logging.critical("Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__))
-            raise ValueError(msg)
-        return
-
-    def _handle_task_notification(self,
-                                  task_notification: TaskNotification) -> None:
-        """
-        Process a task notification event.
-        :param task_notification: The task notification that is to be processed
-        """
-        logging.info("{} Rx TaskNotification {}".format(self.name, task_notification.work_ref.id))
-        self._do_notification(task_notification)
-        return
-
-    def _handle_work_notification(self,
-                                  work_notification: WorkNotification) -> None:
-        """
-        Process a work notification event.
-        :param work_notification: The work notification that is to be processed
-        """
-        logging.info("{} Rx WorkNotification {}".format(self.name, work_notification.work_ref.id))
-        self._do_work(work_notification)
-        return
-
     def _work_notification(self) -> None:
         """
         If there is work to do then reset the work notification timer for the outstanding work.

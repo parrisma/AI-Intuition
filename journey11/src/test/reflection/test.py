@@ -1,5 +1,6 @@
 from typing import Dict, Tuple
 import unittest
+from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.reflection import Reflection
 from journey11.src.test.reflection.TestObj import TestObj
 from journey11.src.test.reflection.dummyclass import DummyClass
@@ -7,6 +8,10 @@ from journey11.src.test.reflection.dummyclass2 import DummyClass2
 
 
 class TestReflection(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        LoggingSetup()
 
     def setUp(self) -> None:
         self.test_obj = TestObj()

@@ -1,9 +1,14 @@
 import unittest
 from typing import List
 from journey11.src.lib.state import State
+from journey11.src.lib.loggingsetup import LoggingSetup
 
 
 class TestState(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        LoggingSetup()
 
     def test_range_asc(self):
         scenarios = [[State.S0, State.S0, [State.S0]],
