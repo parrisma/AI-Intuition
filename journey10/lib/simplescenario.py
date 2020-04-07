@@ -43,11 +43,11 @@ class SimpleScenario(Scenario):
         """
         if self._actors is not None:
             for a in self._actors:
-                a.reset()
+                a.go()
 
         if self._tasks is not None:
             for t in self._tasks:
-                t.reset()
+                t.go()
 
         self._inject_tasks()
 

@@ -1,4 +1,4 @@
-import uuid
+from journey11.src.lib.uniqueref import UniqueRef
 
 
 class UniqueWorkRef:
@@ -21,7 +21,7 @@ class UniqueWorkRef:
         :return: Universally unique work reference
         """
         return "{}-{}-{}".format(str(self._originator_id).replace(' ', ''),
-                                 str(uuid.uuid4()).replace('-', ''),
+                                 UniqueRef().ref,
                                  str(self._task_id))
 
     def __str__(self):

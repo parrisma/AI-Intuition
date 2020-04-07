@@ -1,4 +1,4 @@
-import uuid
+from journey11.src.lib.uniqueref import UniqueRef
 
 
 class UniqueTopic:
@@ -15,7 +15,7 @@ class UniqueTopic:
             sep = ''
         else:
             sep = '.'
-        return "{}{}{}".format(prefix, sep, str(uuid.uuid4()).replace('-', ''))
+        return "{}{}{}".format(prefix, sep, UniqueRef().ref)
 
     def __str__(self):
         return self.topic()
