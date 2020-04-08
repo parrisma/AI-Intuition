@@ -1,5 +1,7 @@
 import unittest
 import time
+import logging
+from pubsub import pub
 from journey11.src.lib.state import State
 from journey11.src.lib.simpleworknotification import SimpleWorkNotification
 from journey11.src.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
@@ -25,25 +27,47 @@ class TestTheAgent(unittest.TestCase):
         effort = 3
         capacity = 1
         pool_name = "Dummy-Test-Pool"
-        test_task = TestTask(effort=effort)
+        source_name = "Dummy-Test-Source"
         TestTask.process_start_state(State.S0)
         TestTask.process_end_state(State.S1)
 
-        test_agent = TestAgent('agent 1',
-                               start_state=State.S0,
-                               end_state=State.S1,
-                               capacity=capacity,
-                               task_consumption_policy=GreedyTaskConsumptionPolicy())
-        test_notification = SimpleWorkNotification(UniqueWorkRef(originator_id=pool_name,
-                                                                 task_id=test_task.id),
-                                                   originator=DummySrcSink(pool_name),
-                                                   task=test_task)
-        test_agent._do_work(test_notification)
+        for i in range(3):
+            logging.info("\n\n- - - - - T E S T  C A S E {} - - - -\n\n".format(i))
+            test_task = TestTask(effort=effort)
 
-        time.sleep(1)
-        TestTask.global_sync_wait()
+            test_agent = TestAgent('agent {}'.format(i),
+                                   start_state=State.S0,
+                                   end_state=State.S1,
+                                   capacity=capacity,
+                                   task_consumption_policy=GreedyTaskConsumptionPolicy(),
+                                   trace=True)
 
-        self.assertEqual(test_task.lead_time, int(effort / capacity))
+            test_notification = SimpleWorkNotification(UniqueWorkRef(originator_id=pool_name,
+                                                                     task_id=str(test_task.id)),
+                                                       originator=DummySrcSink(pool_name),
+                                                       source=DummySrcSink(source_name),
+                                                       task=test_task)
+            if i == 0:
+                # Publish to agent via it's private topic.
+                # test_agent(test_notification)
+                pub.sendMessage(topicName=test_agent.topic, notification=test_notification)
+            elif i == 1:
+                # Direct Injection.
+                test_agent._do_work(test_notification)
+            else:
+                # With Agent as callable
+                test_agent(test_notification)
+
+            time.sleep(1)
+
+            tlid = TestAgent.trace_log_id("_do_work", type(test_notification), test_notification.work_ref)
+            self.assertEqual(test_agent.trace_log[tlid], effort)
+
+            tlid = TestAgent.trace_log_id("_do_notification", type(test_notification), test_notification.work_ref)
+            self.assertTrue(tlid not in test_agent.trace_log)
+
+            self.assertEqual(test_task.lead_time, int(effort / capacity))
+        return
 
 
 if __name__ == "__main__":

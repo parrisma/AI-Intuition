@@ -1,7 +1,7 @@
-from typing import Callable, Type, Dict
+from typing import Callable, Type
 import logging
 import threading
-from journey11.src.lib.reflection import Reflection
+from journey11.src.interface.notification import Notification
 from journey11.src.lib.uniqueref import UniqueRef
 
 
@@ -9,7 +9,7 @@ class NotificationHandler:
     _MSG_TYPE = 0
     _MSG_HANDLER = 1
 
-    class ActivityNotification:
+    class ActivityNotification(Notification):
         """Class to handle timer based activity inside the Handler.
         These timer based activities are added by external party.
         """
@@ -52,7 +52,6 @@ class NotificationHandler:
     def __init__(self,
                  object_to_be_handler_for,
                  throw_unhandled: bool = False):
-        Reflection.check_property_exists(object_to_be_handler_for, "name", str)
         self._object_to_handle = object_to_be_handler_for
 
         self._handler_dict = dict()
@@ -141,7 +140,7 @@ class NotificationHandler:
         be executed
         :param activity: The activity to be run.
         """
-        logging.info("Activity {} invoked".format(str(activity)))
+        logging.info("{} invoked".format(str(activity)))
         activity.run()
         return
 

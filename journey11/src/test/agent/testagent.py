@@ -2,6 +2,7 @@ import logging
 import threading
 from queue import Queue
 from pubsub import pub
+from typing import Type, Dict
 from journey11.src.interface.agent import Agent
 from journey11.src.interface.tasknotification import TaskNotification
 from journey11.src.interface.worknotification import WorkNotification
@@ -21,10 +22,11 @@ class TestAgent(Agent):
                  start_state: State,
                  end_state: State,
                  capacity: int,
-                 task_consumption_policy: TaskConsumptionPolicy):
+                 task_consumption_policy: TaskConsumptionPolicy,
+                 trace: bool = False):
         """
         """
-        super().__init__()
+        super().__init__(agent_name)
         self._fail_rate = TestAgent.FAIL_RATE
         self._capacity = capacity
         self._work_lock = threading.Lock()
@@ -42,6 +44,10 @@ class TestAgent(Agent):
         self._create_topic_and_subscription()
 
         self._task_consumption_policy = task_consumption_policy
+
+        self._trace = trace
+        self._trace_log = dict()
+
         return
 
     def _create_topic_and_subscription(self) -> None:
@@ -76,6 +82,7 @@ class TestAgent(Agent):
         processing but there is no guarantee as another agent may have already requested the task.
         :param task_notification: The notification event for task requiring attention
         """
+        self._trace_log_update("_do_notification", type(task_notification), task_notification.work_ref.id)
         logging.info("{} do_notification for work ref {}".format(self._agent_name, task_notification.work_ref.id))
         self._num_notification += 1
         if self._task_consumption_policy.process_task(task_notification.task_meta):
@@ -102,6 +109,7 @@ class TestAgent(Agent):
         """
         Process any out standing tasks associated with the agent.
         """
+        self._trace_log_update("_do_work", type(work_notification), work_notification.work_ref.id)
         self._num_work += 1
         if work_notification.task.work_in_state_remaining > 0:
             logging.info("{} do_work for work_ref {}".format(self._agent_name, work_notification.work_ref.id))
@@ -131,7 +139,6 @@ class TestAgent(Agent):
     def _add_work_item_to_queue(self,
                                 work_notification: WorkNotification) -> None:
         self._work_in_progress.put(work_notification)
-        super()._work_notification()
         return
 
     def _do_work_initiate(self,
@@ -141,7 +148,7 @@ class TestAgent(Agent):
         """
         with self._work_lock:
             self._work_pending.put(work_notification)
-        pass
+        return
 
     def _do_work_finalise(self,
                           work_notification: WorkNotification) -> None:
@@ -157,7 +164,7 @@ class TestAgent(Agent):
         """
         return
 
-    def _work_to_do(self) -> WorkNotification:
+    def _work_to_do(self) -> None:
         """
         Are there any tasks associated with the Agent that need working on ?
         :return: A WorkNotification event or None if there is no work to do
@@ -166,9 +173,10 @@ class TestAgent(Agent):
         if not self._work_in_progress.empty():
             wtd = self._work_in_progress.get()
             logging.info("{} work_to_do for task ref {}".format(self._agent_name, wtd.work_ref.id))
+            self._do_work(wtd)
         else:
             logging.info("{} work_to_do - nothing to do".format(self._agent_name))
-        return wtd
+        return
 
     def work_initiate(self, work_notification: WorkNotification) -> None:
         """
@@ -176,11 +184,47 @@ class TestAgent(Agent):
         """
         raise NotImplementedError("work_initiate missing")
 
-    def test_wait_until_done(self) -> None:
-        self._work_in_progress.join()
+    def _trace_log_update(self,
+                          func: str,
+                          action_type: Type,
+                          work_ref_id) -> None:
+        """ Keep a record of all the notification events for this agent
+        For unit testing only
+        :param func: The notification function called
+        :param action_type: The type of the action passed to the notification function
+        :param work_ref_id: the work ref id of the notification
+        """
+        if self._trace:
+            tlid = self.trace_log_id(func, action_type, work_ref_id)
+            if tlid not in self._trace_log:
+                self._trace_log[tlid] = 1
+            else:
+                cnt = self._trace_log[tlid]
+                self._trace_log[tlid] = cnt + 1
         return
 
-        # ----- P R O P E R T I E S -----
+    @staticmethod
+    def trace_log_id(func: str,
+                     action_type: Type,
+                     work_ref_id) -> str:
+        """ Create a key to hold a trace log record against
+
+        :param func: The notification function called
+        :param action_type: The type of the action passed to the notification function
+        :param work_ref_id: the work ref id of the notification
+        :return: The key
+        """
+        return "{}{}{}".format(func, action_type.__name__, work_ref_id)
+
+    # ----- P R O P E R T I E S -----
+
+    @property
+    def trace_log(self) -> Dict:
+        """The trace log where agent notifications are tracked
+        For test validation only
+        :return: Trace Log Dictionary
+        """
+        return self._trace_log
 
     @property
     def capacity(self) -> int:
@@ -235,7 +279,7 @@ class TestAgent(Agent):
     @property
     def num_notification(self) -> int:
         """
-        Hoe many task notifications did teh agent get
+        How many task notifications did the agent get
         :return: num notifications
         """
         return self._num_notification
@@ -243,7 +287,7 @@ class TestAgent(Agent):
     @property
     def num_work(self) -> int:
         """
-        Hoe many tasks did the agent work on
+        How many tasks did the agent work on
         :return: num tasks worked on
         """
         return self._num_work

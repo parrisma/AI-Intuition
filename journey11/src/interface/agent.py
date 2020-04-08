@@ -1,33 +1,19 @@
 from abc import abstractmethod
-import threading
-import logging
+from journey11.src.interface.notification import Notification
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.tasknotification import TaskNotification
 from journey11.src.interface.worknotification import WorkNotification
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
+from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
 
 
 class Agent(SrcSink):
-    WORK_TIMER = float(0.05)
+    WORK_TIMER = float(.25)
 
-    _running = True
-
-    @classmethod
-    def running(cls, running: bool = None) -> bool:
-        """
-        Global start/stop for all Agents - if running is True then all Agents can schedule work event timers
-        else no work timers are scheduled.
-        :param running: Optional bool to set state of running
-        :return: the value of running before applying the new run state if given.
-        """
-        pv = cls._running
-        if running is not None:
-            cls._running = running
-        return pv
-
-    def __init__(self):
+    def __init__(self,
+                 agent_name: str):
         """
         Check this or child class has correctly implemented callable __call__ as needed to handle both the
         PubSub listener events and the work timer events.
@@ -37,17 +23,23 @@ class Agent(SrcSink):
         self._work_timer = Agent.WORK_TIMER
         self._timer = None
         self._task_consumption_policy = None
+        self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=False)
+        self._handler.register_handler(self._do_notification, TaskNotification)
+        self._handler.register_handler(self._do_work, WorkNotification)
+        self._handler.register_activity(handler_for_activity=self._work_to_do,
+                                        activity_interval=self._work_timer,
+                                        activity_name="{}-do_work_activity".format(agent_name))
 
         return
 
-    def _work_notification(self) -> None:
+    def __call__(self, notification: Notification):
+        """ Handle notification requests
+        :param notification: The notification to be passed to the handler
         """
-        If there is work to do then reset the work notification timer for the outstanding work.
-        """
-        if Agent.running():
-            to_do = self._work_to_do()
-            if to_do is not None:
-                self._timer = threading.Timer(self._work_timer, self, args=[to_do]).start()
+        if isinstance(notification, Notification):
+            self._handler.call_handler(notification)
+        else:
+            raise ValueError("{} is an un supported notification type for Agent}".format(type(notification).__name__))
         return
 
     @abstractmethod
@@ -100,12 +92,10 @@ class Agent(SrcSink):
 
     def __del__(self):
         """
-        Clean up timer
+        Clean up
         """
-        if self._timer is not None:
-            self._timer.cancel()
-            self._timer = None
-        pass
+        self._handler.stop_all_activity()
+        return
 
     @abstractmethod
     @purevirtual
@@ -199,18 +189,3 @@ class Agent(SrcSink):
         :return: Wait interval between work timer events in seconds
         """
         return self._work_timer
-
-    @work_interval.setter
-    def work_interval(self,
-                      t: float) -> None:
-        """
-        The rate at which completed tasks fail.
-        :param t: the new work timer value in seconds (or fraction of second)
-        """
-        if t is None:
-            self._work_timer = Agent.WORK_TIMER
-        elif t <= float(0):
-            msg = "Work timer must not be greater than or equal to zero, value given {}".format(t)
-            logging.critical(msg)
-            raise ValueError(msg)
-        self._timer = float(t)
