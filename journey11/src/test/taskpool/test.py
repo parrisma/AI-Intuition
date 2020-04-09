@@ -6,7 +6,7 @@ from pubsub import pub
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
 from journey11.src.lib.state import State
 from journey11.src.lib.simpletaskpool import SimpleTaskPool
-from journey11.src.lib.simpleworknotification import SimpleWorkNotification
+from journey11.src.lib.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
 from journey11.src.test.agent.testagent import TestAgent
@@ -124,14 +124,14 @@ class TestTheTaskPool(unittest.TestCase):
             t = TestTask(effort=task_effort, start_state=State.S0)
             tasks.append(t)
             work_originator = agents[0]
-            work_init.append(SimpleWorkNotification(unique_work_ref=UniqueWorkRef(originator_id=work_originator.name,
-                                                                                  task_id=str(t.id)),
-                                                    task=t,
-                                                    originator=work_originator,
-                                                    source=work_originator))
+            work_init.append(SimpleWorkNotificationDo(unique_work_ref=UniqueWorkRef(originator_id=work_originator.name,
+                                                                                    task_id=str(t.id)),
+                                                      task=t,
+                                                      originator=work_originator,
+                                                      source=work_originator))
 
         for w in work_init:
-            pub.sendMessage(topicName=task_pool.topic, arg1=w)
+            pub.sendMessage(topicName=task_pool.topic, notification=w)
 
         # Wait for all tasks to report arrival in terminal state
         TestTask.global_sync_wait()
@@ -147,6 +147,7 @@ class TestTheTaskPool(unittest.TestCase):
         num_transitions = len(State.range(start_state, end_state)) - 1
         self.assertEqual(0, len(task_pool))
         for t in tasks:
+            self.assertTrue(t.finalised)
             self.assertEqual(end_state, t.state, "Final state check failed for task {}".format(str(t)))
             self.assertEqual(max(1, math.ceil(task_effort / agent_capacity) * num_transitions),
                              t.lead_time,

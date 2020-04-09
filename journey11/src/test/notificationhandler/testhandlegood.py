@@ -1,7 +1,7 @@
 import uuid
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.tasknotification import TaskNotification
-from journey11.src.interface.worknotification import WorkNotification
+from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.lib.notificationhandler import NotificationHandler
 
 
@@ -18,7 +18,7 @@ class TestHandleGood(SrcSink):
         if with_handler:
             self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=throw_unhandled)
             self._handler.register_handler(self._do_notification, TaskNotification)
-            self._handler.register_handler(self._do_work, WorkNotification)
+            self._handler.register_handler(self._do_work, WorkNotificationDo)
 
         self.task_notif_sig = None
         self.work_notif_sig = None
@@ -46,7 +46,7 @@ class TestHandleGood(SrcSink):
         self.task_notif_sig = task_notification.work_ref.id
 
     def _do_work(self,
-                 work_notification: WorkNotification) -> None:
+                 work_notification: WorkNotificationDo) -> None:
         """
         Process any out standing tasks associated with the agent.
         """

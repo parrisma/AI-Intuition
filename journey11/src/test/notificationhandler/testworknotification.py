@@ -1,18 +1,18 @@
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.task import Task
-from journey11.src.interface.worknotification import WorkNotification
+from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 
 
-class TestWorkNotification(WorkNotification):
+class TestWorkNotificationDo(WorkNotificationDo):
     _task_id = 1
     _src = 1
 
     def __init__(self):
-        self._unique_sig = UniqueWorkRef(task_id=str(TestWorkNotification._task_id),
-                                         originator_id=str(TestWorkNotification._src))
-        TestWorkNotification._task_id += 1
-        TestWorkNotification._src += 1
+        self._unique_sig = UniqueWorkRef(task_id=str(TestWorkNotificationDo._task_id),
+                                         originator_id=str(TestWorkNotificationDo._src))
+        TestWorkNotificationDo._task_id += 1
+        TestWorkNotificationDo._src += 1
 
     @property
     def task(self) -> Task:

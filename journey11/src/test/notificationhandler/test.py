@@ -6,7 +6,7 @@ from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.test.notificationhandler.testhandlegood import TestHandleGood
 from journey11.src.test.notificationhandler.testtasknotification import TestTaskNotification
-from journey11.src.test.notificationhandler.testworknotification import TestWorkNotification
+from journey11.src.test.notificationhandler.testworknotification import TestWorkNotificationDo
 from journey11.src.test.notificationhandler.dummycallable import DummyCallable
 
 
@@ -55,7 +55,7 @@ class TestNotificationHandler(unittest.TestCase):
         for _ in range(100):
             for thg in ths:
                 tn = TestTaskNotification()
-                wn = TestWorkNotification()
+                wn = TestWorkNotificationDo()
                 if random.random() > 0.5:
                     thg.__call__(tn)
                     thg.__call__(wn)

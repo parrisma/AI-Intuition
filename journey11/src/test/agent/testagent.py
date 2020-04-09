@@ -5,8 +5,9 @@ from pubsub import pub
 from typing import Type, Dict
 from journey11.src.interface.agent import Agent
 from journey11.src.interface.tasknotification import TaskNotification
-from journey11.src.interface.worknotification import WorkNotification
+from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
+from journey11.src.interface.worknotificationfinalise import WorkNotificationFinalise
 from journey11.src.lib.state import State
 from journey11.src.lib.simpleworkrequest import SimpleWorkRequest
 from journey11.src.lib.uniquetopic import UniqueTopic
@@ -89,7 +90,7 @@ class TestAgent(Agent):
             if task_notification.originator is not None:
                 # request the task ot be sent as work.
                 work_request = SimpleWorkRequest(task_notification.work_ref, self)
-                pub.sendMessage(topicName=task_notification.originator.topic, arg1=work_request)
+                pub.sendMessage(topicName=task_notification.originator.topic, notification=work_request)
                 logging.info("{} sent request for work ref {} OK from pool {}".format(self._agent_name,
                                                                                       task_notification.work_ref.id,
                                                                                       task_notification.originator.name))
@@ -105,7 +106,7 @@ class TestAgent(Agent):
         return
 
     def _do_work(self,
-                 work_notification: WorkNotification) -> None:
+                 work_notification: WorkNotificationDo) -> None:
         """
         Process any out standing tasks associated with the agent.
         """
@@ -129,7 +130,7 @@ class TestAgent(Agent):
         #
         if work_notification.task.work_in_state_remaining == 0:
             work_notification.task.state = self.to_state
-            pub.sendMessage(topicName=work_notification.originator.topic, arg1=work_notification)
+            pub.sendMessage(topicName=work_notification.originator.topic, notification=work_notification)
             logging.info("{} send task {} to pool {} in state {}".format(self._agent_name,
                                                                          work_notification.task.id,
                                                                          work_notification.originator.name,
@@ -137,12 +138,12 @@ class TestAgent(Agent):
         return
 
     def _add_work_item_to_queue(self,
-                                work_notification: WorkNotification) -> None:
+                                work_notification: WorkNotificationDo) -> None:
         self._work_in_progress.put(work_notification)
         return
 
     def _do_work_initiate(self,
-                          work_notification: WorkNotification) -> None:
+                          work_notification: WorkNotificationDo) -> None:
         """
         Handle the initiation the given work item from this agent
         """
@@ -151,12 +152,16 @@ class TestAgent(Agent):
         return
 
     def _do_work_finalise(self,
-                          work_notification: WorkNotification) -> None:
+                          work_notification_final: WorkNotificationFinalise) -> None:
         """
         Take receipt of the given completed work item that was initiated from this agent and do any
         final processing.
         """
-        pass
+        logging.info("{} Rx Finalised task {} from source {} in state {}".format(self._agent_name,
+                                                                                 work_notification_final.task.id,
+                                                                                 work_notification_final.originator.name,
+                                                                                 work_notification_final.task.state))
+        return
 
     def reset(self) -> None:
         """
@@ -178,7 +183,7 @@ class TestAgent(Agent):
             logging.info("{} work_to_do - nothing to do".format(self._agent_name))
         return
 
-    def work_initiate(self, work_notification: WorkNotification) -> None:
+    def work_initiate(self, work_notification: WorkNotificationDo) -> None:
         """
         Initiate the given work item with the agent as the owner of the work.
         """

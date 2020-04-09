@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from journey11.src.interface.srcsink import SrcSink
+from journey11.src.interface.notification import Notification
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 
 
-class WorkRequest(ABC):
+class WorkRequest(Notification):
     @property
     @abstractmethod
     @purevirtual

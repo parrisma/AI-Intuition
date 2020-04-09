@@ -38,6 +38,7 @@ class TestTask(Task):
         self._trans = None
         self.reset()
         TestTask.global_sync_inc()
+        self._finalised = False
 
     @classmethod
     def global_sync_reset(cls) -> None:
@@ -168,6 +169,23 @@ class TestTask(Task):
         :param s: the state to set the task to
         """
         self._failed = s
+
+    @property
+    def finalised(self) -> bool:
+        """
+        The finalised state of the task
+        :return: True if task is flagged as finalised
+        """
+        return self._finalised
+
+    @finalised.setter
+    def finalised(self,
+                  f: bool) -> None:
+        """
+        The finalised state of the task
+        :param f: the task finalisation state to set
+        """
+        self._finalised = f
 
     def do_work(self,
                 work: int) -> int:

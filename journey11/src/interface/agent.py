@@ -2,8 +2,9 @@ from abc import abstractmethod
 from journey11.src.interface.notification import Notification
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.tasknotification import TaskNotification
-from journey11.src.interface.worknotification import WorkNotification
+from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
+from journey11.src.interface.worknotificationfinalise import WorkNotificationFinalise
 from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
@@ -25,7 +26,8 @@ class Agent(SrcSink):
         self._task_consumption_policy = None
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=False)
         self._handler.register_handler(self._do_notification, TaskNotification)
-        self._handler.register_handler(self._do_work, WorkNotification)
+        self._handler.register_handler(self._do_work, WorkNotificationDo)
+        self._handler.register_handler(self._do_work_finalise, WorkNotificationFinalise)
         self._handler.register_activity(handler_for_activity=self._work_to_do,
                                         activity_interval=self._work_timer,
                                         activity_name="{}-do_work_activity".format(agent_name))
@@ -56,7 +58,7 @@ class Agent(SrcSink):
     @abstractmethod
     @purevirtual
     def _do_work(self,
-                 work_notification: WorkNotification) -> None:
+                 work_notification: WorkNotificationDo) -> None:
         """
         Process any out standing tasks associated with the agent.
         """
@@ -65,7 +67,7 @@ class Agent(SrcSink):
     @abstractmethod
     @purevirtual
     def _do_work_initiate(self,
-                          work_notification: WorkNotification) -> None:
+                          work_notification: WorkNotificationDo) -> None:
         """
         Handle the initiation the given work item from this agent
         """
@@ -74,7 +76,7 @@ class Agent(SrcSink):
     @abstractmethod
     @purevirtual
     def _do_work_finalise(self,
-                          work_notification: WorkNotification) -> None:
+                          work_notification_finalise: WorkNotificationFinalise) -> None:
         """
         Take receipt of the given completed work item that was initiated from this agent and do any
         final processing.
@@ -83,7 +85,7 @@ class Agent(SrcSink):
 
     @abstractmethod
     @purevirtual
-    def _work_to_do(self) -> WorkNotification:
+    def _work_to_do(self) -> WorkNotificationDo:
         """
         Are there any tasks associated with the Agent that need working on ?
         :return: A WorkNotification event or None if there is no work to do
@@ -100,7 +102,7 @@ class Agent(SrcSink):
     @abstractmethod
     @purevirtual
     def work_initiate(self,
-                      work_notification: WorkNotification) -> None:
+                      work_notification: WorkNotificationDo) -> None:
         """
         Initiate the given work item with the agent as the owner of the work.
         """

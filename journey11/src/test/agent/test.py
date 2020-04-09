@@ -3,7 +3,7 @@ import time
 import logging
 from pubsub import pub
 from journey11.src.lib.state import State
-from journey11.src.lib.simpleworknotification import SimpleWorkNotification
+from journey11.src.lib.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.loggingsetup import LoggingSetup
@@ -42,11 +42,11 @@ class TestTheAgent(unittest.TestCase):
                                    task_consumption_policy=GreedyTaskConsumptionPolicy(),
                                    trace=True)
 
-            test_notification = SimpleWorkNotification(UniqueWorkRef(originator_id=pool_name,
-                                                                     task_id=str(test_task.id)),
-                                                       originator=DummySrcSink(pool_name),
-                                                       source=DummySrcSink(source_name),
-                                                       task=test_task)
+            test_notification = SimpleWorkNotificationDo(UniqueWorkRef(originator_id=pool_name,
+                                                                       task_id=str(test_task.id)),
+                                                         originator=DummySrcSink(pool_name),
+                                                         source=DummySrcSink(source_name),
+                                                         task=test_task)
             if i == 0:
                 # Publish to agent via it's private topic.
                 # test_agent(test_notification)

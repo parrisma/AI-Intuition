@@ -6,7 +6,7 @@ from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 
 
-class WorkNotification(Notification):
+class WorkNotificationDo(Notification):
     @property
     @abstractmethod
     @purevirtual

@@ -1,60 +1,55 @@
 from abc import abstractmethod
-import inspect
 import threading
 import logging
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.workrequest import WorkRequest
-from journey11.src.interface.worknotification import WorkNotification
+from journey11.src.interface.worknotificationdo import WorkNotificationDo
+from journey11.src.interface.notification import Notification
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
+from journey11.src.lib.notificationhandler import NotificationHandler
 
 
 class TaskPool(SrcSink):
-    class PubNotification:
-        pass
+    PUB_TIMER = float(.25)
 
-    def __init__(self):
+    def __init__(self,
+                 pool_name: str):
         """
         Check this or child class has correctly implemented callable __call__ as needed to handle both the
         PubSub listener events and the work timer events.
         """
         super().__init__()
         self._call_lock = threading.Lock()
+        self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=False)
+        self._handler.register_handler(self._get_task, WorkRequest)
+        self._handler.register_handler(self._put_task, WorkNotificationDo)
+        self._handler.register_activity(handler_for_activity=self._do_pub,
+                                        activity_interval=TaskPool.PUB_TIMER,
+                                        activity_name="{}-do_pub_activity".format(pool_name))
         return
 
     def __del__(self):
-        try:
-            self._call_lock.release()
-        except:
-            pass
+        """
+        Clean up
+        """
+        self._handler.stop_all_activity()
         return
 
-    def __call__(self, arg1) -> None:
+    def __call__(self, notification: Notification):
+        """ Handle notification requests
+        :param notification: The notification to be passed to the handler
         """
-        The agent is callable two contexts
-        1. As the sink for PubSub in which case a TaskNotification will be passed
-        2. As the handler for it's own timer to check if work needs to be done in which case WorkNotification is passed
-
-        Other types for arg1 trigger a ValueError exception
-
-        :param arg1: Either a TaskNotification or a WorkNotification
-        """
-        if isinstance(arg1, WorkRequest):
-            self._get_task(arg1)
-        elif isinstance(arg1, WorkNotification):
-            self._put_task(arg1)
-        elif isinstance(arg1, TaskPool.PubNotification):
-            self._do_pub(arg1)
+        if isinstance(notification, Notification):
+            self._handler.call_handler(notification)
         else:
-            msg = "Unexpected type [{}] passed to {}.__call__".format(type(arg1), self.__class__.__name__)
-            logging.critical(msg)
-            raise ValueError(msg)
+            raise ValueError("{} un supported notification type for Task Pool".format(type(notification).__name__))
         return
 
     @purevirtual
     @abstractmethod
     def _put_task(self,
-                  work_initiate: WorkNotification) -> None:
+                  work_initiate: WorkNotificationDo) -> None:
         """
         Add a task to the task pool which will cause it to be advertised via the relevant topic unless the task
         is in it's terminal state.

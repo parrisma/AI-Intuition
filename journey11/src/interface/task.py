@@ -82,6 +82,27 @@ class Task(ABC):
     @property
     @abstractmethod
     @purevirtual
+    def finalised(self) -> bool:
+        """
+        The finalised state of the task
+        :return: True if task is flagged as finalised
+        """
+        pass
+
+    @finalised.setter
+    @abstractmethod
+    @purevirtual
+    def finalised(self,
+                  f: bool) -> None:
+        """
+        The finalised state of the task
+        :param f: the task finalisation state to set
+        """
+        pass
+
+    @property
+    @abstractmethod
+    @purevirtual
     def work_in_state_remaining(self) -> int:
         """
         The units of work required to complete the current state
