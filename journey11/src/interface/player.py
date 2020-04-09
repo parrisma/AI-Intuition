@@ -2,15 +2,15 @@ from abc import ABC, abstractmethod
 from journey11.src.lib.purevirtual import purevirtual
 
 
-class SrcSink(ABC):
+class Player(ABC):
 
     @property
     @purevirtual
     @abstractmethod
     def name(self) -> str:
         """
-        The unique name of the SrcSink
-        :return: The SrcSink name
+        The unique name of the Player
+        :return: The Player name
         """
         pass
 
@@ -19,7 +19,7 @@ class SrcSink(ABC):
     @abstractmethod
     def topic(self) -> str:
         """
-        The unique topic name that SrcSink listens on for activity specific to it.
+        The unique topic name that Player listens on for activity specific to it.
         :return: The topic
         """
         pass

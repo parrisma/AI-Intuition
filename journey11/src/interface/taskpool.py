@@ -1,6 +1,5 @@
 from abc import abstractmethod
 import threading
-import logging
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.workrequest import WorkRequest
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
@@ -69,11 +68,9 @@ class TaskPool(SrcSink):
 
     @purevirtual
     @abstractmethod
-    def _do_pub(self,
-                pub_notification: 'TaskPool.PubNotification') -> None:
+    def _do_pub(self) -> None:
         """
         Check for any pending tasks and advertise or re-advertise them on the relevant topic
-        :param pub_notification: The publication notification closure
         """
         pass
 
