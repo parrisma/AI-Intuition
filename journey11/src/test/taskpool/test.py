@@ -124,8 +124,8 @@ class TestTheTaskPool(unittest.TestCase):
             t = TestTask(effort=task_effort, start_state=State.S0)
             tasks.append(t)
             work_originator = agents[0]
-            work_init.append(SimpleWorkNotificationDo(unique_work_ref=UniqueWorkRef(originator_id=work_originator.name,
-                                                                                    task_id=str(t.id)),
+            work_init.append(SimpleWorkNotificationDo(unique_work_ref=UniqueWorkRef(work_item_ref=work_originator.name,
+                                                                                    subject_name=str(t.id)),
                                                       task=t,
                                                       originator=work_originator,
                                                       source=work_originator))

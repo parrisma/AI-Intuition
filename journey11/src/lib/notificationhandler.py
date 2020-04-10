@@ -18,29 +18,34 @@ class NotificationHandler:
                      name: str,
                      interval: float,
                      func: Callable,
-                     activity_handler: Callable,
-                     stop: bool):
+                     activity_handler: Callable[[], None]):
             self._name = name
             self._interval = interval
             self._func = func
             self._activity_handler = activity_handler
-            self._stop = stop
+            self._paused = False
             return
 
         def run(self) -> None:
             self._activity_handler()
             self.go()
 
+        def pause(self):
+            logging.info("Activity {} paused on request".format(self._name))
+            self._paused = True
+
+        def un_pause(self):
+            logging.info("Activity {} re started on request".format(self._name))
+            self._paused = False
+
         def __call__(self, *args, **kwargs):
             self._func(self)
 
         def go(self):
-            if not self._stop:
+            if not self._paused:
                 t = threading.Timer(self._interval, self)
                 t.daemon = True  # Thread will exit when main program exits.
                 t.start()
-            else:
-                logging.info("Activity {} stopped on request".format(self._name))
             return
 
         def __str__(self):
@@ -59,12 +64,13 @@ class NotificationHandler:
 
         self._throw_unhandled = throw_unhandled
 
-        self._stop_all_activity = False
+        self._activity_lock = threading.Lock()
+        self._activities = dict()
 
         return
 
     def register_handler(self,
-                         handler_for_message: Callable,
+                         handler_for_message: Callable[[Notification], None],
                          message_type: Type) -> None:
         """
         Register the given function against the message type - such that when messages of that type arrive
@@ -94,7 +100,7 @@ class NotificationHandler:
         return type_name in self._handler_dict
 
     def register_activity(self,
-                          handler_for_activity: Callable,
+                          handler_for_activity: Callable[[], None],
                           activity_interval: float,
                           activity_name: str = None) -> None:
         """
@@ -115,23 +121,33 @@ class NotificationHandler:
             activity_name = UniqueRef().ref
 
         if not self.__handler_registered_for_type(self.ActivityNotification):
-            self.register_handler(self.do_activity, self.ActivityNotification)
+            self.register_handler(self.do_activity, self.ActivityNotification)  # TODO look at annotation warning <-
 
-        self._stop_all_activity = False
-        self.ActivityNotification(name=activity_name,
-                                  interval=activity_interval,
-                                  func=self.call_handler,
-                                  activity_handler=handler_for_activity,
-                                  stop=self._stop_all_activity).go()
+        activity = self.ActivityNotification(name=activity_name,
+                                             interval=activity_interval,
+                                             func=self.call_handler,
+                                             activity_handler=handler_for_activity)
+        with self._activity_lock:
+            if activity_name in self._activities:
+                raise ValueError(
+                    "Cannot register activity with same name as existing activity {}".format(activity_name))
+            self._activities[activity_name] = activity
+        activity.go()
 
         return
 
-    def stop_all_activity(self) -> None:
-        """ Stop all activity by setting the stop flag
-        This will cause all activity to not reset the *next* time it fires after the flag is
-        set. The activity cannot be restarted it has ot be re registered.
+    def activity_state(self,
+                       paused: bool) -> None:
+        """ Set the activity state to Paused or running
+        When paused the activity timers still fire but the handler action is not executed.
         """
-        self._stop_all_activity = True
+        with self._activity_lock:
+            for activity in self._activities.values():
+                if paused:
+                    activity.pause()
+                else:
+                    activity.un_pause()
+        return
 
     @staticmethod
     def do_activity(activity: 'NotificationHandler.ActivityNotification') -> None:
@@ -144,15 +160,17 @@ class NotificationHandler:
         activity.run()
         return
 
-    def call_handler(self, arg1) -> None:
+    def call_handler(self,
+                     notification: Notification) -> None:
         """
         Invoke the required call for the object being managed.
-        :param arg1: closure object to pass to handler method
+        :param notification: closure object to pass to handler method
         """
-        msg_type_name = self.supported_message_type(arg1)
+        msg_type_name = self.supported_message_type(notification)
         if msg_type_name is not None:
-            logging.info("{} Rx Message Type {}".format(self._object_to_handle.name, str(arg1)))
-            ((self._handler_dict[msg_type_name])[NotificationHandler._MSG_HANDLER])(arg1)
+            logging.info(
+                "{} Rx Message Type {}".format(self._object_to_handle.name, str(notification.__class__.__name__)))
+            ((self._handler_dict[msg_type_name])[NotificationHandler._MSG_HANDLER])(notification)
         else:
             if self._throw_unhandled:
                 msg = "Un-handled message type {}".format(msg_type_name)

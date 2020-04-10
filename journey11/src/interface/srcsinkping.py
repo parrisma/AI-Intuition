@@ -1,12 +1,11 @@
 from abc import abstractmethod
-from typing import Iterable
 from journey11.src.interface.notification import Notification
-from journey11.src.interface.player import Player
+from journey11.src.interface.srcsink import SrcSink
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 
 
-class PlayerNotification(Notification):
+class SrcSinkPing(Notification):
     @property
     @abstractmethod
     @purevirtual
@@ -20,19 +19,8 @@ class PlayerNotification(Notification):
     @property
     @abstractmethod
     @purevirtual
-    def player(self) -> Player:
+    def sender_srcsink(self) -> SrcSink:
         """
-        The Player that is the subject of the notification
-        :return: The Player
+        The SrcSink that is the subject of the ping notification
+        :return: The SrcSink
         """
-        pass
-
-    @property
-    @abstractmethod
-    @purevirtual
-    def address_book(self) -> Iterable[Player]:
-        """
-        The list of Players in the address book of the notification player
-        :return: Zero or more players
-        """
-        pass

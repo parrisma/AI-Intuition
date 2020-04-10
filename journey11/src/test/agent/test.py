@@ -42,8 +42,8 @@ class TestTheAgent(unittest.TestCase):
                                    task_consumption_policy=GreedyTaskConsumptionPolicy(),
                                    trace=True)
 
-            test_notification = SimpleWorkNotificationDo(UniqueWorkRef(originator_id=pool_name,
-                                                                       task_id=str(test_task.id)),
+            test_notification = SimpleWorkNotificationDo(UniqueWorkRef(work_item_ref=pool_name,
+                                                                       subject_name=str(test_task.id)),
                                                          originator=DummySrcSink(pool_name),
                                                          source=DummySrcSink(source_name),
                                                          task=test_task)
