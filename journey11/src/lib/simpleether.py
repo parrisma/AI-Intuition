@@ -88,7 +88,7 @@ class SimpleEther(Ether):
         :return: Players
         """
         with self._lock:
-            srcsinks = list(x.sender_srcsink for x in self._src_sinks_with_timestamp.values())
+            srcsinks = list(x.srcsink for x in self._src_sinks_with_timestamp.values())
         return srcsinks
 
     def _create_topic_and_subscription(self) -> str:
@@ -111,7 +111,7 @@ class SimpleEther(Ether):
         sender_name = sender_srcsink.name
         with self._lock:
             if sender_name not in self._src_sinks_with_timestamp:
-                self._src_sinks_with_timestamp[sender_name] = SrcSinkWithTimeStamp(sender_srcsink=sender_srcsink,
+                self._src_sinks_with_timestamp[sender_name] = SrcSinkWithTimeStamp(srcsink=sender_srcsink,
                                                                                    time_stamp=datetime.datetime.now())
             else:
                 self._src_sinks_with_timestamp[sender_name].time_stamp = datetime.datetime.now()

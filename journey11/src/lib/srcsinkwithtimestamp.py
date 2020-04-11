@@ -5,13 +5,13 @@ from journey11.src.interface.srcsink import SrcSink
 class SrcSinkWithTimeStamp:
     def __init__(self,
                  time_stamp: datetime,
-                 sender_srcsink: SrcSink):
+                 srcsink: SrcSink):
         self._time_stamp = time_stamp
-        self._sender_src_sink = sender_srcsink
+        self._sender_src_sink = srcsink
         return
 
     @property
-    def sender_srcsink(self) -> SrcSink:
+    def srcsink(self) -> SrcSink:
         return self._sender_src_sink
 
     @property

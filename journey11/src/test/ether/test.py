@@ -70,8 +70,7 @@ class TestEther(unittest.TestCase):
 
     def test_ether_do_pub(self):
         """
-        We publish a SrcSink to on ether on it's private topic and check that it replicates the ping
-        to the back plane via its _do_pub activity in the NotificationHandler.
+        We publish a SrcSink to the back-plane and verify that all other ethers respond with their address.
         """
         ether_tx1 = SimpleEther("TestEtherTx1")  # We will publish to private topic and check it replicates
         ether_rx1 = SimpleEther("TestEtherRx1")  # We will see if it gets the replicated ping.
