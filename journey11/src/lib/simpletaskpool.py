@@ -6,14 +6,12 @@ from journey11.src.lib.state import State
 from journey11.src.lib.simpletasknotification import SimpleTaskNotification
 from journey11.src.interface.workrequest import WorkRequest
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
-from journey11.src.lib.uniquetopic import UniqueTopic
 from journey11.src.lib.simpletaskmetadata import SimpleTaskMetaData
 from journey11.src.lib.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.lib.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
 
 
 class SimpleTaskPool(TaskPool):
-    POOL_TOPIC_PREFIX = "TaskPool"
 
     def __init__(self,
                  name: str):
@@ -22,9 +20,6 @@ class SimpleTaskPool(TaskPool):
         self._pool_lock = threading.Lock()
         self._len = 0
         self._name = name
-        self._unique_topic = None
-        self._create_topic_and_subscription()
-
         return
 
     def __del__(self):
@@ -39,14 +34,6 @@ class SimpleTaskPool(TaskPool):
         """
         self.__del__()
         return
-
-    def _create_topic_and_subscription(self) -> None:
-        """
-        Create the unique topic for the agent that it will listen on for work (task) deliveries that it has
-        requested from the task-pool
-        """
-        self._unique_topic = UniqueTopic().topic(SimpleTaskPool.POOL_TOPIC_PREFIX)
-        pub.subscribe(self, self._unique_topic)
 
     @property
     def topic(self) -> str:

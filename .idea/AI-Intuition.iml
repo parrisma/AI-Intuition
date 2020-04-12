@@ -12,7 +12,7 @@
       <sourceFolder url="file://$MODULE_DIR$/lib" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.7 (notebook_gpu)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.7 (notebook_gpu_netx)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

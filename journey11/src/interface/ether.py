@@ -1,8 +1,7 @@
-from typing import Iterable
 from abc import abstractmethod
 import threading
 from journey11.src.interface.srcsink import SrcSink
-from journey11.src.interface.srcsinknotification import SrcSinkNotification
+from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.notification import Notification
 from journey11.src.lib.purevirtual import purevirtual
@@ -26,7 +25,8 @@ class Ether(SrcSink):
         self._call_lock = threading.Lock()
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=False)
         self._handler.register_handler(self._srcsink_ping, SrcSinkPing)
-        self._handler.register_handler(self._srcsink_notification, SrcSinkNotification)
+        self._handler.register_handler(self._srcsink_ping_notification, SrcSinkPingNotification)
+        # TODO - Revisit - is this needed ?
         # self._handler.register_activity(handler_for_activity=self._do_pub,
         #                                activity_interval=Ether.PUB_TIMER,
         #                                activity_name="{}-do_pub_activity".format(ether_name))
@@ -64,26 +64,6 @@ class Ether(SrcSink):
 
     @purevirtual
     @abstractmethod
-    def _srcsink_notification(self,
-                              ping_notification: SrcSinkNotification) -> None:
-        """
-        Handle a ping response from a player
-        :param: The srcsink notification
-        """
-        pass
-
-    @purevirtual
-    @abstractmethod
-    def _srcsink_ping(self,
-                      ping_request: SrcSinkPing) -> None:
-        """
-        Handle a ping request from a player
-        :param: The srcsink ping request
-        """
-        pass
-
-    @purevirtual
-    @abstractmethod
     def _do_pub(self) -> None:
         """
         Publish any changes to known src sinks in the ether
@@ -107,15 +87,5 @@ class Ether(SrcSink):
         """
         The unique topic name that SrcSink listens on for activity specific to it.
         :return: The unique SrcSink listen topic name
-        """
-        pass
-
-    @property
-    @purevirtual
-    @abstractmethod
-    def srcsinks(self) -> Iterable[SrcSink]:
-        """
-        The list of SrcSink known to the Ether
-        :return: Players
         """
         pass

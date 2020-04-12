@@ -32,6 +32,10 @@ class TestTheTaskPool(unittest.TestCase):
     def setUpClass(cls):
         LoggingSetup()
 
+    def tearDown(self) -> None:
+        pub.unsubAll()
+        return
+
     def test_scenario_runner(self):
 
         # [task_effort, agent_capacity, num_tasks, num_agents]
@@ -48,8 +52,7 @@ class TestTheTaskPool(unittest.TestCase):
                      [10, 2, 100, 10, State.S0, State.S8, greedy_policy],
                      [10, 2, 200, 50, State.S0, State.S8, greedy_policy]]
 
-        scenarios = [[2, 1, 1, 1, State.S0, State.S1, greedy_policy]]
-
+        scenarios = [[10, 2, 100, 10, State.S0, State.S1, greedy_policy]]
         case_num = 1
         for task_effort, agent_capacity, num_tasks, num_agents, start_state, end_state, cons_policy in scenarios:
             case_description \
@@ -61,26 +64,27 @@ class TestTheTaskPool(unittest.TestCase):
                                                                                        start_state,
                                                                                        end_state,
                                                                                        cons_policy)
-            self.test_scenario_execute(case_description,
-                                       task_effort,
-                                       agent_capacity,
-                                       num_tasks,
-                                       num_agents,
-                                       start_state,
-                                       end_state,
-                                       cons_policy)
+            self.scenario_execute(case_description,
+                                  task_effort,
+                                  agent_capacity,
+                                  num_tasks,
+                                  num_agents,
+                                  start_state,
+                                  end_state,
+                                  cons_policy)
+            pub.unsubAll()
             case_num += 1
         return
 
-    def test_scenario_execute(self,
-                              case_descr: str,
-                              task_effort: int,
-                              agent_capacity: int,
-                              num_tasks: int,
-                              num_agents: int,
-                              start_state: State,
-                              end_state: State,
-                              cons_policy: TaskConsumptionPolicy) -> None:
+    def scenario_execute(self,
+                         case_descr: str,
+                         task_effort: int,
+                         agent_capacity: int,
+                         num_tasks: int,
+                         num_agents: int,
+                         start_state: State,
+                         end_state: State,
+                         cons_policy: TaskConsumptionPolicy) -> None:
         """
         Execute the given scenario and then verify Agent & Task completion status is consistent with scenario
         parameters.
@@ -117,7 +121,7 @@ class TestTheTaskPool(unittest.TestCase):
             pub.subscribe(agent, topicName=task_pool.topic_for_state(agent.from_state))
 
         # Create tasks
-        # TODO: Agent should inject work and work only done when agent is notified of all tasks being finsihed.
+        # TODO: Agent should inject work and work only done when agent is notified of all tasks being finished.
         tasks = list()
         work_init = list()
         for _ in range(num_tasks):

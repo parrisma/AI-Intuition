@@ -1,13 +1,12 @@
 from datetime import datetime
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.srcsinkmetadata import SrcSinkMetaData
-from journey11.src.lib.srcsinkwithtimestamp import SrcSinkWithTimeStamp
 
 
 class SimpleSrcSinkMetaData(SrcSinkMetaData):
 
     def __init__(self,
-                 srcsink_with_timestamp: SrcSinkWithTimeStamp):
+                 srcsink_with_timestamp: SrcSink.SrcSinkWithTimeStamp):
         self._src_sink_with_timestamp = srcsink_with_timestamp
         return
 

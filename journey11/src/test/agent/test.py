@@ -2,11 +2,14 @@ import unittest
 import time
 import logging
 from pubsub import pub
+from journey11.src.interface.capability import Capability
 from journey11.src.lib.state import State
 from journey11.src.lib.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.loggingsetup import LoggingSetup
+from journey11.src.lib.capabilityregister import CapabilityRegister
+from journey11.src.lib.simplecapability import SimpleCapability
 from journey11.src.test.agent.testagent import TestAgent
 from journey11.src.test.task.testtask import TestTask
 from journey11.src.test.agent.dummysrcsink import DummySrcSink
@@ -21,6 +24,18 @@ class TestTheAgent(unittest.TestCase):
     def setUp(self) -> None:
         print("SetUp")
         TestTask.global_sync_reset()
+        return
+
+    def test_basic_capability(self):
+        test_agent = TestAgent('agent {}'.format(1),
+                               start_state=State.S0,
+                               end_state=State.S1,
+                               capacity=1,
+                               task_consumption_policy=GreedyTaskConsumptionPolicy(),
+                               trace=True)
+        self.assertEqual(float(1),
+                         Capability.equivalence_factor([SimpleCapability(CapabilityRegister.ETHER.name)],
+                                                       test_agent.capabilities))
         return
 
     def test_simple_task_injection(self):

@@ -1,16 +1,25 @@
 from abc import abstractmethod
+from typing import List, Iterable
 import threading
+from pubsub import pub
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.workrequest import WorkRequest
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.interface.notification import Notification
+from journey11.src.interface.capability import Capability
+from journey11.src.interface.srcsinkping import SrcSinkPing
+from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
 from journey11.src.lib.notificationhandler import NotificationHandler
+from journey11.src.lib.uniquetopic import UniqueTopic
+from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.lib.capabilityregister import CapabilityRegister
 
 
 class TaskPool(SrcSink):
     PUB_TIMER = float(.25)
+    POOL_TOPIC_PREFIX = "TaskPool"
 
     def __init__(self,
                  pool_name: str):
@@ -23,16 +32,21 @@ class TaskPool(SrcSink):
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=False)
         self._handler.register_handler(self._get_task, WorkRequest)
         self._handler.register_handler(self._put_task, WorkNotificationDo)
+        self._handler.register_handler(self._srcsink_ping, SrcSinkPing)
+        self._handler.register_handler(self._srcsink_ping_notification, SrcSinkPingNotification)
         self._handler.register_activity(handler_for_activity=self._do_pub,
                                         activity_interval=TaskPool.PUB_TIMER,
                                         activity_name="{}-do_pub_activity".format(pool_name))
+        self._capabilities = self._get_capabilities()
+        self._unique_topic = self._create_topic_and_subscription()
         return
 
     def __del__(self):
         """
         Clean up
         """
-        self._handler.stop_all_activity()
+        self._handler.activity_state(paused=True)
+        pub.unsubscribe(self, self._unique_topic)
         return
 
     def __call__(self, notification: Notification):
@@ -44,6 +58,23 @@ class TaskPool(SrcSink):
         else:
             raise ValueError("{} un supported notification type for Task Pool".format(type(notification).__name__))
         return
+
+    def _create_topic_and_subscription(self) -> str:
+        """
+        Create the unique topic for the agent that it will listen on for work (task) deliveries that it has
+        requested from the task-pool
+        """
+        unique_topic = UniqueTopic().topic(TaskPool.POOL_TOPIC_PREFIX)
+        pub.subscribe(self, unique_topic)
+        return unique_topic
+
+    @staticmethod
+    def _get_capabilities() -> List[Capability]:
+        """
+        The capabilities of this Agent
+        :return: List of Capabilities
+        """
+        return [SimpleCapability(capability_name=str(CapabilityRegister.POOL))]
 
     @purevirtual
     @abstractmethod
@@ -94,3 +125,11 @@ class TaskPool(SrcSink):
         :return: The name of the task pool as string
         """
         pass
+
+    @property
+    def capabilities(self) -> Iterable[Capability]:
+        """
+        The collection of capabilities of the SrcSink
+        :return: The collection of capabilities
+        """
+        return self._capabilities

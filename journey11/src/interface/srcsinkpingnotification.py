@@ -1,12 +1,12 @@
 from abc import abstractmethod
-from typing import Iterable
+from typing import List
 from journey11.src.interface.notification import Notification
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 
 
-class SrcSinkNotification(Notification):
+class SrcSinkPingNotification(Notification):
     @property
     @abstractmethod
     @purevirtual
@@ -30,7 +30,7 @@ class SrcSinkNotification(Notification):
     @property
     @abstractmethod
     @purevirtual
-    def address_book(self) -> Iterable[SrcSink]:
+    def address_book(self) -> List[SrcSink]:
         """
         The list of Players in the address book of the notification player
         :return: Zero or more players

@@ -1,11 +1,11 @@
 from typing import Iterable, List
-from journey11.src.interface.srcsinknotification import SrcSinkNotification
+from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.uniqueref import UniqueRef
 
 
-class SimpleSrcSinkNotification(SrcSinkNotification):
+class SimpleSrcSinkNotification(SrcSinkPingNotification):
 
     def __init__(self,
                  sender_srcsink: SrcSink,

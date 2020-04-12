@@ -2,21 +2,24 @@ import logging
 import threading
 from queue import Queue
 from pubsub import pub
-from typing import Type, Dict
+from typing import Type, Dict, List
 from journey11.src.interface.agent import Agent
 from journey11.src.interface.tasknotification import TaskNotification
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
 from journey11.src.interface.worknotificationfinalise import WorkNotificationFinalise
+from journey11.src.interface.capability import Capability
+from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
+from journey11.src.interface.srcsinkping import SrcSinkPing
+from journey11.src.lib.simplesrcsinkpingnotification import SimpleSrcSinkNotification
 from journey11.src.lib.state import State
 from journey11.src.lib.simpleworkrequest import SimpleWorkRequest
-from journey11.src.lib.uniquetopic import UniqueTopic
+from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.lib.capabilityregister import CapabilityRegister
 
 
 class TestAgent(Agent):
     FAIL_RATE = float(0)
-
-    AGENT_TOPIC_PREFIX = "agent"
 
     def __init__(self,
                  agent_name: str,
@@ -27,37 +30,32 @@ class TestAgent(Agent):
                  trace: bool = False):
         """
         """
-        super().__init__(agent_name)
-        self._fail_rate = TestAgent.FAIL_RATE
-        self._capacity = capacity
-        self._work_lock = threading.Lock()
-        self._work_pending = Queue()
-        self._work_in_progress = Queue()
-        self._work_done = Queue()
         self._agent_name = agent_name
         self._start_state = start_state
         self._end_state = end_state
 
+        super().__init__(agent_name)
+
+        self._fail_rate = TestAgent.FAIL_RATE
+        self._capacity = capacity
+
+        self._work_lock = threading.Lock()
+        self._work_pending = Queue()
+        self._work_in_progress = Queue()
+        self._work_done = Queue()
+
         self._num_notification = 0
         self._num_work = 0
-
-        self._unique_topic = None
-        self._create_topic_and_subscription()
 
         self._task_consumption_policy = task_consumption_policy
 
         self._trace = trace
         self._trace_log = dict()
 
-        return
+        self._ping_factor_threshold = float(1)
 
-    def _create_topic_and_subscription(self) -> None:
-        """
-        Create the unique topic for the agent that it will listen on for work (task) deliveries that it has
-        requested from the task-pool
-        """
-        self._unique_topic = UniqueTopic().topic(TestAgent.AGENT_TOPIC_PREFIX)
-        pub.subscribe(self, self._unique_topic)
+        self._capabilities = [SimpleCapability(str(CapabilityRegister.ETHER))]
+
         return
 
     @property
@@ -88,17 +86,15 @@ class TestAgent(Agent):
         self._num_notification += 1
         if self._task_consumption_policy.process_task(task_notification.task_meta):
             if task_notification.originator is not None:
-                # request the task ot be sent as work.
                 work_request = SimpleWorkRequest(task_notification.work_ref, self)
                 pub.sendMessage(topicName=task_notification.originator.topic, notification=work_request)
                 logging.info("{} sent request for work ref {} OK from pool {}".format(self._agent_name,
                                                                                       task_notification.work_ref.id,
                                                                                       task_notification.originator.name))
             else:
-                logging.info("{} notification IGNORED by policy for work ref {} OK from pool {}".format(
+                logging.error("{} notification IGNORED as no originator address given for work ref {}".format(
                     self._agent_name,
-                    task_notification.work_ref.id,
-                    task_notification.originator.name))
+                    task_notification.work_ref.id))
         else:
             self._num_notification -= 1
             logging.info("{} Rx TaskNotification Ignored by Consumption Policy{}".format(self.name,
@@ -171,10 +167,9 @@ class TestAgent(Agent):
 
     def _work_to_do(self) -> None:
         """
-        Are there any tasks associated with the Agent that need working on ?
-        :return: A WorkNotification event or None if there is no work to do
+        Are there any tasks associated with the Agent that need working on ? if so invoke the do_work method for
+        every task that needs work.
         """
-        wtd = None
         if not self._work_in_progress.empty():
             wtd = self._work_in_progress.get()
             logging.info("{} work_to_do for task ref {}".format(self._agent_name, wtd.work_ref.id))
@@ -296,3 +291,42 @@ class TestAgent(Agent):
         :return: num tasks worked on
         """
         return self._num_work
+
+    @property
+    def capabilities(self) -> List[Capability]:
+        """
+        The capabilities of the Ether
+        :return: List of Ether capabilities
+        """
+        return self._capabilities
+
+    def _srcsink_ping_notification(self,
+                                   ping_notification: SrcSinkPingNotification) -> None:
+        """
+        Handle a ping response from a srcsink
+        :param: The srcsink notification
+        """
+        logging.info("Ether {} RX ping response for {}".format(self.name, ping_notification.src_sink.name))
+        if ping_notification.src_sink.topic != self.topic:
+            # Don't count ping response from our self.
+            for srcsink in ping_notification.address_book:
+                self._update_srcsink_addressbook(sender_srcsink=srcsink)
+        return
+
+    def _srcsink_ping(self,
+                      ping_request: SrcSinkPing) -> None:
+        """
+        Handle a ping response from a srcsink
+        :param: The srcsink notification
+        """
+        logging.info("Ether {} RX ping request for {}".format(self.name, ping_request.sender_srcsink.name))
+        # Don't count pings from our self.
+        if ping_request.sender_srcsink.topic != self.topic:
+            # Note the sender is alive
+            self._update_srcsink_addressbook(ping_request.sender_srcsink)
+            if Capability.equivalence_factor(ping_request.required_capabilities,
+                                             self.capabilities) >= self._ping_factor_threshold:
+                pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
+                                notification=SimpleSrcSinkNotification(sender_srcsink=self,
+                                                                       address_book=[self]))
+        return
