@@ -37,8 +37,12 @@ class Capability(ABC):
         equiv = 0
         for rc in required_capabilities:
             for gc in given_capabilities:
-                if rc._equivalent(gc):
-                    equiv += 1
+                if isinstance(rc, Capability) and isinstance(gc, Capability):
+                    if rc._equivalent(gc):
+                        equiv += 1
+                else:
+                    raise ValueError(
+                        "Something NOT of type {} passed to equivalence factor".format(Capability.__name__))
         return equiv / len(required_capabilities)
 
     @abstractmethod

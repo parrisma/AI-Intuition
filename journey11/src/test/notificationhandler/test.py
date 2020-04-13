@@ -86,8 +86,6 @@ class TestNotificationHandler(unittest.TestCase):
             self.fail("Unexpected exception : [{}]".format(str(e)))
 
         time.sleep(interval_in_sec * wait_cycles)  # Allow the timer to fire a few times
-        for nh in nhs:
-            nh.stop_all_activity()
         for act in acts:
             # We expect each activity to have registered at least wait_cycle - 1 number of invocations.
             self.assertTrue(act.invocation_count >= (wait_cycles - 1))

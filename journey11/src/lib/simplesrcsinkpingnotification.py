@@ -8,15 +8,17 @@ from journey11.src.lib.uniqueref import UniqueRef
 class SimpleSrcSinkNotification(SrcSinkPingNotification):
 
     def __init__(self,
-                 sender_srcsink: SrcSink,
-                 address_book: List[SrcSink]):
-        self._work_ref = UniqueWorkRef(sender_srcsink.name, UniqueRef().ref)
-        self._sender_srcsink = sender_srcsink
+                 responder_srcsink: SrcSink,
+                 address_book: List[SrcSink],
+                 sender_workref: UniqueWorkRef):
+        self._work_ref = UniqueWorkRef(responder_srcsink.name, UniqueRef().ref)
+        self._sender_srcsink = responder_srcsink
         self._address_book = address_book
+        self._sender_workref = sender_workref
         return
 
     @property
-    def work_ref(self) -> UniqueWorkRef:
+    def responder_work_ref(self) -> UniqueWorkRef:
         """
         The unique work reference for this notification
         :return: The work reference
@@ -24,15 +26,23 @@ class SimpleSrcSinkNotification(SrcSinkPingNotification):
         return self._work_ref
 
     @property
+    def sender_work_ref(self) -> UniqueWorkRef:
+        """
+        The unique work reference of the sender of the ping this is the response to
+        :return: The work reference
+        """
+        return self._sender_workref
+
+    @property
     def src_sink(self) -> SrcSink:
         """
-        The SrcSink that is the subject of the notification
+        The SrcSink that is replying to the ping.
         :return: The SrcSink
         """
         return self._sender_srcsink
 
     @property
-    def address_book(self) -> Iterable[SrcSink]:
+    def responder_address_book(self) -> Iterable[SrcSink]:
         """
         The list of Players in the address book of the notification player
         :return: Zero or more players

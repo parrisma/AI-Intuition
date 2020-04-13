@@ -10,9 +10,19 @@ class SrcSinkPingNotification(Notification):
     @property
     @abstractmethod
     @purevirtual
-    def work_ref(self) -> UniqueWorkRef:
+    def responder_work_ref(self) -> UniqueWorkRef:
         """
         The unique work reference for this notification
+        :return: The work reference
+        """
+        pass
+
+    @property
+    @abstractmethod
+    @purevirtual
+    def sender_work_ref(self) -> UniqueWorkRef:
+        """
+        The unique work reference of the sender of the ping this is the response to
         :return: The work reference
         """
         pass
@@ -30,9 +40,9 @@ class SrcSinkPingNotification(Notification):
     @property
     @abstractmethod
     @purevirtual
-    def address_book(self) -> List[SrcSink]:
+    def responder_address_book(self) -> List[SrcSink]:
         """
-        The list of Players in the address book of the notification player
-        :return: Zero or more players
+        The portion of the responders address book they wish to share with the ping sender.
+        :return: List of zero or more SrcSinks
         """
         pass

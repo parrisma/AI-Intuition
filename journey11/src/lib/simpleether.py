@@ -45,7 +45,7 @@ class SimpleEther(Ether):
         logging.info("Ether {} RX ping response for {}".format(self.name, ping_notification.src_sink.name))
         if ping_notification.src_sink.topic != self.topic:
             # Don't count ping response from our self.
-            for srcsink in ping_notification.address_book:
+            for srcsink in ping_notification.responder_address_book:
                 self._update_srcsink_addressbook(sender_srcsink=srcsink)
         return
 
@@ -63,8 +63,9 @@ class SimpleEther(Ether):
             if Capability.equivalence_factor(ping_request.required_capabilities,
                                              self.capabilities) >= self._ping_factor_threshold:
                 pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
-                                notification=SimpleSrcSinkNotification(sender_srcsink=self,
-                                                                       address_book=[self]))
+                                notification=SimpleSrcSinkNotification(responder_srcsink=self,
+                                                                       address_book=[self],
+                                                                       sender_workref=ping_request.work_ref))
         return
 
     def _do_pub(self) -> None:

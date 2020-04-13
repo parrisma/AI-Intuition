@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import List, Iterable
+from typing import List, List
 import threading
 from pubsub import pub
 from journey11.src.interface.srcsink import SrcSink
@@ -9,6 +9,7 @@ from journey11.src.interface.notification import Notification
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
+from journey11.src.interface.ether import Ether
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
 from journey11.src.lib.notificationhandler import NotificationHandler
@@ -47,6 +48,7 @@ class TaskPool(SrcSink):
         """
         self._handler.activity_state(paused=True)
         pub.unsubscribe(self, self._unique_topic)
+        pub.unsubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         return
 
     def __call__(self, notification: Notification):
@@ -66,6 +68,7 @@ class TaskPool(SrcSink):
         """
         unique_topic = UniqueTopic().topic(TaskPool.POOL_TOPIC_PREFIX)
         pub.subscribe(self, unique_topic)
+        pub.subscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         return unique_topic
 
     @staticmethod
@@ -127,7 +130,7 @@ class TaskPool(SrcSink):
         pass
 
     @property
-    def capabilities(self) -> Iterable[Capability]:
+    def capabilities(self) -> List[Capability]:
         """
         The collection of capabilities of the SrcSink
         :return: The collection of capabilities

@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import List
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.capability import Capability
@@ -33,7 +33,7 @@ class SimpleSrcSinkPing(SrcSinkPing):
         return self._sender_srcsink
 
     @property
-    def required_capabilities(self) -> Iterable[Capability]:
+    def required_capabilities(self) -> List[Capability]:
         """
         The required list of capabilities to respond to the ping. If capabilities is None or
         empty the matcher is allowed to consider this as match anything i.e. wild card.

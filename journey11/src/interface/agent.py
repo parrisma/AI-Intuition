@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from pubsub import pub
-from typing import List, Iterable
+from typing import List, List
 from journey11.src.interface.notification import Notification
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.tasknotification import TaskNotification
@@ -10,6 +10,7 @@ from journey11.src.interface.worknotificationfinalise import WorkNotificationFin
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
+from journey11.src.interface.ether import Ether
 from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
@@ -42,8 +43,17 @@ class Agent(SrcSink):
         self._handler.register_activity(handler_for_activity=self._work_to_do,
                                         activity_interval=self._work_timer,
                                         activity_name="{}-do_work_activity".format(agent_name))
-        self._unique_topic = self._create_topic_and_subscription()
+        self._unique_topic = self._create_topic_and_subscriptions()
         self._capabilities = self._get_capabilities()
+        return
+
+    def __del__(self):
+        """
+        Shut down
+        """
+        self._handler.activity_state(paused=True)
+        pub.unsubscribe(self, self._unique_topic)
+        pub.unsubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         return
 
     def __call__(self, notification: Notification):
@@ -56,13 +66,14 @@ class Agent(SrcSink):
             raise ValueError("{} is an un supported notification type for Agent}".format(type(notification).__name__))
         return
 
-    def _create_topic_and_subscription(self) -> str:
+    def _create_topic_and_subscriptions(self) -> str:
         """
         Create the unique topic for the agent that it will listen on for work (task) deliveries that it has
         requested from the task-pool
         """
         unique_topic = UniqueTopic().topic(Agent.AGENT_TOPIC_PREFIX)
         pub.subscribe(self, unique_topic)
+        pub.subscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         return unique_topic
 
     @staticmethod
@@ -120,14 +131,6 @@ class Agent(SrcSink):
         :return: A WorkNotification event or None if there is no work to do
         """
         pass
-
-    def __del__(self):
-        """
-        Shut down
-        """
-        self._handler.activity_state(paused=True)
-        pub.unsubscribe(self, self._unique_topic)
-        return
 
     @abstractmethod
     @purevirtual
@@ -223,7 +226,7 @@ class Agent(SrcSink):
         return self._work_timer
 
     @property
-    def capabilities(self) -> Iterable[Capability]:
+    def capabilities(self) -> List[Capability]:
         """
         The collection of capabilities of the SrcSink
         :return: The collection of capabilities

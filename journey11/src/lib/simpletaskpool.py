@@ -2,13 +2,17 @@ import threading
 import logging
 from pubsub import pub
 from journey11.src.interface.taskpool import TaskPool
-from journey11.src.lib.state import State
-from journey11.src.lib.simpletasknotification import SimpleTaskNotification
 from journey11.src.interface.workrequest import WorkRequest
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
+from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
+from journey11.src.interface.srcsinkping import SrcSinkPing
+from journey11.src.interface.capability import Capability
+from journey11.src.lib.state import State
+from journey11.src.lib.simpletasknotification import SimpleTaskNotification
 from journey11.src.lib.simpletaskmetadata import SimpleTaskMetaData
 from journey11.src.lib.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.lib.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
+from journey11.src.lib.simplesrcsinkpingnotification import SimpleSrcSinkNotification
 
 
 class SimpleTaskPool(TaskPool):
@@ -20,6 +24,7 @@ class SimpleTaskPool(TaskPool):
         self._pool_lock = threading.Lock()
         self._len = 0
         self._name = name
+        self._ping_factor_threshold = float(1)
         return
 
     def __del__(self):
@@ -125,6 +130,38 @@ class SimpleTaskPool(TaskPool):
             pub.sendMessage(topicName=topic, notification=notification)
             logging.info("{} stored & advertised task {} on {} = {}".format(self.name, task_id, topic, ref.id))
 
+        return
+
+    def _srcsink_ping_notification(self,
+                                   ping_notification: SrcSinkPingNotification) -> None:
+        """
+        Handle a ping response from a srcsink
+        :param: The srcsink notification
+        """
+        logging.info("{} RX ping response for {}".format(self.name, ping_notification.src_sink.name))
+        if ping_notification.src_sink.topic != self.topic:
+            # Don't count ping response from our self.
+            for srcsink in ping_notification.responder_address_book:
+                self._update_srcsink_addressbook(sender_srcsink=srcsink)
+        return
+
+    def _srcsink_ping(self,
+                      ping_request: SrcSinkPing) -> None:
+        """
+        Handle a ping response from a srcsink
+        :param: The srcsink notification
+        """
+        logging.info("{} RX ping request for {}".format(self.name, ping_request.sender_srcsink.name))
+        # Don't count pings from our self.
+        if ping_request.sender_srcsink.topic != self.topic:
+            # Note the sender is alive
+            self._update_srcsink_addressbook(ping_request.sender_srcsink)
+            if Capability.equivalence_factor(ping_request.required_capabilities,
+                                             self.capabilities) >= self._ping_factor_threshold:
+                pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
+                                notification=SimpleSrcSinkNotification(responder_srcsink=self,
+                                                                       address_book=[self],
+                                                                       sender_workref=ping_request.work_ref))
         return
 
     def topic_for_state(self,

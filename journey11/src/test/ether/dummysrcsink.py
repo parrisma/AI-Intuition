@@ -10,6 +10,7 @@ class DummySrcSink(SrcSink):
     _glob_id = 1
 
     def __init__(self):
+        super().__init__()
         self._name = "{}-{}-{}".format(DummySrcSink.__class__.__name__, DummySrcSink.global_id(), UniqueRef())
         self._topic = UniqueTopic.topic(prefix=DummySrcSink.__class__.__name__)
         self._capabilities = [SimpleCapability("DummyCapability")]

@@ -4,14 +4,18 @@ import time
 import math
 from pubsub import pub
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
+from journey11.src.interface.capability import Capability
 from journey11.src.lib.state import State
 from journey11.src.lib.simpletaskpool import SimpleTaskPool
 from journey11.src.lib.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
-from journey11.src.test.agent.testagent import TestAgent
+from journey11.src.lib.simpleagent import SimpleAgent
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
+from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.test.task.testtask import TestTask
+from journey11.src.test.agent.dummysrcsink import DummySrcSink  # Borrow this test class
 
 
 class Listener:
@@ -34,6 +38,34 @@ class TestTheTaskPool(unittest.TestCase):
 
     def tearDown(self) -> None:
         pub.unsubAll()
+        return
+
+    def test_taskpool_capabilities(self):
+        task_pool = SimpleTaskPool('Task Pool 1')
+        self.assertEqual(float(1),
+                         Capability.equivalence_factor([SimpleCapability(CapabilityRegister.POOL.name)],
+                                                       task_pool.capabilities))
+        return
+
+    def test_ping_cycle(self):
+        scenarios = [[[SimpleCapability(str(CapabilityRegister.POOL))], 1],
+                     [[], 1],
+                     [[SimpleCapability(str(CapabilityRegister.AGENT))], 0],
+                     [[SimpleCapability("MadeUpCapability")], 0]]
+
+        for scenario in scenarios:
+            reqd_cap, expected_notification = scenario
+            logging.info("\n\nTesting Ping Cycle with capabilities [{}]\n\n".format(str(reqd_cap)))
+            ping_srcsink = DummySrcSink("PingSrcSink")
+            _ = SimpleTaskPool('Task Pool 1')
+
+            ping_workref = ping_srcsink.send_ping(required_capabilities=reqd_cap)
+
+            time.sleep(1)
+            self.assertEqual(expected_notification, len(ping_srcsink.ping_notifications))
+            if expected_notification > 0:
+                self.assertEqual(ping_workref.id, ping_srcsink.ping_notifications[0].sender_work_ref.id)
+            pub.unsubAll()
         return
 
     def test_scenario_runner(self):
@@ -107,11 +139,11 @@ class TestTheTaskPool(unittest.TestCase):
         i = 1
         for es in State.range(start_state, end_state)[1:]:
             for _ in range(num_agents):
-                agent = TestAgent(agent_name="Agent {}".format(i),
-                                  start_state=st,
-                                  end_state=es,
-                                  capacity=agent_capacity,
-                                  task_consumption_policy=cons_policy)
+                agent = SimpleAgent(agent_name="Agent {}".format(i),
+                                    start_state=st,
+                                    end_state=es,
+                                    capacity=agent_capacity,
+                                    task_consumption_policy=cons_policy)
                 agents.append(agent)
                 i += 1
             st = es
