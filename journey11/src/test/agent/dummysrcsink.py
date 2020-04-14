@@ -1,3 +1,5 @@
+import threading
+import logging
 from typing import List
 from pubsub import pub
 from journey11.src.interface.capability import Capability
@@ -6,6 +8,9 @@ from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.ether import Ether
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.interface.srcsinkping import SrcSinkPing
+from journey11.src.interface.tasknotification import TaskNotification
+from journey11.src.interface.worknotificationfinalise import WorkNotificationFinalise
+from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.uniquetopic import UniqueTopic
 from journey11.src.lib.simplecapability import SimpleCapability
@@ -24,14 +29,21 @@ class DummySrcSink(SrcSink):
         super().__init__()
         self._capabilities = [SimpleCapability(capability_name='DummySrcSink')]
 
+        self._lock = threading.Lock()
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=True)
         self._handler.register_handler(self._srcsink_ping, SrcSinkPing)
         self._handler.register_handler(self._srcsink_ping_notification, SrcSinkPingNotification)
+        self._handler.register_handler(self._do_notification, TaskNotification)
+        self._handler.register_handler(self._do_work, WorkNotificationDo)
+        self._handler.register_handler(self._do_work_finalise, WorkNotificationFinalise)
 
         # Public Members just for Unit Test Asserts
         #
         self.pings = list()
         self.ping_notifications = list()
+        self.task_notification = list()
+        self.work_notification = list()
+        self.work_finalise = list()
 
         # Get connected !
         self.setup_subscriptions()
@@ -54,7 +66,7 @@ class DummySrcSink(SrcSink):
         return
 
     def __del__(self):
-        pub.unsubscribesubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
+        pub.unsubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         pub.unsubscribe(self, self.topic)
         return
 
@@ -63,15 +75,38 @@ class DummySrcSink(SrcSink):
         return self._capabilities
 
     def _srcsink_ping_notification(self, ping_notification: Notification) -> None:
-        self.ping_notifications.append(ping_notification)
+        logging.info("{} :: {} RX handled by".format(self.__class__.__name__, self.name, "_srcsink_ping_notification"))
+        with self._lock:
+            self.ping_notifications.append(ping_notification)
         return
 
     def _srcsink_ping(self, ping_request: Notification) -> None:
-        self.pings.append(ping_request)
+        logging.info("{} :: {} RX handled by".format(self.__class__.__name__, self.name, "_srcsink_ping"))
+        with self._lock:
+            self.pings.append(ping_request)
+        return
+
+    def _do_notification(self, task_notification: Notification):
+        logging.info("{} :: {} RX handled by".format(self.__class__.__name__, self.name, "_do_notification"))
+        with self._lock:
+            self.task_notification.append(task_notification)
+        return
+
+    def _do_work(self, work_notification: Notification):
+        logging.info("{} :: {} RX handled by".format(self.__class__.__name__, self.name, "_do_work"))
+        with self._lock:
+            self.work_notification.append(work_notification)
+        return
+
+    def _do_work_finalise(self, do_work_finalise: Notification):
+        logging.info("{} :: {} RX handled by".format(self.__class__.__name__, self.name, "_do_work_finalise"))
+        with self._lock:
+            self.work_finalise.append(do_work_finalise)
         return
 
     def send_ping(self,
                   required_capabilities: List[Capability]) -> UniqueWorkRef:
+        logging.info("{} :: {} Sent Ping".format(self.__class__.__name__, self.name, "send_ping"))
         ping = SimpleSrcSinkPing(sender_srcsink=self, required_capabilities=required_capabilities)
         pub.sendMessage(Ether.ETHER_BACK_PLANE_TOPIC, notification=ping)
         return ping.work_ref

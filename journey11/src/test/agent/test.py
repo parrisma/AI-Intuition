@@ -71,7 +71,6 @@ class TestTheAgent(unittest.TestCase):
     def test_simple_task_injection(self):
         effort = 3
         capacity = 1
-        pool_name = "Dummy-Test-Pool"
         source_name = "Dummy-Test-Source"
         TestTask.process_start_state(State.S0)
         TestTask.process_end_state(State.S1)
@@ -87,9 +86,9 @@ class TestTheAgent(unittest.TestCase):
                                      task_consumption_policy=GreedyTaskConsumptionPolicy(),
                                      trace=True)
 
-            test_notification = SimpleWorkNotificationDo(UniqueWorkRef(work_item_ref=pool_name,
+            test_notification = SimpleWorkNotificationDo(UniqueWorkRef(work_item_ref=source_name,
                                                                        subject_name=str(test_task.id)),
-                                                         originator=DummySrcSink(pool_name),
+                                                         originator=DummySrcSink(source_name),
                                                          source=DummySrcSink(source_name),
                                                          task=test_task)
             if i == 0:

@@ -173,7 +173,8 @@ class NotificationHandler:
             ((self._handler_dict[msg_type_name])[NotificationHandler._MSG_HANDLER])(notification)
         else:
             if self._throw_unhandled:
-                msg = "{} RX Un-handled message type {}".format(self._object_to_handle.name, msg_type_name)
+                msg = "{} RX Un-handled message type {}".format(self._object_to_handle.name,
+                                                                type(notification).__name__)
                 logging.critical(msg)
                 raise NotImplementedError(msg)
             else:
@@ -203,6 +204,8 @@ class NotificationHandler:
                 if res is not None:
                     tn, mt, vc = to_add
                     self._handler_dict[tn] = [mt, vc]
+                else:
+                    print('oops')
             else:
                 res = msg_type_name
         return res

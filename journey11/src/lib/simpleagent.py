@@ -174,7 +174,7 @@ class SimpleAgent(Agent):
         """
         if not self._work_in_progress.empty():
             wtd = self._work_in_progress.get()
-            logging.info("{} work_to_do for task ref {}".format(self._agent_name, wtd.responder_work_ref.id))
+            logging.info("{} work_to_do for task ref {}".format(self._agent_name, wtd.work_ref.id))
             self._do_work(wtd)
         else:
             logging.info("{} work_to_do - nothing to do".format(self._agent_name))
