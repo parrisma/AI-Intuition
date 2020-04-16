@@ -5,6 +5,7 @@ from journey11.src.interface.taskpool import TaskPool
 from journey11.src.interface.workrequest import WorkRequest
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
+from journey11.src.interface.worknotificationfinalise import WorkNotificationFinalise
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.capability import Capability
 from journey11.src.lib.state import State
@@ -64,13 +65,13 @@ class SimpleTaskPool(TaskPool):
         :param work_notification: The task to be added
         """
         if work_notification.task.state == work_notification.task.process_end_state():
+            logging.warning("{} expected finalised rather than do as task complete & in end state".format(
+                work_notification.source.name))
             work_notification_finalise = SimpleWorkNotificationFinalise.finalise_factory(work_notification)
-            work_notification_finalise.task.finalised = True
-            pub.sendMessage(topicName=work_notification_finalise.originator.topic,
+            logging.info("{} converted {} to finalised & processed".format(self.name,
+                                                                           work_notification_finalise.work_ref.id))
+            pub.sendMessage(topicName=self.topic,
                             notification=work_notification_finalise)
-            logging.info("{} sent finalised task {} to {}".format(self.name,
-                                                                  work_notification_finalise.task.id,
-                                                                  work_notification_finalise.source.name))
         else:
             with self._pool_lock:
                 self._task_pool[work_notification.work_ref.id] = [work_notification.work_ref, work_notification]
@@ -95,15 +96,15 @@ class SimpleTaskPool(TaskPool):
                 self._len -= 1
                 to_pub = [work_request.originator.topic, SimpleWorkNotificationDo(unique_work_ref=work_request.work_ref,
                                                                                   task=work.task,
-                                                                                  originator=self,
-                                                                                  source=work.source)]
+                                                                                  originator=work.originator,
+                                                                                  source=self)]
 
         if to_pub is not None:
             topic, notification = to_pub
-            pub.sendMessage(topicName=topic, notification=notification)
             logging.info("{} sent task {} to {}".format(self.name,
-                                                        notification.task.id,
-                                                        work_request.originator.name))
+                                                        notification.work_ref.id,
+                                                        notification.originator.name))
+            pub.sendMessage(topicName=topic, notification=notification)
         else:
             logging.info("{} had NO task {} to send to {}".format(self.name,
                                                                   work_request.work_ref.id,
@@ -127,13 +128,13 @@ class SimpleTaskPool(TaskPool):
 
         for pub_event in to_pub:
             ref, topic, notification, task_id = pub_event
-            pub.sendMessage(topicName=topic, notification=notification)
             logging.info("{} stored & advertised task {} on {} = {}".format(self.name, task_id, topic, ref.id))
+            pub.sendMessage(topicName=topic, notification=notification)
 
         return
 
-    def _srcsink_ping_notification(self,
-                                   ping_notification: SrcSinkPingNotification) -> None:
+    def _do_srcsink_ping_notification(self,
+                                      ping_notification: SrcSinkPingNotification) -> None:
         """
         Handle a ping response from a srcsink
         :param: The srcsink notification
@@ -145,8 +146,8 @@ class SimpleTaskPool(TaskPool):
                 self._update_srcsink_addressbook(sender_srcsink=srcsink)
         return
 
-    def _srcsink_ping(self,
-                      ping_request: SrcSinkPing) -> None:
+    def _do_srcsink_ping(self,
+                         ping_request: SrcSinkPing) -> None:
         """
         Handle a ping response from a srcsink
         :param: The srcsink notification
@@ -162,6 +163,21 @@ class SimpleTaskPool(TaskPool):
                                 notification=SimpleSrcSinkNotification(responder_srcsink=self,
                                                                        address_book=[self],
                                                                        sender_workref=ping_request.work_ref))
+        return
+
+    def _do_work_finalise(self,
+                          work_notification_final: WorkNotificationFinalise) -> None:
+        """
+        Take receipt of the given completed work item that was initiated from this agent and do any
+        final processing.
+        """
+        logging.info("{} Rx Finalised task {} from source {} in state {}".format(self.name,
+                                                                                 work_notification_final.work_ref.id,
+                                                                                 work_notification_final.originator.name,
+                                                                                 work_notification_final.task.state))
+        # Send to Originator for closure
+        pub.sendMessage(topicName=work_notification_final.originator.topic,
+                        notification=work_notification_final)
         return
 
     def topic_for_state(self,

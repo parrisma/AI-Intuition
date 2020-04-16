@@ -205,7 +205,8 @@ class NotificationHandler:
                     tn, mt, vc = to_add
                     self._handler_dict[tn] = [mt, vc]
                 else:
-                    print('oops')
+                    print('::::{}'.format(str(message)))
+                    print('::::{}'.format(str(self._object_to_handle)))
             else:
                 res = msg_type_name
         return res

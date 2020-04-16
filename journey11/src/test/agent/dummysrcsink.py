@@ -31,8 +31,8 @@ class DummySrcSink(SrcSink):
 
         self._lock = threading.Lock()
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=True)
-        self._handler.register_handler(self._srcsink_ping, SrcSinkPing)
-        self._handler.register_handler(self._srcsink_ping_notification, SrcSinkPingNotification)
+        self._handler.register_handler(self._do_srcsink_ping, SrcSinkPing)
+        self._handler.register_handler(self._do_srcsink_ping_notification, SrcSinkPingNotification)
         self._handler.register_handler(self._do_notification, TaskNotification)
         self._handler.register_handler(self._do_work, WorkNotificationDo)
         self._handler.register_handler(self._do_work_finalise, WorkNotificationFinalise)
@@ -74,13 +74,13 @@ class DummySrcSink(SrcSink):
     def capabilities(self) -> List[Capability]:
         return self._capabilities
 
-    def _srcsink_ping_notification(self, ping_notification: Notification) -> None:
+    def _do_srcsink_ping_notification(self, ping_notification: Notification) -> None:
         logging.info("{} :: {} RX handled by".format(self.__class__.__name__, self.name, "_srcsink_ping_notification"))
         with self._lock:
             self.ping_notifications.append(ping_notification)
         return
 
-    def _srcsink_ping(self, ping_request: Notification) -> None:
+    def _do_srcsink_ping(self, ping_request: Notification) -> None:
         logging.info("{} :: {} RX handled by".format(self.__class__.__name__, self.name, "_srcsink_ping"))
         with self._lock:
             self.pings.append(ping_request)

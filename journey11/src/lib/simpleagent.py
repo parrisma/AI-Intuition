@@ -14,8 +14,7 @@ from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.lib.simplesrcsinkpingnotification import SimpleSrcSinkNotification
 from journey11.src.lib.state import State
 from journey11.src.lib.simpleworkrequest import SimpleWorkRequest
-from journey11.src.lib.simplecapability import SimpleCapability
-from journey11.src.lib.capabilityregister import CapabilityRegister
+from journey11.src.lib.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
 
 
 class SimpleAgent(Agent):
@@ -89,10 +88,10 @@ class SimpleAgent(Agent):
         if self._task_consumption_policy.process_task(task_notification.task_meta):
             if task_notification.originator is not None:
                 work_request = SimpleWorkRequest(task_notification.work_ref, self)
-                pub.sendMessage(topicName=task_notification.originator.topic, notification=work_request)
                 logging.info("{} sent request for work ref {} OK from pool {}".format(self._agent_name,
                                                                                       task_notification.work_ref.id,
                                                                                       task_notification.originator.name))
+                pub.sendMessage(topicName=task_notification.originator.topic, notification=work_request)
             else:
                 logging.error("{} notification IGNORED as no originator address given for work ref {}".format(
                     self._agent_name,
@@ -114,13 +113,13 @@ class SimpleAgent(Agent):
             logging.info("{} do_work for work_ref {}".format(self._agent_name, work_notification.work_ref.id))
             if work_notification.task.do_work(self.capacity) > 0:
                 logging.info("{} do_work for task id {} - task rescheduled with {} work remaining in state {}".format(
-                    self._agent_name, work_notification.task.id,
+                    self._agent_name, work_notification.work_ref.id,
                     work_notification.task.work_in_state_remaining,
                     work_notification.task.state))
                 self._add_work_item_to_queue(work_notification)
         else:
             logging.info("{} do_work nothing left to do for task {} in state {}".format(self._agent_name,
-                                                                                        work_notification.task.id,
+                                                                                        work_notification.work_ref.id,
                                                                                         work_notification.task.state))
 
         # If work remaining is zero, need to transition to next state and post the task back to the
@@ -128,11 +127,13 @@ class SimpleAgent(Agent):
         #
         if work_notification.task.work_in_state_remaining == 0:
             work_notification.task.state = self.to_state
-            pub.sendMessage(topicName=work_notification.originator.topic, notification=work_notification)
-            logging.info("{} send task {} to pool {} in state {}".format(self._agent_name,
-                                                                         work_notification.task.id,
-                                                                         work_notification.originator.name,
-                                                                         work_notification.task.state))
+            work_notification_finalise = SimpleWorkNotificationFinalise.finalise_factory(work_notification)
+            logging.info("{} Finalised {} : SrcSink {} : State {}".format(self._agent_name,
+                                                                          work_notification_finalise.work_ref.id,
+                                                                          work_notification_finalise.originator.name,
+                                                                          work_notification_finalise.task.state))
+            pub.sendMessage(topicName=work_notification.source.topic,
+                            notification=work_notification_finalise)
         return
 
     def _add_work_item_to_queue(self,
@@ -155,8 +156,9 @@ class SimpleAgent(Agent):
         Take receipt of the given completed work item that was initiated from this agent and do any
         final processing.
         """
+        work_notification_final.task.finalised = True
         logging.info("{} Rx Finalised task {} from source {} in state {}".format(self._agent_name,
-                                                                                 work_notification_final.task.id,
+                                                                                 work_notification_final.work_ref.id,
                                                                                  work_notification_final.originator.name,
                                                                                  work_notification_final.task.state))
         return
@@ -302,8 +304,8 @@ class SimpleAgent(Agent):
         """
         return self._capabilities
 
-    def _srcsink_ping_notification(self,
-                                   ping_notification: SrcSinkPingNotification) -> None:
+    def _do_srcsink_ping_notification(self,
+                                      ping_notification: SrcSinkPingNotification) -> None:
         """
         Handle a ping response from a srcsink
         :param: The srcsink notification
@@ -315,8 +317,8 @@ class SimpleAgent(Agent):
                 self._update_srcsink_addressbook(sender_srcsink=srcsink)
         return
 
-    def _srcsink_ping(self,
-                      ping_request: SrcSinkPing) -> None:
+    def _do_srcsink_ping(self,
+                         ping_request: SrcSinkPing) -> None:
         """
         Handle a ping response from a srcsink
         :param: The srcsink notification

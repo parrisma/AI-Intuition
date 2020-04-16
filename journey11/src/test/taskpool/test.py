@@ -14,6 +14,7 @@ from journey11.src.lib.simpleagent import SimpleAgent
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.simplecapability import SimpleCapability
 from journey11.src.lib.capabilityregister import CapabilityRegister
+from journey11.src.lib.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
 from journey11.src.test.task.testtask import TestTask
 from journey11.src.test.agent.dummysrcsink import DummySrcSink  # Borrow this test class
 
@@ -45,6 +46,28 @@ class TestTheTaskPool(unittest.TestCase):
         self.assertEqual(float(1),
                          Capability.equivalence_factor([SimpleCapability(CapabilityRegister.POOL.name)],
                                                        task_pool.capabilities))
+        return
+
+    def test_handlers(self):
+        task_pool = SimpleTaskPool('Task Pool 1')
+
+        TestTask.global_sync_reset()
+        TestTask.process_start_state(State.S0)
+        TestTask.process_end_state(State.S1)
+        test_task = TestTask(effort=1, start_state=State.S0)
+
+        uwr = UniqueWorkRef("Dummy1", "Dummy2")
+        src = DummySrcSink("Source")
+        orig = DummySrcSink("originator")
+
+        scenarios = [SimpleWorkNotificationDo(uwr, test_task, orig, src),
+                     SimpleWorkNotificationFinalise(uwr, test_task, orig, src)]
+
+        try:
+            for scenario in scenarios:
+                task_pool(scenario)
+        except Exception as e:
+            self.fail("Un expected exception {}".format(str(e)))
         return
 
     def test_ping_cycle(self):
@@ -84,7 +107,7 @@ class TestTheTaskPool(unittest.TestCase):
                      [10, 2, 100, 10, State.S0, State.S8, greedy_policy],
                      [10, 2, 200, 50, State.S0, State.S8, greedy_policy]]
 
-        scenarios = [[10, 2, 100, 10, State.S0, State.S1, greedy_policy]]
+        scenarios = [[4, 2, 25, 5, State.S0, State.S1, greedy_policy]]
         case_num = 1
         for task_effort, agent_capacity, num_tasks, num_agents, start_state, end_state, cons_policy in scenarios:
             case_description \
@@ -171,8 +194,8 @@ class TestTheTaskPool(unittest.TestCase):
 
         # Wait for all tasks to report arrival in terminal state
         TestTask.global_sync_wait()
+        time.sleep(1)  # To run debug set to 10'000 to give you time to debug before exit.
         task_pool.terminate_all()
-        time.sleep(2)
 
         # Validate behaviours for this test case
         #

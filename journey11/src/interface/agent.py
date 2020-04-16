@@ -38,8 +38,8 @@ class Agent(SrcSink):
         self._handler.register_handler(self._do_notification, TaskNotification)
         self._handler.register_handler(self._do_work, WorkNotificationDo)
         self._handler.register_handler(self._do_work_finalise, WorkNotificationFinalise)
-        self._handler.register_handler(self._srcsink_ping, SrcSinkPing)
-        self._handler.register_handler(self._srcsink_ping_notification, SrcSinkPingNotification)
+        self._handler.register_handler(self._do_srcsink_ping, SrcSinkPing)
+        self._handler.register_handler(self._do_srcsink_ping_notification, SrcSinkPingNotification)
         self._handler.register_activity(handler_for_activity=self._work_to_do,
                                         activity_interval=self._work_timer,
                                         activity_name="{}-do_work_activity".format(agent_name))

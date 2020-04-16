@@ -5,6 +5,7 @@ from pubsub import pub
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.workrequest import WorkRequest
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
+from journey11.src.interface.worknotificationfinalise import WorkNotificationFinalise
 from journey11.src.interface.notification import Notification
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkping import SrcSinkPing
@@ -33,8 +34,9 @@ class TaskPool(SrcSink):
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=False)
         self._handler.register_handler(self._get_task, WorkRequest)
         self._handler.register_handler(self._put_task, WorkNotificationDo)
-        self._handler.register_handler(self._srcsink_ping, SrcSinkPing)
-        self._handler.register_handler(self._srcsink_ping_notification, SrcSinkPingNotification)
+        self._handler.register_handler(self._do_srcsink_ping, SrcSinkPing)
+        self._handler.register_handler(self._do_srcsink_ping_notification, SrcSinkPingNotification)
+        self._handler.register_handler(self._do_work_finalise, WorkNotificationFinalise)
         self._handler.register_activity(handler_for_activity=self._do_pub,
                                         activity_interval=TaskPool.PUB_TIMER,
                                         activity_name="{}-do_pub_activity".format(pool_name))
@@ -105,6 +107,16 @@ class TaskPool(SrcSink):
     def _do_pub(self) -> None:
         """
         Check for any pending tasks and advertise or re-advertise them on the relevant topic
+        """
+        pass
+
+    @purevirtual
+    @abstractmethod
+    def _do_work_finalise(self,
+                          work_notification_final: WorkNotificationFinalise) -> None:
+        """
+        Handle the event where a task is in terminal state with no work to do. Default is to notify the
+        originator of the task that their work is done by forwarding the finalise notification.
         """
         pass
 

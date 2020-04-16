@@ -67,8 +67,8 @@ class SrcSink(ABC):
 
     @purevirtual
     @abstractmethod
-    def _srcsink_ping_notification(self,
-                                   ping_notification: Notification) -> None:
+    def _do_srcsink_ping_notification(self,
+                                      ping_notification: Notification) -> None:
         """
         Handle a ping response from another SrcSink
         :param: The srcsink notification
@@ -77,11 +77,21 @@ class SrcSink(ABC):
 
     @purevirtual
     @abstractmethod
-    def _srcsink_ping(self,
-                      ping_request: Notification) -> None:
+    def _do_srcsink_ping(self,
+                         ping_request: Notification) -> None:
         """
         Handle a ping request from another SrcSink
         :param: The srcsink ping request
+        """
+        pass
+
+    @purevirtual
+    @abstractmethod
+    def _do_work_finalise(self,
+                          work_finalise: Notification) -> None:
+        """
+        Handle the event where a task is in terminal state with no work to do. Default is to notify the
+        originator of the task that their work is done by forwarding the finalise notification.
         """
         pass
 

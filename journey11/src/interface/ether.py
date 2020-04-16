@@ -24,8 +24,8 @@ class Ether(SrcSink):
         super().__init__()
         self._call_lock = threading.Lock()
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=False)
-        self._handler.register_handler(self._srcsink_ping, SrcSinkPing)
-        self._handler.register_handler(self._srcsink_ping_notification, SrcSinkPingNotification)
+        self._handler.register_handler(self._do_srcsink_ping, SrcSinkPing)
+        self._handler.register_handler(self._do_srcsink_ping_notification, SrcSinkPingNotification)
         # TODO - Revisit - is this needed ?
         # self._handler.register_activity(handler_for_activity=self._do_pub,
         #                                activity_interval=Ether.PUB_TIMER,

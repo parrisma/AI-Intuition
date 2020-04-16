@@ -36,8 +36,8 @@ class SimpleEther(Ether):
         pub.unsubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         return
 
-    def _srcsink_ping_notification(self,
-                                   ping_notification: SrcSinkPingNotification) -> None:
+    def _do_srcsink_ping_notification(self,
+                                      ping_notification: SrcSinkPingNotification) -> None:
         """
         Handle a ping response from a srcsink
         :param: The srcsink notification
@@ -49,8 +49,8 @@ class SimpleEther(Ether):
                 self._update_srcsink_addressbook(sender_srcsink=srcsink)
         return
 
-    def _srcsink_ping(self,
-                      ping_request: SrcSinkPing) -> None:
+    def _do_srcsink_ping(self,
+                         ping_request: SrcSinkPing) -> None:
         """
         Handle a ping response from a srcsink
         :param: The srcsink notification
