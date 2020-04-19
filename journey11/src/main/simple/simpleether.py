@@ -46,7 +46,7 @@ class SimpleEther(Ether):
         if ping_notification.src_sink.topic != self.topic:
             # Don't count ping response from our self.
             for srcsink in ping_notification.responder_address_book:
-                self._update_srcsink_addressbook(sender_srcsink=srcsink)
+                self._update_addressbook(sender_srcsink=srcsink)
         return
 
     def _do_srcsink_ping(self,
@@ -59,7 +59,7 @@ class SimpleEther(Ether):
         # Don't count pings from our self.
         if ping_request.sender_srcsink.topic != self.topic:
             # Note the sender is alive
-            self._update_srcsink_addressbook(ping_request.sender_srcsink)
+            self._update_addressbook(ping_request.sender_srcsink)
             if Capability.equivalence_factor(ping_request.required_capabilities,
                                              self.capabilities) >= self._ping_factor_threshold:
                 pub.sendMessage(topicName=ping_request.sender_srcsink.topic,

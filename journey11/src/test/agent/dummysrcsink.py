@@ -16,6 +16,7 @@ from journey11.src.lib.uniquetopic import UniqueTopic
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
 from journey11.src.lib.notificationhandler import NotificationHandler
+from journey11.src.lib.addressbook import AddressBook
 
 
 class DummySrcSink(SrcSink):
@@ -26,6 +27,9 @@ class DummySrcSink(SrcSink):
         #
         self._name = name
         self._topic = UniqueTopic().topic()
+
+        self._address_book = AddressBook()
+
         super().__init__()
         self._capabilities = [SimpleCapability(capability_name='DummySrcSink')]
 
@@ -62,12 +66,12 @@ class DummySrcSink(SrcSink):
 
     def setup_subscriptions(self) -> None:
         pub.subscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
-        pub.subscribe(self, self.topic)
+        pub.subscribe(self, self._topic)
         return
 
     def __del__(self):
         pub.unsubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
-        pub.unsubscribe(self, self.topic)
+        pub.unsubscribe(self, self._topic)
         return
 
     @property
@@ -121,3 +125,19 @@ class DummySrcSink(SrcSink):
     @property
     def topic(self) -> str:
         return self._topic
+
+    @property
+    def get_addressbook(self) -> List['SrcSink']:
+        logging.info("{} :: {} get_addressbook".format(self.__class__.__name__, self.name, "get_addressbook"))
+        return self._address_book.get()
+
+    def _update_addressbook(self, srcsink: 'SrcSink') -> None:
+        logging.info("{} :: {} update_addressbook".format(self.__class__.__name__, self.name, "update_addressbook"))
+        self._address_book.update(srcsink)
+        return
+
+    def __str__(self):
+        return "DummySrcSink name := {}".format(self.name)
+
+    def __repr__(self):
+        return self.__str__()

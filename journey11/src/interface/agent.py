@@ -18,6 +18,7 @@ from journey11.src.lib.state import State
 from journey11.src.lib.uniquetopic import UniqueTopic
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.lib.capabilityregister import CapabilityRegister
+from journey11.src.lib.addressbook import AddressBook
 
 
 class Agent(SrcSink):
@@ -30,6 +31,8 @@ class Agent(SrcSink):
         Check this or child class has correctly implemented callable __call__ as needed to handle both the
         PubSub listener events and the work timer events.
         """
+        self._address_book = AddressBook()
+
         super().__init__()
 
         self._work_timer = Agent.WORK_TIMER
@@ -234,3 +237,20 @@ class Agent(SrcSink):
         :return: The collection of capabilities
         """
         return self._capabilities
+
+    def get_addressbook(self) -> List[SrcSink]:
+        """
+        The list of srcsinks known to the Ether
+        :return: srcsinks
+        """
+        return self._address_book.get()
+
+    def _update_addressbook(self,
+                            srcsink: SrcSink) -> None:
+        """
+        Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
+        add it with a current time stamp.
+        :param srcsink: The src_sink to update / add.
+        """
+        self._address_book.update(srcsink)
+        return

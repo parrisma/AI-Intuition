@@ -1,5 +1,3 @@
-import datetime
-import threading
 from abc import ABC, abstractmethod
 from typing import List
 from journey11.src.interface.notification import Notification
@@ -8,31 +6,8 @@ from journey11.src.lib.purevirtual import purevirtual
 
 
 class SrcSink(ABC):
-    class SrcSinkWithTimeStamp:
-        def __init__(self,
-                     time_stamp: datetime,
-                     srcsink: 'SrcSink'):
-            self._time_stamp = time_stamp
-            self._sender_src_sink = srcsink
-            return
-
-        @property
-        def srcsink(self) -> 'SrcSink':
-            return self._sender_src_sink
-
-        @property
-        def time_stamp(self) -> datetime:
-            return self._time_stamp
-
-        @time_stamp.setter
-        def time_stamp(self,
-                       t: datetime) -> None:
-            self._time_stamp = t
-            return
 
     def __init__(self):
-        self._lock = threading.Lock()
-        self._src_sinks_with_timestamp = dict()
         return
 
     @property
@@ -85,29 +60,22 @@ class SrcSink(ABC):
         """
         pass
 
-    @property
-    def get_srcsink_addressbook(self) -> List['SrcSink']:
+    @purevirtual
+    @abstractmethod
+    def get_addressbook(self) -> List['SrcSink']:
         """
         The list of srcsinks known to the Ether
         :return: srcsinks
         """
-        with self._lock:
-            srcsinks = list(x.srcsink for x in self._src_sinks_with_timestamp.values())
-        return srcsinks
+        pass
 
-    def _update_srcsink_addressbook(self,
-                                    sender_srcsink: 'SrcSink') -> None:
+    @purevirtual
+    @abstractmethod
+    def _update_addressbook(self,
+                            srcsink: 'SrcSink') -> None:
         """
         Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
         add it with a current time stamp.
         :param srcsink: The src_sink to update / add.
         """
-        srcsink_name = sender_srcsink.name
-        with self._lock:
-            if srcsink_name not in self._src_sinks_with_timestamp:
-                self._src_sinks_with_timestamp[srcsink_name] = \
-                    SrcSink.SrcSinkWithTimeStamp(srcsink=sender_srcsink,
-                                                 time_stamp=datetime.datetime.now())
-            else:
-                self._src_sinks_with_timestamp[srcsink_name].time_stamp = datetime.datetime.now()
-        return
+        pass

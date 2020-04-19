@@ -1,5 +1,6 @@
 import threading
 import logging
+from typing import List
 from pubsub import pub
 from journey11.src.interface.taskpool import TaskPool
 from journey11.src.interface.workrequest import WorkRequest
@@ -9,6 +10,7 @@ from journey11.src.interface.worknotificationfinalise import WorkNotificationFin
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.capability import Capability
 from journey11.src.lib.state import State
+from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.main.simple.simpletasknotification import SimpleTaskNotification
 from journey11.src.main.simple.simpletaskmetadata import SimpleTaskMetaData
 from journey11.src.main.simple.simpleworknotificationdo import SimpleWorkNotificationDo
@@ -19,13 +21,16 @@ from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSin
 class SimpleTaskPool(TaskPool):
 
     def __init__(self,
-                 name: str):
+                 name: str,
+                 pool_capabilities: List[Capability] = None):
         super().__init__(name)
         self._task_pool = dict()
-        self._pool_lock = threading.Lock()
+        self._pool_lock = threading.RLock()
         self._len = 0
         self._name = name
         self._ping_factor_threshold = float(1)
+        self._capabilities = list()
+        self.set_pool_capabilities(pool_capabilities)
         return
 
     def __del__(self):
@@ -120,7 +125,7 @@ class SimpleTaskPool(TaskPool):
         with self._pool_lock:
             for ref in self._task_pool.keys():
                 work_ref, work = self._task_pool[ref]
-                topic = self.topic_for_state(work.task.state)
+                topic = self.topic_for_capability(work.task.state)
                 stn = SimpleTaskNotification(unique_work_ref=work_ref,
                                              task_meta=SimpleTaskMetaData(work.task.id),
                                              originator=self)
@@ -133,6 +138,13 @@ class SimpleTaskPool(TaskPool):
 
         return
 
+    def _do_manage_presence(self) -> None:
+        """
+        Ensure that we are known on the ether.
+        """
+
+        pass
+
     def _do_srcsink_ping_notification(self,
                                       ping_notification: SrcSinkPingNotification) -> None:
         """
@@ -143,7 +155,7 @@ class SimpleTaskPool(TaskPool):
         if ping_notification.src_sink.topic != self.topic:
             # Don't count ping response from our self.
             for srcsink in ping_notification.responder_address_book:
-                self._update_srcsink_addressbook(sender_srcsink=srcsink)
+                self._update_addressbook(sender_srcsink=srcsink)
         return
 
     def _do_srcsink_ping(self,
@@ -156,7 +168,7 @@ class SimpleTaskPool(TaskPool):
         # Don't count pings from our self.
         if ping_request.sender_srcsink.topic != self.topic:
             # Note the sender is alive
-            self._update_srcsink_addressbook(ping_request.sender_srcsink)
+            self._update_addressbook(ping_request.sender_srcsink)
             if Capability.equivalence_factor(ping_request.required_capabilities,
                                              self.capabilities) >= self._ping_factor_threshold:
                 pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
@@ -180,14 +192,28 @@ class SimpleTaskPool(TaskPool):
                         notification=work_notification_final)
         return
 
-    def topic_for_state(self,
-                        state: State) -> str:
+    def topic_for_capability(self,
+                             state: State) -> str:
         """
         The topic string on which tasks needing work in that state are published on
         :param state: The state for which the topic is required
         :return: The topic string for the given state
         """
         return "topic-{}".format(str(state.id()))
+
+    def set_pool_capabilities(self,
+                              additional_capabilities: List[Capability] = None) -> None:
+        """ Set the given capabilities for the Agent and add the base capabilities that all Agents have.
+        :param additional_capabilities: Optional capabilities to add to the base capabilities
+        """
+        with self._pool_lock:
+            if CapabilityRegister.POOL not in self._capabilities:
+                self._capabilities.append(CapabilityRegister.POOL)
+            if additional_capabilities is not None:
+                for c in additional_capabilities:
+                    if c not in self._capabilities:
+                        self._capabilities.append(c)
+        return
 
     def __str__(self) -> str:
         """

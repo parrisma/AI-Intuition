@@ -14,6 +14,7 @@ from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotificat
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.lib.state import State
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
+from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkNotification
 from journey11.src.main.simple.simpleworkrequest import SimpleWorkRequest
 from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
@@ -29,19 +30,24 @@ class SimpleAgent(Agent):
                  end_state: State,
                  capacity: int,
                  task_consumption_policy: TaskConsumptionPolicy,
+                 agent_capabilities: List[Capability] = None,
                  trace: bool = False):
         """
         """
+        self._work_lock = threading.RLock()
+
         self._agent_name = agent_name
         self._start_state = start_state
         self._end_state = end_state
+
+        self._capabilities = list()
+        self.set_agent_capabilities(agent_capabilities)
 
         super().__init__(agent_name)
 
         self._fail_rate = SimpleAgent.FAIL_RATE
         self._capacity = capacity
 
-        self._work_lock = threading.Lock()
         self._work_in_progress = Queue()
         self._work_done = Queue()
 
@@ -186,24 +192,24 @@ class SimpleAgent(Agent):
         Handle a ping response from a srcsink
         :param: The srcsink notification
         """
-        logging.info("Ether {} RX ping response for {}".format(self.name, ping_notification.src_sink.name))
+        logging.info("Agent {} RX ping response for {}".format(self.name, ping_notification.src_sink.name))
         if ping_notification.src_sink.topic != self.topic:
             # Don't count ping response from our self.
             for srcsink in ping_notification.responder_address_book:
-                self._update_srcsink_addressbook(sender_srcsink=srcsink)
+                self._update_addressbook(sender_srcsink=srcsink)
         return
 
     def _do_srcsink_ping(self,
                          ping_request: SrcSinkPing) -> None:
         """
-        Handle a ping response from a srcsink
+        Respond to a ping request and share details of self + capabilities
         :param: The srcsink notification
         """
-        logging.info("Ether {} RX ping request for {}".format(self.name, ping_request.sender_srcsink.name))
+        logging.info("Agent {} RX ping request for {}".format(self.name, ping_request.sender_srcsink.name))
         # Don't count pings from our self.
         if ping_request.sender_srcsink.topic != self.topic:
             # Note the sender is alive
-            self._update_srcsink_addressbook(ping_request.sender_srcsink)
+            self._update_addressbook(ping_request.sender_srcsink)
             if Capability.equivalence_factor(ping_request.required_capabilities,
                                              self.capabilities) >= self._ping_factor_threshold:
                 pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
@@ -365,3 +371,17 @@ class SimpleAgent(Agent):
         :return: List of Ether capabilities
         """
         return self._capabilities
+
+    def set_agent_capabilities(self,
+                               additional_capabilities: List[Capability] = None) -> None:
+        """ Set the given capabilities for the Agent and add the base capabilities that all Agents have.
+        :param additional_capabilities: Optional capabilities to add to the base capabilities
+        """
+        with self._work_lock:
+            if CapabilityRegister.AGENT not in self._capabilities:
+                self._capabilities.append(CapabilityRegister.AGENT)
+            if additional_capabilities is not None:
+                for c in additional_capabilities:
+                    if c not in self._capabilities:
+                        self._capabilities.append(c)
+        return

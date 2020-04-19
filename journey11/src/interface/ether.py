@@ -1,3 +1,4 @@
+from typing import List
 from abc import abstractmethod
 import threading
 from journey11.src.interface.srcsink import SrcSink
@@ -6,6 +7,7 @@ from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.notification import Notification
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.notificationhandler import NotificationHandler
+from journey11.src.lib.addressbook import AddressBook
 
 
 class Ether(SrcSink):
@@ -21,15 +23,12 @@ class Ether(SrcSink):
             will fire (here) before they have been defined in the sub-class init()
         """
         self._stopped = False
+        self._address_book = AddressBook()
         super().__init__()
         self._call_lock = threading.Lock()
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=False)
         self._handler.register_handler(self._do_srcsink_ping, SrcSinkPing)
         self._handler.register_handler(self._do_srcsink_ping_notification, SrcSinkPingNotification)
-        # TODO - Revisit - is this needed ?
-        # self._handler.register_activity(handler_for_activity=self._do_pub,
-        #                                activity_interval=Ether.PUB_TIMER,
-        #                                activity_name="{}-do_pub_activity".format(ether_name))
         return
 
     def __del__(self):
@@ -89,3 +88,20 @@ class Ether(SrcSink):
         :return: The unique SrcSink listen topic name
         """
         pass
+
+    def get_addressbook(self) -> List[SrcSink]:
+        """
+        The list of srcsinks known to the Ether
+        :return: srcsinks
+        """
+        return self._address_book.get()
+
+    def _update_addressbook(self,
+                            srcsink: SrcSink) -> None:
+        """
+        Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
+        add it with a current time stamp.
+        :param srcsink: The src_sink to update / add.
+        """
+        self._address_book.update(srcsink)
+        return

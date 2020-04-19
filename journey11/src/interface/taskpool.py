@@ -17,10 +17,12 @@ from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.lib.uniquetopic import UniqueTopic
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.lib.capabilityregister import CapabilityRegister
+from journey11.src.lib.addressbook import AddressBook
 
 
 class TaskPool(SrcSink):
     PUB_TIMER = float(.25)
+    PRS_TIMER = float(.25)
     POOL_TOPIC_PREFIX = "TaskPool"
 
     def __init__(self,
@@ -29,6 +31,7 @@ class TaskPool(SrcSink):
         Check this or child class has correctly implemented callable __call__ as needed to handle both the
         PubSub listener events and the work timer events.
         """
+        self._address_book = AddressBook()
         super().__init__()
         self._call_lock = threading.Lock()
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=False)
@@ -40,6 +43,9 @@ class TaskPool(SrcSink):
         self._handler.register_activity(handler_for_activity=self._do_pub,
                                         activity_interval=TaskPool.PUB_TIMER,
                                         activity_name="{}-do_pub_activity".format(pool_name))
+        self._handler.register_activity(handler_for_activity=self._do_manage_presence,
+                                        activity_interval=TaskPool.PRS_TIMER,
+                                        activity_name="{}-do_manage_presence".format(pool_name))
         self._capabilities = self._get_capabilities()
         self._unique_topic = self._create_topic_and_subscription()
         return
@@ -112,6 +118,14 @@ class TaskPool(SrcSink):
 
     @purevirtual
     @abstractmethod
+    def _do_manage_presence(self) -> None:
+        """
+        Ensure that we are known on the ether.
+        """
+        pass
+
+    @purevirtual
+    @abstractmethod
     def _do_work_finalise(self,
                           work_notification_final: WorkNotificationFinalise) -> None:
         """
@@ -122,8 +136,9 @@ class TaskPool(SrcSink):
 
     @purevirtual
     @abstractmethod
-    def topic_for_state(self,
-                        state: State) -> str:
+    def topic_for_capability(self,
+                             state: State) -> str:
+        # TODO: Expose as a request base notification rather them method of the class.
         """
         The topic string on which tasks needing work in that state are published on
         :param state: The state for which the topic is required
@@ -148,3 +163,20 @@ class TaskPool(SrcSink):
         :return: The collection of capabilities
         """
         return self._capabilities
+
+    def get_addressbook(self) -> List[SrcSink]:
+        """
+        The list of srcsinks known to the Ether
+        :return: srcsinks
+        """
+        return self._address_book.get()
+
+    def _update_addressbook(self,
+                            srcsink: SrcSink) -> None:
+        """
+        Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
+        add it with a current time stamp.
+        :param srcsink: The src_sink to update / add.
+        """
+        self._address_book.update(srcsink)
+        return

@@ -17,6 +17,7 @@ from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
 from journey11.src.main.simple.simpleworknotificationinitiate import SimpleWorkNotificationInitiate
+from journey11.src.main.simple.simpleether import SimpleEther
 from journey11.src.test.task.testtask import TestTask
 from journey11.src.test.agent.dummysrcsink import DummySrcSink  # Borrow this test class
 
@@ -93,6 +94,21 @@ class TestTheTaskPool(unittest.TestCase):
             pub.unsubAll()
         return
 
+    def test_discover_pool(self):
+        """
+        Test that an Agent can find and maintain a link with one or more pools.
+        """
+        # Establish Ether to provide back-plane connectivity.
+        ether = SimpleEther("TestEther1")
+        # Create pool
+        task_pool = SimpleTaskPool("TestTaskPool1")
+
+        time.sleep(1)
+
+        # Check task_pool registered it's self with the Ether.
+        self.assertTrue(task_pool in ether.get_addressbook())
+        return
+
     def test_scenario_runner(self):
 
         # [task_effort, agent_capacity, num_tasks, num_agents]
@@ -109,7 +125,7 @@ class TestTheTaskPool(unittest.TestCase):
                      [10, 2, 100, 10, State.S0, State.S8, greedy_policy],
                      [10, 2, 200, 50, State.S0, State.S8, greedy_policy]]
 
-        scenarios = [[3, 1, 5, 2, State.S0, State.S1, greedy_policy]]
+        scenarios = [[1, 1, 1, 1, State.S0, State.S1, greedy_policy]]
         case_num = 1
         for task_effort, agent_capacity, num_tasks, num_agents, start_state, end_state, cons_policy in scenarios:
             case_description \
@@ -175,7 +191,7 @@ class TestTheTaskPool(unittest.TestCase):
 
         # Must create all agents *before* subscription - otherwise odd effect where only last agent listens.
         for agent in agents:
-            pub.subscribe(agent, topicName=task_pool.topic_for_state(agent.from_state))
+            pub.subscribe(agent, topicName=task_pool.topic_for_capability(agent.from_state))
 
         # Create tasks
         # TODO: Agent should inject work and work only done when agent is notified of all tasks being finished.
@@ -183,7 +199,7 @@ class TestTheTaskPool(unittest.TestCase):
         work_init = list()
         for _ in range(num_tasks):
             task_to_do = TestTask(effort=task_effort, start_state=State.S0)
-            agent_to_initiate = random.sample(population=agents, k=1)
+            agent_to_initiate = random.sample(population=agents, k=1)[0]
             work_initiate = SimpleWorkNotificationInitiate(task=task_to_do, originator=agent_to_initiate)
             tasks.append([agent_to_initiate, work_initiate])
 

@@ -9,7 +9,7 @@ from journey11.src.main.simple.simpleether import SimpleEther
 from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.lib.capabilityregister import CapabilityRegister
-from journey11.src.test.ether.dummysrcsink import DummySrcSink
+from journey11.src.test.agent.dummysrcsink import DummySrcSink
 
 
 class TestEther(unittest.TestCase):
@@ -45,7 +45,7 @@ class TestEther(unittest.TestCase):
                                  [SimpleCapability("ArbitraryCapability")]]
         for reqd_cap in required_capabilities:
             for i in range(3):
-                srcsink = DummySrcSink()
+                srcsink = DummySrcSink("DummySrcSink-2")
                 ether = SimpleEther("TestEther1")
 
                 ping = SimpleSrcSinkPing(sender_srcsink=srcsink, required_capabilities=reqd_cap)
@@ -57,7 +57,7 @@ class TestEther(unittest.TestCase):
                     pub.sendMessage(topicName=Ether.back_plane_topic(),
                                     notification=ping)  # Publish to back plane topic
 
-                srcsink_topics = list(x.topic for x in ether.get_srcsink_addressbook)
+                srcsink_topics = list(x.topic for x in ether.get_addressbook)
                 self.assertEqual(1, len(srcsink_topics))  # We expect a single topic only
                 self.assertTrue(srcsink.topic in srcsink_topics)  # The topic should be in the set recorded by the ether
         return
@@ -75,15 +75,15 @@ class TestEther(unittest.TestCase):
             ethers.append(SimpleEther("TestEther{}".format(i)))
 
         srcsinks = list()
-        for _ in range(num_diff_ping_sources):
-            srcsink = DummySrcSink()
+        for i in range(num_diff_ping_sources):
+            srcsink = DummySrcSink("DummySrcSink-{}".format(i))
             srcsinks.append(srcsink)
             ping = SimpleSrcSinkPing(sender_srcsink=srcsink, required_capabilities=TestEther.NO_CAPABILITIES_REQUIRED, )
             # Publish to back plane topic, single message should go to all ethers on backplane.
             pub.sendMessage(topicName=Ether.back_plane_topic(), notification=ping)
 
         for ether in ethers:
-            srcsink_topics = list(x.topic for x in ether.get_srcsink_addressbook)
+            srcsink_topics = list(x.topic for x in ether.get_addressbook)
             self.assertEqual(num_diff_ping_sources, len(srcsink_topics))  # Num topic = num diff ones sent
             for srcsink in srcsinks:
                 self.assertTrue(srcsink.topic in srcsink_topics)  # Every ether should have every topic
@@ -113,7 +113,7 @@ class TestEther(unittest.TestCase):
             # The sender of the ping request should have all the addresses on the ether
             ether = ether_tx1
             logging.info("Checking {}".format(ether.name))
-            srcsink_topics = list(x.topic for x in ether.get_srcsink_addressbook)
+            srcsink_topics = list(x.topic for x in ether.get_addressbook)
 
             if expected == 0:
                 self.assertEqual(0, len(srcsink_topics))  # We expect all topics
@@ -126,7 +126,7 @@ class TestEther(unittest.TestCase):
 
             for ether in [ether_rx1, ether_rx2]:
                 logging.info("Checking {}".format(ether.name))
-                srcsink_topics = list(x.topic for x in ether.get_srcsink_addressbook)
+                srcsink_topics = list(x.topic for x in ether.get_addressbook)
                 self.assertEqual(1, len(srcsink_topics))  # We expect a single topic only
                 self.assertTrue(
                     ether_tx1.topic in srcsink_topics)  # The topic should be in the set recorded by the ether
