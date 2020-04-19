@@ -9,11 +9,11 @@ from journey11.src.interface.worknotificationfinalise import WorkNotificationFin
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.capability import Capability
 from journey11.src.lib.state import State
-from journey11.src.lib.simpletasknotification import SimpleTaskNotification
-from journey11.src.lib.simpletaskmetadata import SimpleTaskMetaData
-from journey11.src.lib.simpleworknotificationdo import SimpleWorkNotificationDo
-from journey11.src.lib.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
-from journey11.src.lib.simplesrcsinkpingnotification import SimpleSrcSinkNotification
+from journey11.src.main.simple.simpletasknotification import SimpleTaskNotification
+from journey11.src.main.simple.simpletaskmetadata import SimpleTaskMetaData
+from journey11.src.main.simple.simpleworknotificationdo import SimpleWorkNotificationDo
+from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
+from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkNotification
 
 
 class SimpleTaskPool(TaskPool):

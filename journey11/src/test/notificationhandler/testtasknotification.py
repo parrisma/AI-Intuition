@@ -9,8 +9,8 @@ class TestTaskNotification(TaskNotification):
     _src = 1
 
     def __init__(self):
-        self._unique_sig = UniqueWorkRef(subject_name=str(TestTaskNotification._task_id),
-                                         work_item_ref=str(TestTaskNotification._src))
+        self._unique_sig = UniqueWorkRef(prefix=str(TestTaskNotification._task_id),
+                                         suffix=str(TestTaskNotification._src))
         TestTaskNotification._task_id += 1
         TestTaskNotification._src += 1
 

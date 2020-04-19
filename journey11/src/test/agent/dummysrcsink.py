@@ -13,8 +13,8 @@ from journey11.src.interface.worknotificationfinalise import WorkNotificationFin
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.uniquetopic import UniqueTopic
-from journey11.src.lib.simplecapability import SimpleCapability
-from journey11.src.lib.simplesrcsinkping import SimpleSrcSinkPing
+from journey11.src.main.simple.simplecapability import SimpleCapability
+from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
 from journey11.src.lib.notificationhandler import NotificationHandler
 
 
@@ -98,10 +98,13 @@ class DummySrcSink(SrcSink):
             self.work_notification.append(work_notification)
         return
 
-    def _do_work_finalise(self, do_work_finalise: Notification):
+    def _do_work_finalise(self, do_work_finalise: WorkNotificationFinalise):
         logging.info("{} :: {} RX handled by".format(self.__class__.__name__, self.name, "_do_work_finalise"))
         with self._lock:
             self.work_finalise.append(do_work_finalise)
+
+        pub.sendMessage(topicName=do_work_finalise.originator.topic,
+                        notification=do_work_finalise)
         return
 
     def send_ping(self,

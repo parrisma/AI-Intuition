@@ -8,13 +8,16 @@ from journey11.src.interface.tasknotification import TaskNotification
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
 from journey11.src.interface.worknotificationfinalise import WorkNotificationFinalise
+from journey11.src.interface.worknotificationinitiate import WorkNotificationInitiate
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.interface.srcsinkping import SrcSinkPing
-from journey11.src.lib.simplesrcsinkpingnotification import SimpleSrcSinkNotification
 from journey11.src.lib.state import State
-from journey11.src.lib.simpleworkrequest import SimpleWorkRequest
-from journey11.src.lib.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
+from journey11.src.lib.uniqueworkref import UniqueWorkRef
+from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkNotification
+from journey11.src.main.simple.simpleworkrequest import SimpleWorkRequest
+from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
+from journey11.src.main.simple.simpleworknotificationdo import SimpleWorkNotificationDo
 
 
 class SimpleAgent(Agent):
@@ -39,7 +42,6 @@ class SimpleAgent(Agent):
         self._capacity = capacity
 
         self._work_lock = threading.Lock()
-        self._work_pending = Queue()
         self._work_in_progress = Queue()
         self._work_done = Queue()
 
@@ -138,16 +140,25 @@ class SimpleAgent(Agent):
 
     def _add_work_item_to_queue(self,
                                 work_notification: WorkNotificationDo) -> None:
-        self._work_in_progress.put(work_notification)
+        with self._work_lock:
+            self._work_in_progress.put(work_notification)
         return
 
     def _do_work_initiate(self,
-                          work_notification: WorkNotificationDo) -> None:
+                          work_notification_initiate: WorkNotificationInitiate) -> None:
         """
         Handle the initiation the given work item from this agent
         """
-        with self._work_lock:
-            self._work_pending.put(work_notification)
+        self._trace_log_update("_do_work_initiate",
+                               type(work_notification_initiate),
+                               work_notification_initiate.task.id)
+        task_to_do = work_notification_initiate.task
+        work_notification_do = SimpleWorkNotificationDo(unique_work_ref=UniqueWorkRef(prefix=str(task_to_do.id),
+                                                                                      suffix=self.name),
+                                                        task=task_to_do,
+                                                        source=self,
+                                                        originator=self)
+        self._add_work_item_to_queue(work_notification=work_notification_do)
         return
 
     def _do_work_finalise(self,
@@ -156,11 +167,49 @@ class SimpleAgent(Agent):
         Take receipt of the given completed work item that was initiated from this agent and do any
         final processing.
         """
+        self._trace_log_update("_do_work_finalise",
+                               type(work_notification_final),
+                               work_notification_final.task.id)
+
         work_notification_final.task.finalised = True
         logging.info("{} Rx Finalised task {} from source {} in state {}".format(self._agent_name,
                                                                                  work_notification_final.work_ref.id,
                                                                                  work_notification_final.originator.name,
                                                                                  work_notification_final.task.state))
+        with self._work_lock:
+            self._work_done.put(work_notification_final)
+        return
+
+    def _do_srcsink_ping_notification(self,
+                                      ping_notification: SrcSinkPingNotification) -> None:
+        """
+        Handle a ping response from a srcsink
+        :param: The srcsink notification
+        """
+        logging.info("Ether {} RX ping response for {}".format(self.name, ping_notification.src_sink.name))
+        if ping_notification.src_sink.topic != self.topic:
+            # Don't count ping response from our self.
+            for srcsink in ping_notification.responder_address_book:
+                self._update_srcsink_addressbook(sender_srcsink=srcsink)
+        return
+
+    def _do_srcsink_ping(self,
+                         ping_request: SrcSinkPing) -> None:
+        """
+        Handle a ping response from a srcsink
+        :param: The srcsink notification
+        """
+        logging.info("Ether {} RX ping request for {}".format(self.name, ping_request.sender_srcsink.name))
+        # Don't count pings from our self.
+        if ping_request.sender_srcsink.topic != self.topic:
+            # Note the sender is alive
+            self._update_srcsink_addressbook(ping_request.sender_srcsink)
+            if Capability.equivalence_factor(ping_request.required_capabilities,
+                                             self.capabilities) >= self._ping_factor_threshold:
+                pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
+                                notification=SimpleSrcSinkNotification(responder_srcsink=self,
+                                                                       address_book=[self],
+                                                                       sender_workref=ping_request.work_ref))
         return
 
     def reset(self) -> None:
@@ -297,41 +346,22 @@ class SimpleAgent(Agent):
         return self._num_work
 
     @property
+    def work_done(self) -> List[WorkNotificationFinalise]:
+        """
+        A list of the finalised work notifications, which contain the task that was
+        executed
+        :return: List of finalised Task Notifications
+        """
+        work_done = list()
+        with self._work_lock:
+            for fw in self._work_done.queue:
+                work_done.append(fw)
+        return work_done
+
+    @property
     def capabilities(self) -> List[Capability]:
         """
         The capabilities of the Ether
         :return: List of Ether capabilities
         """
         return self._capabilities
-
-    def _do_srcsink_ping_notification(self,
-                                      ping_notification: SrcSinkPingNotification) -> None:
-        """
-        Handle a ping response from a srcsink
-        :param: The srcsink notification
-        """
-        logging.info("Ether {} RX ping response for {}".format(self.name, ping_notification.src_sink.name))
-        if ping_notification.src_sink.topic != self.topic:
-            # Don't count ping response from our self.
-            for srcsink in ping_notification.responder_address_book:
-                self._update_srcsink_addressbook(sender_srcsink=srcsink)
-        return
-
-    def _do_srcsink_ping(self,
-                         ping_request: SrcSinkPing) -> None:
-        """
-        Handle a ping response from a srcsink
-        :param: The srcsink notification
-        """
-        logging.info("Ether {} RX ping request for {}".format(self.name, ping_request.sender_srcsink.name))
-        # Don't count pings from our self.
-        if ping_request.sender_srcsink.topic != self.topic:
-            # Note the sender is alive
-            self._update_srcsink_addressbook(ping_request.sender_srcsink)
-            if Capability.equivalence_factor(ping_request.required_capabilities,
-                                             self.capabilities) >= self._ping_factor_threshold:
-                pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
-                                notification=SimpleSrcSinkNotification(responder_srcsink=self,
-                                                                       address_book=[self],
-                                                                       sender_workref=ping_request.work_ref))
-        return

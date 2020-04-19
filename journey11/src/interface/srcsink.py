@@ -85,16 +85,6 @@ class SrcSink(ABC):
         """
         pass
 
-    @purevirtual
-    @abstractmethod
-    def _do_work_finalise(self,
-                          work_finalise: Notification) -> None:
-        """
-        Handle the event where a task is in terminal state with no work to do. Default is to notify the
-        originator of the task that their work is done by forwarding the finalise notification.
-        """
-        pass
-
     @property
     def get_srcsink_addressbook(self) -> List['SrcSink']:
         """

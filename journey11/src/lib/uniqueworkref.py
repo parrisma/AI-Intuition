@@ -4,14 +4,14 @@ from journey11.src.lib.uniqueref import UniqueRef
 class UniqueWorkRef:
 
     def __init__(self,
-                 subject_name: str,
-                 work_item_ref: str):
+                 prefix: str = "",
+                 suffix: str = ""):
         """
-        :param subject_name: The id of the subject (object) of the work reference
-        :param work_item_ref: The topic of the originator of the work
+        :param prefix: Optional, Arbitrary prefix (spaces will be removed)
+        :param suffix: Optional, Arbitrary suffix (spaces will be removed)
         """
-        self._originator_id = work_item_ref
-        self._subject_id = subject_name
+        self._prefix = suffix
+        self._suffix = prefix
         self._ref = self._new_ref()
         return
 
@@ -24,9 +24,9 @@ class UniqueWorkRef:
         Generate a universally unique work reference if
         :return: Universally unique work reference
         """
-        return "{}-{}-{}".format(str(self._originator_id).replace(' ', ''),
+        return "{}-{}-{}".format(str(self._prefix).replace(' ', ''),
                                  UniqueRef().ref,
-                                 str(self._subject_id))
+                                 str(self._suffix))
 
     def __str__(self):
         return self._ref

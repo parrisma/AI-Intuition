@@ -1,12 +1,13 @@
 from abc import abstractmethod
 from pubsub import pub
-from typing import List, List
+from typing import List
 from journey11.src.interface.notification import Notification
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.tasknotification import TaskNotification
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
 from journey11.src.interface.worknotificationfinalise import WorkNotificationFinalise
+from journey11.src.interface.worknotificationinitiate import WorkNotificationInitiate
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
@@ -15,7 +16,7 @@ from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
 from journey11.src.lib.uniquetopic import UniqueTopic
-from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.lib.capabilityregister import CapabilityRegister
 
 
@@ -38,6 +39,7 @@ class Agent(SrcSink):
         self._handler.register_handler(self._do_notification, TaskNotification)
         self._handler.register_handler(self._do_work, WorkNotificationDo)
         self._handler.register_handler(self._do_work_finalise, WorkNotificationFinalise)
+        self._handler.register_handler(self._do_work_initiate, WorkNotificationInitiate)
         self._handler.register_handler(self._do_srcsink_ping, SrcSinkPing)
         self._handler.register_handler(self._do_srcsink_ping_notification, SrcSinkPingNotification)
         self._handler.register_activity(handler_for_activity=self._work_to_do,
@@ -107,7 +109,7 @@ class Agent(SrcSink):
     @abstractmethod
     @purevirtual
     def _do_work_initiate(self,
-                          work_notification: WorkNotificationDo) -> None:
+                          work_notification: WorkNotificationInitiate) -> None:
         """
         Handle the initiation the given work item from this agent
         """

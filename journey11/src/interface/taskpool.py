@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import List, List
+from typing import List
 import threading
 from pubsub import pub
 from journey11.src.interface.srcsink import SrcSink
@@ -15,7 +15,7 @@ from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
 from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.lib.uniquetopic import UniqueTopic
-from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.lib.capabilityregister import CapabilityRegister
 
 

@@ -3,7 +3,7 @@ from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.capability import Capability
 from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.lib.uniquetopic import UniqueTopic
-from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.main.simple.simplecapability import SimpleCapability
 
 
 class DummySrcSink(SrcSink):

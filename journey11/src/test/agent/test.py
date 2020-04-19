@@ -1,18 +1,21 @@
 import unittest
 import time
 import logging
+from math import ceil
 from pubsub import pub
 from journey11.src.interface.capability import Capability
 from journey11.src.lib.state import State
-from journey11.src.lib.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.capabilityregister import CapabilityRegister
-from journey11.src.lib.simplecapability import SimpleCapability
-from journey11.src.lib.simpleagent import SimpleAgent
+from journey11.src.main.simple.simplecapability import SimpleCapability
+from journey11.src.main.simple.simpleagent import SimpleAgent
 from journey11.src.test.task.testtask import TestTask
 from journey11.src.test.agent.dummysrcsink import DummySrcSink
+from journey11.src.main.simple.simpleworknotificationdo import SimpleWorkNotificationDo
+from journey11.src.main.simple.simpleworknotificationinitiate import SimpleWorkNotificationInitiate
+from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
 
 
 class TestTheAgent(unittest.TestCase):
@@ -71,13 +74,14 @@ class TestTheAgent(unittest.TestCase):
     def test_simple_task_injection(self):
         effort = 3
         capacity = 1
-        source_name = "Dummy-Test-Source"
+        source_name = "Dummy-Test-Source-Inject"
         TestTask.process_start_state(State.S0)
         TestTask.process_end_state(State.S1)
 
         for i in range(3):
             logging.info("\n\n- - - - - T E S T  C A S E {} - - - -\n\n".format(i))
             test_task = TestTask(effort=effort)
+            test_srcsink = DummySrcSink(source_name)
 
             test_agent = SimpleAgent('agent {}'.format(i),
                                      start_state=State.S0,
@@ -86,10 +90,10 @@ class TestTheAgent(unittest.TestCase):
                                      task_consumption_policy=GreedyTaskConsumptionPolicy(),
                                      trace=True)
 
-            test_notification = SimpleWorkNotificationDo(UniqueWorkRef(work_item_ref=source_name,
-                                                                       subject_name=str(test_task.id)),
-                                                         originator=DummySrcSink(source_name),
-                                                         source=DummySrcSink(source_name),
+            test_notification = SimpleWorkNotificationDo(UniqueWorkRef(suffix=source_name,
+                                                                       prefix=str(test_task.id)),
+                                                         originator=test_agent,
+                                                         source=test_srcsink,
                                                          task=test_task)
             if i == 0:
                 # Publish to agent via it's private topic.
@@ -110,7 +114,45 @@ class TestTheAgent(unittest.TestCase):
             tlid = SimpleAgent.trace_log_id("_do_notification", type(test_notification), test_notification.work_ref)
             self.assertTrue(tlid not in test_agent.trace_log)
 
-            self.assertEqual(test_task.lead_time, int(effort / capacity))
+            self.assertEqual(test_task.lead_time, int(ceil(effort / capacity)))
+
+            work_done = test_agent.work_done
+            self.assertEqual(1, len(work_done))
+            self.assertEqual(test_task.id, work_done[0].task.id)
+        return
+
+    def test_simple_task_initiate(self):
+        effort = 5
+        capacity = 2
+        TestTask.process_start_state(State.S0)
+        TestTask.process_end_state(State.S1)
+
+        logging.info("\n\n- - - - - T E S T  C A S E - I N I T I A T E - - - -\n\n")
+        test_task = TestTask(effort=effort)
+
+        test_agent = SimpleAgent('agent-initiate-1',
+                                 start_state=State.S0,
+                                 end_state=State.S1,
+                                 capacity=capacity,
+                                 task_consumption_policy=GreedyTaskConsumptionPolicy(),
+                                 trace=True)
+
+        test_initiate = SimpleWorkNotificationInitiate(task=test_task, originator=test_agent)
+
+        pub.sendMessage(topicName=test_agent.topic, notification=test_initiate)
+        time.sleep(1)
+
+        tlid = SimpleAgent.trace_log_id("_do_work_initiate", type(test_initiate), test_task.id)
+        self.assertEqual(test_agent.trace_log[tlid], test_task.id)
+
+        tlid = SimpleAgent.trace_log_id("_do_work_finalise", SimpleWorkNotificationFinalise, test_task.id)
+        self.assertEqual(test_agent.trace_log[tlid], test_task.id)
+
+        self.assertEqual(test_task.lead_time, int(ceil(effort / capacity)))
+
+        work_done = test_agent.work_done
+        self.assertEqual(1, len(work_done))
+        self.assertEqual(test_task.id, work_done[0].task.id)
         return
 
 

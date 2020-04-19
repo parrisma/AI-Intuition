@@ -2,19 +2,21 @@ import logging
 import unittest
 import time
 import math
+import random
 from pubsub import pub
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
 from journey11.src.interface.capability import Capability
 from journey11.src.lib.state import State
-from journey11.src.lib.simpletaskpool import SimpleTaskPool
-from journey11.src.lib.simpleworknotificationdo import SimpleWorkNotificationDo
+from journey11.src.main.simple.simpletaskpool import SimpleTaskPool
+from journey11.src.main.simple.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
-from journey11.src.lib.simpleagent import SimpleAgent
+from journey11.src.main.simple.simpleagent import SimpleAgent
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
-from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.lib.capabilityregister import CapabilityRegister
-from journey11.src.lib.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
+from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
+from journey11.src.main.simple.simpleworknotificationinitiate import SimpleWorkNotificationInitiate
 from journey11.src.test.task.testtask import TestTask
 from journey11.src.test.agent.dummysrcsink import DummySrcSink  # Borrow this test class
 
@@ -107,7 +109,7 @@ class TestTheTaskPool(unittest.TestCase):
                      [10, 2, 100, 10, State.S0, State.S8, greedy_policy],
                      [10, 2, 200, 50, State.S0, State.S8, greedy_policy]]
 
-        scenarios = [[4, 2, 25, 5, State.S0, State.S1, greedy_policy]]
+        scenarios = [[3, 1, 5, 2, State.S0, State.S1, greedy_policy]]
         case_num = 1
         for task_effort, agent_capacity, num_tasks, num_agents, start_state, end_state, cons_policy in scenarios:
             case_description \
@@ -180,16 +182,12 @@ class TestTheTaskPool(unittest.TestCase):
         tasks = list()
         work_init = list()
         for _ in range(num_tasks):
-            t = TestTask(effort=task_effort, start_state=State.S0)
-            tasks.append(t)
-            work_originator = agents[0]
-            work_init.append(SimpleWorkNotificationDo(unique_work_ref=UniqueWorkRef(work_item_ref=work_originator.name,
-                                                                                    subject_name=str(t.id)),
-                                                      task=t,
-                                                      originator=work_originator,
-                                                      source=work_originator))
+            task_to_do = TestTask(effort=task_effort, start_state=State.S0)
+            agent_to_initiate = random.sample(population=agents, k=1)
+            work_initiate = SimpleWorkNotificationInitiate(task=task_to_do, originator=agent_to_initiate)
+            tasks.append([agent_to_initiate, work_initiate])
 
-        for w in work_init:
+        for a, w in work_init:
             pub.sendMessage(topicName=task_pool.topic, notification=w)
 
         # Wait for all tasks to report arrival in terminal state

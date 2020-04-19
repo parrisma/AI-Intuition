@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import logging
 from journey11.src.interface.capability import Capability
-from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.lib.loggingsetup import LoggingSetup
 
 

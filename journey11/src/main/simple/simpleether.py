@@ -7,9 +7,9 @@ from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.interface.ether import Ether
 from journey11.src.lib.uniquetopic import UniqueTopic
-from journey11.src.lib.simplesrcsinkpingnotification import SimpleSrcSinkNotification
+from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkNotification
 from journey11.src.lib.capabilityregister import CapabilityRegister
-from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.main.simple.simplecapability import SimpleCapability
 
 
 class SimpleEther(Ether):

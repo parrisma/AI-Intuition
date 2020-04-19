@@ -5,9 +5,9 @@ from pubsub import pub
 from journey11.src.interface.ether import Ether
 from journey11.src.interface.capability import Capability
 from journey11.src.lib.loggingsetup import LoggingSetup
-from journey11.src.lib.simpleether import SimpleEther
-from journey11.src.lib.simplesrcsinkping import SimpleSrcSinkPing
-from journey11.src.lib.simplecapability import SimpleCapability
+from journey11.src.main.simple.simpleether import SimpleEther
+from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
+from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.test.ether.dummysrcsink import DummySrcSink
 

@@ -6,7 +6,7 @@ import numpy as np
 from journey11.src.interface.srcsink import SrcSink
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.mostactivesrcsinkselectionpolicy import MostActiveSrcSinkSelectionPolicy
-from journey11.src.lib.simplesrcsinkmetadata import SimpleSrcSinkMetaData
+from journey11.src.main.simple.simplesrcsinkmetadata import SimpleSrcSinkMetaData
 from journey11.src.test.srcsinkselectionpolicy.dummysrcsink import DummySrcSink
 
 

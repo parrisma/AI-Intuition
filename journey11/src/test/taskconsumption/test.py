@@ -2,7 +2,7 @@ import logging
 import unittest
 import random
 from journey11.src.lib.randomtaskconsumptionpolicy import RandomTaskConsumptionPolicy
-from journey11.src.lib.simpletaskmetadata import SimpleTaskMetaData
+from journey11.src.main.simple.simpletaskmetadata import SimpleTaskMetaData
 from journey11.src.lib.loggingsetup import LoggingSetup
 
 
