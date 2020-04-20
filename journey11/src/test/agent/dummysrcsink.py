@@ -78,6 +78,17 @@ class DummySrcSink(SrcSink):
     def capabilities(self) -> List[Capability]:
         return self._capabilities
 
+    @capabilities.setter
+    def capabilities(self,
+                     capabilities: List[Capability]):
+        """
+        Override capabilities, only really meaningful in a test setting.
+        :param capabilities:
+        :return:
+        """
+        self._capabilities = capabilities
+        return
+
     def _do_srcsink_ping_notification(self, ping_notification: Notification) -> None:
         logging.info("{} :: {} RX handled by".format(self.__class__.__name__, self.name, "_srcsink_ping_notification"))
         with self._lock:

@@ -52,7 +52,7 @@ class SimpleEther(Ether):
     def _do_srcsink_ping(self,
                          ping_request: SrcSinkPing) -> None:
         """
-        Handle a ping response from a srcsink
+        Handle a ping request from a SrcSink
         :param: The srcsink notification
         """
         logging.info("Ether {} RX ping request for {}".format(self.name, ping_request.sender_srcsink.name))
@@ -66,13 +66,6 @@ class SimpleEther(Ether):
                                 notification=SimpleSrcSinkNotification(responder_srcsink=self,
                                                                        address_book=[self],
                                                                        sender_workref=ping_request.work_ref))
-        return
-
-    def _do_pub(self) -> None:
-        # TODO Revisit the period push of addresses what updates have been seen - is this needed ?
-        """
-        Publish any changes to known srcsinks in the ether
-        """
         return
 
     @property

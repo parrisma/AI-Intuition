@@ -7,12 +7,12 @@ class SrcSinkWithTimeStamp:
                  time_stamp: datetime,
                  srcsink: 'SrcSink'):
         self._time_stamp = time_stamp
-        self._sender_src_sink = srcsink
+        self._src_sink = srcsink
         return
 
     @property
     def srcsink(self) -> 'SrcSink':
-        return self._sender_src_sink
+        return self._src_sink
 
     @property
     def time_stamp(self) -> datetime:
@@ -23,3 +23,9 @@ class SrcSinkWithTimeStamp:
                    t: datetime) -> None:
         self._time_stamp = t
         return
+
+    def __str__(self):
+        return "{} @ {:%d %m %Y : %I %M %S %f }".format(self._src_sink.name, self.time_stamp)
+
+    def __repr__(self):
+        return self.__str__()

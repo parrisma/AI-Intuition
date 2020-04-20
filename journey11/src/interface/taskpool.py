@@ -180,3 +180,12 @@ class TaskPool(SrcSink):
         """
         self._address_book.update(srcsink)
         return
+
+    def _get_recent_ether_address(self) -> SrcSink:
+        """
+        Get a recent Ether address from the AddressBook. If there is no recent Ether then return None
+        :return: Ether SrcSink or None
+        """
+        return self._address_book.get_with_capabilities(
+            required_capabilities=[SimpleCapability(str(CapabilityRegister.ETHER))],
+            max_age_in_seconds=60)

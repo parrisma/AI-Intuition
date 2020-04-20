@@ -5,6 +5,7 @@ from pubsub import pub
 from journey11.src.lib.addressbook import AddressBook
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.test.agent.dummysrcsink import DummySrcSink
+from journey11.src.main.simple.simplecapability import SimpleCapability
 
 
 class TestAddressBook(unittest.TestCase):
@@ -31,6 +32,64 @@ class TestAddressBook(unittest.TestCase):
         test_address_book.update(test_srcsink)
         self.assertEqual(1, len(test_address_book.get()))
         self.assertTrue(test_srcsink in test_address_book.get())
+        return
+
+    def test_get_with_capabilities_bad_params(self):
+        test_address_book = AddressBook()
+
+        with self.assertRaises(ValueError):
+            test_address_book.get_with_capabilities(required_capabilities=[SimpleCapability("NotImportantForThisTest")],
+                                                    match_threshold=-0.1)
+        with self.assertRaises(ValueError):
+            test_address_book.get_with_capabilities(required_capabilities=[SimpleCapability("NotImportantForThisTest")],
+                                                    match_threshold=1.1)
+        return
+
+    def test_get_with_capabilities_partial_matches(self):
+        test_address_book = AddressBook()
+
+        cap1 = SimpleCapability("Cap1")
+        cap2 = SimpleCapability("Cap2")
+        cap3 = SimpleCapability("Cap3")
+        cap4 = SimpleCapability("Cap4")
+        capx = SimpleCapability("Cap?")
+
+        test_srcsink1 = DummySrcSink("DummySrcSink-1")
+        test_srcsink1.capabilities = [cap1]
+
+        test_srcsink2 = DummySrcSink("DummySrcSink-2")
+        test_srcsink2.capabilities = [cap1, cap2]
+
+        test_srcsink3 = DummySrcSink("DummySrcSink-3")
+        test_srcsink3.capabilities = [cap1, cap2, cap3]
+
+        test_srcsink4 = DummySrcSink("DummySrcSink-4")
+        test_srcsink4.capabilities = [cap2, cap4]
+
+        test_address_book.update(test_srcsink1)
+        test_address_book.update(test_srcsink2)
+        test_address_book.update(test_srcsink3)
+        test_address_book.update(test_srcsink4)
+
+        scenarios = [[1, [cap1, capx], 1.0, [None]],
+                     [2, [cap1, cap2, cap3], 1.0, [test_srcsink3]],
+                     [3, [cap1, cap2], 1.0, [test_srcsink3]],  # As ss-3 also has Cap1, Cap2 and was created last
+                     [4, [capx], 0.0, [test_srcsink4]],  # Zero => match any so will return last one created
+                     [5, [capx], 0.3142, [None]],
+                     [6, [capx], 1.0, [None]],
+                     [7, [cap1], 1.0, [test_srcsink3]],
+                     [8, [cap1, cap2], 1.0, [test_srcsink3]],
+                     [9, [cap1, cap2], 0.5, [test_srcsink3]]
+                     ]
+
+        for scenario in scenarios:
+            case_num, caps, threshold, expected = scenario
+            logging.info("test_get_with_capabilities_partial_matches case {}".format(case_num))
+            res = test_address_book.get_with_capabilities(required_capabilities=caps, match_threshold=threshold)
+            for ss in expected:
+                self.assertEqual(ss, res)
+            logging.info("case {} passed OK".format(case_num))
+
         return
 
     def test_get_with_capabilities_single_ss(self):

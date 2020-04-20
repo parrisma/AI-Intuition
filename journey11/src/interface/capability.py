@@ -23,7 +23,10 @@ class Capability(ABC):
     def equivalence_factor(required_capabilities: List['Capability'],
                            given_capabilities: List['Capability']) -> float:
         """
-        The degree in range 0.0 to 1.0 that the given capabilities match required capabilities
+        The degree in range 0.0 to 1.0 that the given capabilities match required capabilities. If the required
+        capabilities have more capabilities than requested then it will still show as a 1.0 match as all of the
+        require capabilities are held. (the additional ones are ignored and in this sense 1.0 is an exact match
+        in that given contains required)
         :param required_capabilities:
         :param given_capabilities:
         :return: The degree to which required matches given

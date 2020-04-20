@@ -94,19 +94,24 @@ class TestTheTaskPool(unittest.TestCase):
             pub.unsubAll()
         return
 
-    def test_discover_pool(self):
+    def test_discover_pool_via_ether(self):
         """
         Test that an Agent can find and maintain a link with one or more pools.
         """
-        # Establish Ether to provide back-plane connectivity.
+        # (1) Establish Ether to provide back-plane connectivity.
         ether = SimpleEther("TestEther1")
-        # Create pool
+
+        # (2) Create pool - Simple pool with automatically start to ping for the Ether on the back-plane topic
         task_pool = SimpleTaskPool("TestTaskPool1")
 
-        time.sleep(1)
+        # (3) Allow for pings to cross propagate
+        time.sleep(444440.75)
 
-        # Check task_pool registered it's self with the Ether.
+        # (4) Check task_pool registered it's self with the Ether & visa versa. (Address exchange)
         self.assertTrue(task_pool in ether.get_addressbook())
+        self.assertTrue(ether in task_pool.get_addressbook())
+
+        # (5) Start simple Agent, which will automatically ping ether
         return
 
     def test_scenario_runner(self):

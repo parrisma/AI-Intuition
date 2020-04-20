@@ -9,6 +9,7 @@ from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotificat
 from journey11.src.interface.worknotificationfinalise import WorkNotificationFinalise
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.capability import Capability
+from journey11.src.interface.ether import Ether
 from journey11.src.lib.state import State
 from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.main.simple.simpletasknotification import SimpleTaskNotification
@@ -16,6 +17,8 @@ from journey11.src.main.simple.simpletaskmetadata import SimpleTaskMetaData
 from journey11.src.main.simple.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
 from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkNotification
+from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
+from journey11.src.main.simple.simplecapability import SimpleCapability
 
 
 class SimpleTaskPool(TaskPool):
@@ -142,8 +145,13 @@ class SimpleTaskPool(TaskPool):
         """
         Ensure that we are known on the ether.
         """
-
-        pass
+        if self._get_recent_ether_address() is None:
+            logging.info("{} not linked to Ether - sending discovery Ping".format(self.name))
+            pub.sendMessage(topicName=Ether.back_plane_topic(),
+                            notification=SimpleSrcSinkPing(sender_srcsink=self,
+                                                           required_capabilities=[
+                                                               SimpleCapability(str(CapabilityRegister.ETHER))]))
+        return
 
     def _do_srcsink_ping_notification(self,
                                       ping_notification: SrcSinkPingNotification) -> None:
@@ -155,7 +163,7 @@ class SimpleTaskPool(TaskPool):
         if ping_notification.src_sink.topic != self.topic:
             # Don't count ping response from our self.
             for srcsink in ping_notification.responder_address_book:
-                self._update_addressbook(sender_srcsink=srcsink)
+                self._update_addressbook(srcsink=srcsink)
         return
 
     def _do_srcsink_ping(self,
