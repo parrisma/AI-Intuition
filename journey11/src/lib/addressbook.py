@@ -47,17 +47,22 @@ class AddressBook:
     def get_with_capabilities(self,
                               required_capabilities: List[Capability],
                               match_threshold: float = CAPABILITY_MATCH_EXACT,
-                              max_age_in_seconds: float = None) -> SrcSink:
+                              max_age_in_seconds: float = None,
+                              n: int = 1) -> List[SrcSink]:
         """
         Get a SrcSin with matching capabilities, and if there are more than one get the one with the newest timestamp.
         :param required_capabilities: The required capabilities
         :param match_threshold: The minimum match level to the required capabilities 0.0 to 1.0 = exact
         :param max_age_in_seconds: (optional) the max age of the SrcSink since the last ping - the get will remove
             any capability matched SrcSinks that are older than this threshold.
+        :param n: The maximum number of items to return
         :return:
         """
         if match_threshold > 1.0 or match_threshold < 0:
             raise ValueError("match_threshold must be in range 0.0 to 1.0 :{} was given".format(str(match_threshold)))
+
+        if n <= 0:
+            raise ValueError("maximum number of items n must be >= 1 :{} was given".format(str(match_threshold)))
 
         res = None
         to_consider = list()
@@ -73,5 +78,6 @@ class AddressBook:
         if len(to_consider) > 0:
             if len(to_consider) > 1:
                 to_consider = sorted(to_consider, key=operator.itemgetter(0, 1))
-            res = (to_consider[-1])[2].srcsink
+            n = min(n, len(to_consider))
+            res = [x[2].srcsink for x in to_consider[-n:]]
         return res
