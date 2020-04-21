@@ -75,8 +75,11 @@ class TestAddressBook(unittest.TestCase):
         ss4.capabilities = [cap2, cap4]
 
         test_address_book.update(ss1)
+        time.sleep(.01)
         test_address_book.update(ss2)
+        time.sleep(.01)
         test_address_book.update(ss3)
+        time.sleep(.01)
         test_address_book.update(ss4)
 
         scenarios = [[1, [cap1, capx], 1.0, [None], 1],
@@ -87,15 +90,19 @@ class TestAddressBook(unittest.TestCase):
                      [6, [capx], 1.0, [None], 1],
                      [7, [cap1], 1.0, [ss3], 1],
                      [8, [cap1, cap2], 1.0, [ss3], 1],
-                     [9, [cap1, cap2], 0.5, [ss3], 1],
-                     [10, [cap1], 1.0, [ss2, ss3], 2],
-                     [11, [cap1], 1.0, [ss1, ss2, ss3], 3],
-                     [12, [cap1], 1.0, [ss1, ss2, ss3], 4],
-                     [13, [cap1], 0.0, [ss4, ss1, ss2, ss3], 4],
-                     [14, [cap1], 1.0, [ss1, ss2, ss3], 5],
-                     [15, [cap1], 1.0, [ss1, ss2, ss3], 500],
+                     [9, [cap1, cap2], 0.5, [ss4], 1],
+                     [10, [cap1], 1.0, [ss3, ss2], 2],
+                     [11, [cap1], 1.0, [ss3, ss2, ss1], 3],
+                     [12, [cap1], 1.0, [ss3, ss2, ss1], 4],
+                     [13, [cap1], 0.0, [ss4, ss3, ss2, ss1], 4],
+                     [14, [cap1], 1.0, [ss3, ss2, ss1], 5],
+                     [15, [cap1], 1.0, [ss3, ss2, ss1], 500],
+                     [16, [cap4, capx], 1.0, [None], 10],
+                     [17, [cap4, capx], 0.5, [ss4], 10],
+                     [18, [cap3, cap4, capx], 1.0, [None], 10],
+                     [19, [cap3, cap4, capx], 0.33, [ss4, ss3], 10]
                      ]
-        # TODO finihs adding tests.
+        # TODO finish adding tests.
 
         for scenario in scenarios:
             case_num, caps, threshold, expected, n = scenario

@@ -71,13 +71,13 @@ class AddressBook:
                                                required_capabilities=required_capabilities)
             if ef >= match_threshold:
                 if max_age_in_seconds is None:
-                    to_consider.append([ef, sswt.time_stamp, sswt])
+                    to_consider.append([ef, datetime.datetime.now() - sswt.time_stamp, sswt])
                 else:
                     if self._recent(sswt.time_stamp, max_age_in_seconds):
-                        to_consider.append([ef, sswt.time_stamp, sswt])
+                        to_consider.append([ef, datetime.datetime.now() - sswt.time_stamp, sswt])
         if len(to_consider) > 0:
             if len(to_consider) > 1:
                 to_consider = sorted(to_consider, key=operator.itemgetter(0, 1))
             n = min(n, len(to_consider))
-            res = [x[2].srcsink for x in to_consider[-n:]]
+            res = [x[2].srcsink for x in to_consider[:n]]
         return res
