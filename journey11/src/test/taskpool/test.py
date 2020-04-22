@@ -105,13 +105,27 @@ class TestTheTaskPool(unittest.TestCase):
         task_pool = SimpleTaskPool("TestTaskPool1")
 
         # (3) Allow for pings to cross propagate
-        time.sleep(444440.75)
+        time.sleep(0.75)
 
         # (4) Check task_pool registered it's self with the Ether & visa versa. (Address exchange)
         self.assertTrue(task_pool in ether.get_addressbook())
         self.assertTrue(ether in task_pool.get_addressbook())
 
         # (5) Start simple Agent, which will automatically ping ether
+        agent = SimpleAgent(agent_name="Test-Agent-1",
+                            start_state=State.S0,
+                            end_state=State.S1,
+                            capacity=1,
+                            task_consumption_policy=GreedyTaskConsumptionPolicy())
+
+        # (6) Allow for pings to cross propagate
+        time.sleep(1.00)
+
+        # Agent should now have Ether address and Pool address
+        self.assertTrue(agent in ether.get_addressbook())
+        self.assertTrue(ether in agent.get_addressbook())
+        self.assertTrue(task_pool in agent.get_addressbook())
+
         return
 
     def test_scenario_runner(self):

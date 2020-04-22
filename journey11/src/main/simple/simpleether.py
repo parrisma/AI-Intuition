@@ -46,7 +46,7 @@ class SimpleEther(Ether):
         if ping_notification.src_sink.topic != self.topic:
             # Don't count ping response from our self.
             for srcsink in ping_notification.responder_address_book:
-                self._update_addressbook(sender_srcsink=srcsink)
+                self._update_addressbook(srcsink=srcsink)
         return
 
     def _do_srcsink_ping(self,
@@ -60,12 +60,11 @@ class SimpleEther(Ether):
         if ping_request.sender_srcsink.topic != self.topic:
             # Note the sender is alive
             self._update_addressbook(ping_request.sender_srcsink)
-            if Capability.equivalence_factor(ping_request.required_capabilities,
-                                             self.capabilities) >= self._ping_factor_threshold:
-                pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
-                                notification=SimpleSrcSinkNotification(responder_srcsink=self,
-                                                                       address_book=[self],
-                                                                       sender_workref=ping_request.work_ref))
+            addrs = self._get_addresses_with_capabilities(ping_request.required_capabilities)
+            pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
+                            notification=SimpleSrcSinkNotification(responder_srcsink=self,
+                                                                   address_book=addrs,
+                                                                   sender_workref=ping_request.work_ref))
         return
 
     @property
@@ -101,3 +100,11 @@ class SimpleEther(Ether):
         :return: The unique SrcSink listen topic name
         """
         return self._unique_topic
+
+    def _do_pub(self) -> None:
+        """
+        Not implemented
+        :return: None
+        """
+        # TODO: this will be target of Ether Activity to ping and refresh expired addresses
+        pass

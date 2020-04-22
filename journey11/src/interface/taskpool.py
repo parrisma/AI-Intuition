@@ -56,7 +56,6 @@ class TaskPool(SrcSink):
         """
         self._handler.activity_state(paused=True)
         pub.unsubscribe(self, self._unique_topic)
-        pub.unsubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         return
 
     def __call__(self, notification: Notification):
@@ -76,7 +75,6 @@ class TaskPool(SrcSink):
         """
         unique_topic = UniqueTopic().topic(TaskPool.POOL_TOPIC_PREFIX)
         pub.subscribe(self, unique_topic)
-        pub.subscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         return unique_topic
 
     @staticmethod
@@ -186,6 +184,10 @@ class TaskPool(SrcSink):
         Get a recent Ether address from the AddressBook. If there is no recent Ether then return None
         :return: Ether SrcSink or None
         """
-        return self._address_book.get_with_capabilities(
+        ss = self._address_book.get_with_capabilities(
             required_capabilities=[SimpleCapability(str(CapabilityRegister.ETHER))],
-            max_age_in_seconds=60)
+            max_age_in_seconds=60,
+            n=1)
+        if ss is not None:
+            ss = ss[0]
+        return ss

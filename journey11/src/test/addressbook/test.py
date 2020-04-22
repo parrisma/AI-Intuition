@@ -128,7 +128,7 @@ class TestAddressBook(unittest.TestCase):
 
         self.assertEqual(None, test_address_book.get_with_capabilities(test_srcsink.capabilities))
         test_address_book.update(test_srcsink)
-        self.assertEqual(test_srcsink, test_address_book.get_with_capabilities(test_srcsink.capabilities))
+        self.assertEqual(test_srcsink, test_address_book.get_with_capabilities(test_srcsink.capabilities)[0])
         return
 
     def test_get_with_capabilities_multi_ss(self):
@@ -149,7 +149,7 @@ class TestAddressBook(unittest.TestCase):
         for ss in ss_list:
             time.sleep(0.1)
             test_address_book.update(ss)
-            self.assertEqual(ss, test_address_book.get_with_capabilities(ss.capabilities))
+            self.assertEqual(ss, test_address_book.get_with_capabilities(ss.capabilities)[0])
 
         # Check everything is in the addressBook
         addr_bk = test_address_book.get()
@@ -162,14 +162,14 @@ class TestAddressBook(unittest.TestCase):
         ss_last = ss_list[-1]
         self.assertEqual(None,
                          test_address_book.get_with_capabilities(ss_last.capabilities, max_age_in_seconds=delay - 0.1))
-        self.assertEqual(ss_last, test_address_book.get_with_capabilities(ss_last.capabilities, max_age_in_seconds=100))
+        self.assertEqual(ss_last, test_address_book.get_with_capabilities(ss_last.capabilities, max_age_in_seconds=100)[0])
 
         # Add one more and make sure it comes back
         ss_new = DummySrcSink("DummySrcSink-new")
         test_address_book.update(ss_new)
         self.assertEqual(ss_new,
-                         test_address_book.get_with_capabilities(ss_new.capabilities, max_age_in_seconds=None))
-        self.assertEqual(ss_new, test_address_book.get_with_capabilities(ss_new.capabilities, max_age_in_seconds=0.5))
+                         test_address_book.get_with_capabilities(ss_new.capabilities, max_age_in_seconds=None)[0])
+        self.assertEqual(ss_new, test_address_book.get_with_capabilities(ss_new.capabilities, max_age_in_seconds=0.5)[0])
         return
 
 

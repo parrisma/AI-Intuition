@@ -4,6 +4,8 @@ from queue import Queue
 from pubsub import pub
 from typing import Type, Dict, List
 from journey11.src.interface.agent import Agent
+from journey11.src.interface.ether import Ether
+from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.tasknotification import TaskNotification
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
@@ -19,10 +21,13 @@ from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSin
 from journey11.src.main.simple.simpleworkrequest import SimpleWorkRequest
 from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
 from journey11.src.main.simple.simpleworknotificationdo import SimpleWorkNotificationDo
+from journey11.src.main.simple.simplecapability import SimpleCapability
+from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
 
 
 class SimpleAgent(Agent):
     FAIL_RATE = float(0)
+    RECENT_IN_SECS = 60
 
     def __init__(self,
                  agent_name: str,
@@ -196,7 +201,7 @@ class SimpleAgent(Agent):
         if ping_notification.src_sink.topic != self.topic:
             # Don't count ping response from our self.
             for srcsink in ping_notification.responder_address_book:
-                self._update_addressbook(sender_srcsink=srcsink)
+                self._update_addressbook(srcsink=srcsink)
         return
 
     def _do_srcsink_ping(self,
@@ -216,6 +221,24 @@ class SimpleAgent(Agent):
                                 notification=SimpleSrcSinkNotification(responder_srcsink=self,
                                                                        address_book=[self],
                                                                        sender_workref=ping_request.work_ref))
+        return
+
+    def _do_manage_presence(self) -> None:
+        """
+        Ensure that we are known on the ether & that we have a local pool address.
+        """
+        if self._get_recent_ether_address() is None:
+            logging.info("{} not linked to Ether - sending discovery Ping".format(self.name))
+            pub.sendMessage(topicName=Ether.back_plane_topic(),
+                            notification=SimpleSrcSinkPing(sender_srcsink=self,
+                                                           required_capabilities=[
+                                                               SimpleCapability(str(CapabilityRegister.ETHER))]))
+        if self._get_recent_pool_address() is None:
+            logging.info("{} Missing local Pool address - sending discovery Ping to Ether".format(self.name))
+            pub.sendMessage(topicName=Ether.back_plane_topic(),
+                            notification=SimpleSrcSinkPing(sender_srcsink=self,
+                                                           required_capabilities=[
+                                                               SimpleCapability(str(CapabilityRegister.POOL))]))
         return
 
     def reset(self) -> None:
@@ -385,3 +408,29 @@ class SimpleAgent(Agent):
                     if c not in self._capabilities:
                         self._capabilities.append(c)
         return
+
+    def _get_recent_ether_address(self) -> SrcSink:
+        """
+        Get a recent Ether address from the AddressBook. If there is no recent Ether then return None
+        :return: Ether SrcSink or None
+        """
+        ss = self._address_book.get_with_capabilities(
+            required_capabilities=[SimpleCapability(str(CapabilityRegister.ETHER))],
+            max_age_in_seconds=SimpleAgent.RECENT_IN_SECS,
+            n=1)
+        if ss is not None:
+            ss = ss[0]
+        return ss
+
+    def _get_recent_pool_address(self) -> SrcSink:
+        """
+        Get a recent Ether address from the AddressBook. If there is no recent Ether then return None
+        :return: Ether SrcSink or None
+        """
+        ss = self._address_book.get_with_capabilities(
+            required_capabilities=[SimpleCapability(str(CapabilityRegister.POOL))],
+            max_age_in_seconds=SimpleAgent.RECENT_IN_SECS,
+            n=1)
+        if ss is not None:
+            ss = ss[0]
+        return ss

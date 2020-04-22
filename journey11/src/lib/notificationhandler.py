@@ -1,15 +1,20 @@
-from typing import Callable, Type
 import logging
 import threading
+import random
+from typing import Callable, Type
+from copy import copy
 from journey11.src.interface.notification import Notification
 from journey11.src.lib.uniqueref import UniqueRef
 
 
 class NotificationHandler:
+    MAX_INTERVAL = float(60 * 60 * 24)
+
     _MSG_TYPE = 0
     _MSG_HANDLER = 1
 
     class ActivityNotification(Notification):
+
         """Class to handle timer based activity inside the Handler.
         These timer based activities are added by external party.
         """
@@ -18,7 +23,7 @@ class NotificationHandler:
                      name: str,
                      interval: float,
                      func: Callable,
-                     activity_handler: Callable[[], None]):
+                     activity_handler: Callable[[float], float]):
             self._name = name
             self._interval = interval
             self._func = func
@@ -27,7 +32,11 @@ class NotificationHandler:
             return
 
         def run(self) -> None:
-            self._activity_handler()
+            new_interval = self._activity_handler(copy(self._interval))
+            if new_interval is not None and \
+                    isinstance(new_interval, float) and \
+                    new_interval <= NotificationHandler.MAX_INTERVAL:
+                self._interval = new_interval
             self.go()
 
         def pause(self):
@@ -100,7 +109,7 @@ class NotificationHandler:
         return type_name in self._handler_dict
 
     def register_activity(self,
-                          handler_for_activity: Callable[[], None],
+                          handler_for_activity: Callable[[float], float],
                           activity_interval: float,
                           activity_name: str = None) -> None:
         """
@@ -210,3 +219,38 @@ class NotificationHandler:
             else:
                 res = msg_type_name
         return res
+
+    @classmethod
+    def back_off(cls,
+                 reset: bool,
+                 curr_interval: float,
+                 min_interval: float,
+                 max_interval: float,
+                 factor: float = 2.0):
+        """
+        Calculate the back-off interval for the activity timer. Back-off is used where we need to slow the rate at
+        which the activity event is called when there is nothing to do - i.e. avoid needless CPU thrash
+        :param reset: If True interval is reset to min
+        :param curr_interval: The current activity interval: if <= 0 or None, defaulted to min_interval
+        :param min_interval: The minimum (reset) value of the interval
+        :param max_interval: The maximum (cap) for the interval as back-off increases
+        :param factor: The back-off factor: new interval = current_interval + (current_interval * (random() * factor)))
+        :return: The new interval
+        """
+        if min_interval <= 0 or max_interval <= 0 or max_interval <= min_interval:
+            raise ValueError(
+                "Min & Max interval must be >0 and Max > Min : given min {}, max {}".format(min_interval, max_interval))
+        if factor <= 0:
+            raise ValueError("back-off factor must be > 0, given {}".format(factor))
+        if curr_interval is None or curr_interval <= 0:
+            curr_interval = min_interval
+
+        if reset:
+            new_interval = min_interval
+        else:
+            if curr_interval >= max_interval:
+                new_interval = max_interval
+            else:
+                new_interval = max(min_interval,
+                                   min(max_interval, curr_interval + (curr_interval * (random.random() * factor))))
+        return new_interval

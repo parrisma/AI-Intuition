@@ -23,6 +23,7 @@ from journey11.src.lib.addressbook import AddressBook
 
 class Agent(SrcSink):
     WORK_TIMER = float(.25)
+    PRS_TIMER = float(.25)
     AGENT_TOPIC_PREFIX = "agent"
 
     def __init__(self,
@@ -48,6 +49,9 @@ class Agent(SrcSink):
         self._handler.register_activity(handler_for_activity=self._work_to_do,
                                         activity_interval=self._work_timer,
                                         activity_name="{}-do_work_activity".format(agent_name))
+        self._handler.register_activity(handler_for_activity=self._do_manage_presence,
+                                        activity_interval=Agent.PRS_TIMER,
+                                        activity_name="{}-do_manage_presence".format(agent_name))
         self._unique_topic = self._create_topic_and_subscriptions()
         self._capabilities = self._get_capabilities()
         return
@@ -58,7 +62,6 @@ class Agent(SrcSink):
         """
         self._handler.activity_state(paused=True)
         pub.unsubscribe(self, self._unique_topic)
-        pub.unsubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         return
 
     def __call__(self, notification: Notification):
@@ -78,7 +81,6 @@ class Agent(SrcSink):
         """
         unique_topic = UniqueTopic().topic(Agent.AGENT_TOPIC_PREFIX)
         pub.subscribe(self, unique_topic)
-        pub.subscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         return unique_topic
 
     @staticmethod
@@ -143,6 +145,14 @@ class Agent(SrcSink):
                       work_notification: WorkNotificationDo) -> None:
         """
         Initiate the given work item with the agent as the owner of the work.
+        """
+        pass
+
+    @purevirtual
+    @abstractmethod
+    def _do_manage_presence(self) -> None:
+        """
+        Ensure that we are known on the ether & our address book has the name of at least one local pool in it.
         """
         pass
 

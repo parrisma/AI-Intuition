@@ -22,6 +22,7 @@ from journey11.src.main.simple.simplecapability import SimpleCapability
 
 
 class SimpleTaskPool(TaskPool):
+    _POOL_CAPABILITY = SimpleCapability(str(CapabilityRegister.POOL))
 
     def __init__(self,
                  name: str,
@@ -215,8 +216,8 @@ class SimpleTaskPool(TaskPool):
         :param additional_capabilities: Optional capabilities to add to the base capabilities
         """
         with self._pool_lock:
-            if CapabilityRegister.POOL not in self._capabilities:
-                self._capabilities.append(CapabilityRegister.POOL)
+            if self._POOL_CAPABILITY not in self._capabilities:
+                self._capabilities.append(self._POOL_CAPABILITY)
             if additional_capabilities is not None:
                 for c in additional_capabilities:
                     if c not in self._capabilities:

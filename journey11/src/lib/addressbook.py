@@ -14,7 +14,7 @@ class AddressBook:
         self._lock = threading.RLock()
         self._src_sinks_with_timestamp = dict()
 
-    def get(self) -> List['SrcSink']:
+    def get(self) -> List[SrcSink]:
         """
         The list of srcsinks in the address book
         :return: List of srcsinks
@@ -24,7 +24,7 @@ class AddressBook:
         return srcsinks
 
     def update(self,
-               srcsink: 'SrcSink') -> None:
+               srcsink: SrcSink) -> None:
         """
         Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
         add it with a current time stamp.

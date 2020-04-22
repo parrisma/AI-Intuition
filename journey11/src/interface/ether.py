@@ -2,6 +2,7 @@ from typing import List
 from abc import abstractmethod
 import threading
 from journey11.src.interface.srcsink import SrcSink
+from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.notification import Notification
@@ -105,3 +106,20 @@ class Ether(SrcSink):
         """
         self._address_book.update(srcsink)
         return
+
+    def _get_addresses_with_capabilities(self,
+                                         required_capabilities: List[Capability]) -> List[SrcSink]:
+        """
+        Get the top five addresses in the address book that match the required capabilities. Always include
+        this Ether (self) in the list.
+        :param required_capabilities: The capabilities required
+        :return: The list of matching addresses
+        """
+        addr = self._address_book.get_with_capabilities(required_capabilities=required_capabilities,
+                                                        match_threshold=float(1),
+                                                        max_age_in_seconds=600,
+                                                        n=5)
+        if addr is None:
+            addr = list()
+        addr.append(self)
+        return addr
