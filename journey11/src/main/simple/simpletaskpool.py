@@ -12,6 +12,7 @@ from journey11.src.interface.capability import Capability
 from journey11.src.interface.ether import Ether
 from journey11.src.lib.state import State
 from journey11.src.lib.capabilityregister import CapabilityRegister
+from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.main.simple.simpletasknotification import SimpleTaskNotification
 from journey11.src.main.simple.simpletaskmetadata import SimpleTaskMetaData
 from journey11.src.main.simple.simpleworknotificationdo import SimpleWorkNotificationDo
@@ -121,11 +122,15 @@ class SimpleTaskPool(TaskPool):
 
         return
 
-    def _do_pub(self) -> None:
+    def _do_pub(self,
+                current_interval: float) -> float:
         """
         Check for any pending tasks and advertise or re-advertise them on the relevant topic
+        :param current_interval: The current activity interval
+        :return: The optionally revised interval before the action is invoked again
         """
         to_pub = list()
+        back_off_reset = False
         with self._pool_lock:
             for ref in self._task_pool.keys():
                 work_ref, work = self._task_pool[ref]
@@ -136,23 +141,35 @@ class SimpleTaskPool(TaskPool):
                 to_pub.append([work_ref, topic, stn, work.task.id])
 
         for pub_event in to_pub:
+            back_off_reset = True
             ref, topic, notification, task_id = pub_event
             logging.info("{} stored & advertised task {} on {} = {}".format(self.name, task_id, topic, ref.id))
             pub.sendMessage(topicName=topic, notification=notification)
 
-        return
+        return NotificationHandler.back_off(reset=back_off_reset,
+                                            curr_interval=current_interval,
+                                            min_interval=TaskPool.PRS_TIMER,
+                                            max_interval=TaskPool.PRS_TIMER_MAX)
 
-    def _do_manage_presence(self) -> None:
+    def _do_manage_presence(self,
+                            current_interval: float) -> float:
         """
         Ensure that we are known on the ether.
+        :param current_interval: The current activity interval
+        :return: The optionally revised interval before the action is invoked again
         """
+        back_off_reset = False
         if self._get_recent_ether_address() is None:
             logging.info("{} not linked to Ether - sending discovery Ping".format(self.name))
+            back_off_reset = True
             pub.sendMessage(topicName=Ether.back_plane_topic(),
                             notification=SimpleSrcSinkPing(sender_srcsink=self,
                                                            required_capabilities=[
                                                                SimpleCapability(str(CapabilityRegister.ETHER))]))
-        return
+        return NotificationHandler.back_off(reset=back_off_reset,
+                                            curr_interval=current_interval,
+                                            min_interval=TaskPool.PRS_TIMER,
+                                            max_interval=TaskPool.PRS_TIMER_MAX)
 
     def _do_srcsink_ping_notification(self,
                                       ping_notification: SrcSinkPingNotification) -> None:

@@ -22,7 +22,9 @@ from journey11.src.lib.addressbook import AddressBook
 class DummySrcSink(SrcSink):
 
     def __init__(self,
-                 name: str):
+                 name: str,
+                 capability: SimpleCapability = SimpleCapability(capability_name='DummySrcSink'),
+                 ping_topic: str = Ether.ETHER_BACK_PLANE_TOPIC):
         # SrcSink - Standard boot-strap & protected members
         #
         self._name = name
@@ -31,7 +33,7 @@ class DummySrcSink(SrcSink):
         self._address_book = AddressBook()
 
         super().__init__()
-        self._capabilities = [SimpleCapability(capability_name='DummySrcSink')]
+        self._capabilities = [capability]
 
         self._lock = threading.Lock()
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=True)
@@ -49,6 +51,8 @@ class DummySrcSink(SrcSink):
         self.work_notification = list()
         self.work_finalise = list()
 
+        self._ping_topic = ping_topic  # The topic to issue ping's on
+
         # Get connected !
         self.setup_subscriptions()
         return
@@ -65,12 +69,10 @@ class DummySrcSink(SrcSink):
         return
 
     def setup_subscriptions(self) -> None:
-        pub.subscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         pub.subscribe(self, self._topic)
         return
 
     def __del__(self):
-        pub.unsubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
         pub.unsubscribe(self, self._topic)
         return
 
@@ -118,15 +120,16 @@ class DummySrcSink(SrcSink):
         with self._lock:
             self.work_finalise.append(do_work_finalise)
 
-        pub.sendMessage(topicName=do_work_finalise.originator.topic,
-                        notification=do_work_finalise)
+        if self.topic != do_work_finalise.originator.topic:
+            pub.sendMessage(topicName=do_work_finalise.originator.topic,
+                            notification=do_work_finalise)
         return
 
     def send_ping(self,
                   required_capabilities: List[Capability]) -> UniqueWorkRef:
         logging.info("{} :: {} Sent Ping".format(self.__class__.__name__, self.name, "send_ping"))
         ping = SimpleSrcSinkPing(sender_srcsink=self, required_capabilities=required_capabilities)
-        pub.sendMessage(Ether.ETHER_BACK_PLANE_TOPIC, notification=ping)
+        pub.sendMessage(self._ping_topic, notification=ping)
         return ping.work_ref
 
     @property

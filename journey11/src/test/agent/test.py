@@ -54,14 +54,14 @@ class TestTheAgent(unittest.TestCase):
         for scenario in scenarios:
             reqd_cap, expected_notification = scenario
             logging.info("\n\nTesting Ping Cycle with capabilities [{}]\n\n".format(str(reqd_cap)))
-            ping_srcsink = DummySrcSink("PingSrcSink")
-            _ = SimpleAgent('test agent',
-                            start_state=State.S0,
-                            end_state=State.S1,
-                            capacity=1,
-                            task_consumption_policy=GreedyTaskConsumptionPolicy(),
-                            trace=True)
+            sa = SimpleAgent('test agent',
+                             start_state=State.S0,
+                             end_state=State.S1,
+                             capacity=1,
+                             task_consumption_policy=GreedyTaskConsumptionPolicy(),
+                             trace=True)
 
+            ping_srcsink = DummySrcSink("PingSrcSink", ping_topic=sa.topic)
             ping_workref = ping_srcsink.send_ping(required_capabilities=reqd_cap)
 
             time.sleep(1)

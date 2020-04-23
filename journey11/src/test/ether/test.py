@@ -1,6 +1,7 @@
 import unittest
 import logging
 import time
+from typing import List
 from pubsub import pub
 from journey11.src.interface.ether import Ether
 from journey11.src.interface.capability import Capability
@@ -14,7 +15,8 @@ from journey11.src.test.agent.dummysrcsink import DummySrcSink
 
 class TestEther(unittest.TestCase):
     _id = 1
-
+    capability_1 = "Cap1"
+    capability_2 = "Cap2"
     NO_CAPABILITIES_REQUIRED = []
 
     @classmethod
@@ -57,7 +59,7 @@ class TestEther(unittest.TestCase):
                     pub.sendMessage(topicName=Ether.back_plane_topic(),
                                     notification=ping)  # Publish to back plane topic
 
-                srcsink_topics = list(x.topic for x in ether.get_addressbook)
+                srcsink_topics = list(x.topic for x in ether.get_addressbook())
                 self.assertEqual(1, len(srcsink_topics))  # We expect a single topic only
                 self.assertTrue(srcsink.topic in srcsink_topics)  # The topic should be in the set recorded by the ether
         return
@@ -83,53 +85,69 @@ class TestEther(unittest.TestCase):
             pub.sendMessage(topicName=Ether.back_plane_topic(), notification=ping)
 
         for ether in ethers:
-            srcsink_topics = list(x.topic for x in ether.get_addressbook)
+            srcsink_topics = list(x.topic for x in ether.get_addressbook())
             self.assertEqual(num_diff_ping_sources, len(srcsink_topics))  # Num topic = num diff ones sent
             for srcsink in srcsinks:
                 self.assertTrue(srcsink.topic in srcsink_topics)  # Every ether should have every topic
         return
 
-    def test_ether_do_pub(self):
+    def test_ether_no_capabilities(self):
+        self.run_ether_do_pub([TestEther.NO_CAPABILITIES_REQUIRED, 5])
+        return
+
+    def test_ether_with_capabilities(self):
+        self.run_ether_do_pub([[SimpleCapability(self.capability_1)], 3])
+        return
+
+    def run_ether_do_pub(self,
+                         scenario: List):
         """
         We publish a SrcSink to the back-plane and verify that all other ethers respond with their address.
         """
-        required_capabilities = [[TestEther.NO_CAPABILITIES_REQUIRED, 2],
-                                 [[SimpleCapability("ArbitraryCapability")], 0]]
-        for reqd_cap, expected in required_capabilities:
-            ether_tx1 = SimpleEther("TestEtherTx1")  # We will publish to private topic and check it replicates
-            ether_rx1 = SimpleEther("TestEtherRx1")  # We will see if it gets the replicated ping.
-            ether_rx2 = SimpleEther("TestEtherRx2")  # We will see if it gets the replicated ping.
-            ethers = [ether_tx1, ether_rx1, ether_rx2]
+        reqd_cap, expected = scenario
 
-            ping = SimpleSrcSinkPing(sender_srcsink=ether_tx1, required_capabilities=reqd_cap)
+        ether_tx1 = SimpleEther("TestEtherTx1")  # We will publish to private topic and check it replicates
+        ether_rx1 = SimpleEther("TestEtherRx1")  # We will see if it gets the replicated ping.
+        ether_rx2 = SimpleEther("TestEtherRx2")  # We will see if it gets the replicated ping.
+        ethers = [ether_tx1, ether_rx1, ether_rx2]
 
-            # Pub to Private
-            pub.sendMessage(topicName=Ether.back_plane_topic(),
-                            notification=ping)  # Publish direct to Ether private topic
-            time.sleep(1)  # Wait for 1 sec to ensure the activity time triggers.
-            for ether in ethers:
-                ether.stop()
+        # Force in some SrcSinks with capabilities via protected methods just for testing
+        ds1 = DummySrcSink(name="DS1", capability=SimpleCapability(capability_name=self.capability_1))
+        ds2 = DummySrcSink(name="DS2", capability=SimpleCapability(capability_name=self.capability_2))
+        ether_rx1._update_addressbook(srcsink=ds1)
+        ether_rx2._update_addressbook(srcsink=ds2)
 
-            # The sender of the ping request should have all the addresses on the ether
-            ether = ether_tx1
-            logging.info("Checking {}".format(ether.name))
-            srcsink_topics = list(x.topic for x in ether.get_addressbook)
+        ping = SimpleSrcSinkPing(sender_srcsink=ether_tx1, required_capabilities=reqd_cap)
 
-            if expected == 0:
-                self.assertEqual(0, len(srcsink_topics))  # We expect all topics
-                self.assertTrue(ether_rx1.topic not in srcsink_topics)  # The topic should not be in the set
-                self.assertTrue(ether_rx2.topic not in srcsink_topics)  # The topic should not be in the set
-            else:
-                self.assertEqual(2, len(srcsink_topics))  # We expect all topics
-                self.assertTrue(ether_rx1.topic in srcsink_topics)  # The topic should be in the set
-                self.assertTrue(ether_rx2.topic in srcsink_topics)  # The topic should be in the set
+        # Pub to Private
+        pub.sendMessage(topicName=Ether.back_plane_topic(),
+                        notification=ping)  # Publish direct to Ether private topic
+        time.sleep(1)  # Wait for 1 sec to ensure the activity time triggers.
+        for ether in ethers:
+            ether.stop()
 
-            for ether in [ether_rx1, ether_rx2]:
-                logging.info("Checking {}".format(ether.name))
-                srcsink_topics = list(x.topic for x in ether.get_addressbook)
-                self.assertEqual(1, len(srcsink_topics))  # We expect a single topic only
-                self.assertTrue(
-                    ether_tx1.topic in srcsink_topics)  # The topic should be in the set recorded by the ether
+        # The sender of the ping request should have all the addresses on the ether
+        ether = ether_tx1
+        logging.info("Checking {}".format(ether.name))
+        srcsink_topics = list(x.topic for x in ether.get_addressbook())
+
+        if expected == 3:
+            self.assertEqual(expected, len(srcsink_topics))  # We expect all topics
+            self.assertTrue(ether_rx1.topic in srcsink_topics)
+            self.assertTrue(ether_rx2.topic in srcsink_topics)
+            self.assertTrue(ds1.topic in srcsink_topics)  # The SrcSink with reqd capability
+        else:
+            self.assertEqual(expected, len(srcsink_topics))  # We expect all topics + the tx
+            self.assertTrue(ether_rx1.topic in srcsink_topics)  # The topic should be in the set
+            self.assertTrue(ether_rx2.topic in srcsink_topics)  # The topic should be in the set
+            self.assertTrue(ether_tx1.topic in srcsink_topics)  # The topic should be in the set
+            self.assertTrue(ds1.topic in srcsink_topics)  # The SrcSink with reqd capability
+            self.assertTrue(ds2.topic in srcsink_topics)  # The SrcSink with reqd capability
+
+        for ether in ethers:
+            del ether
+        del ds1
+        del ds2
         return
 
 

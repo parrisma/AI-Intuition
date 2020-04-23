@@ -17,6 +17,7 @@ from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.lib.state import State
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.capabilityregister import CapabilityRegister
+from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkNotification
 from journey11.src.main.simple.simpleworkrequest import SimpleWorkRequest
 from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
@@ -223,23 +224,33 @@ class SimpleAgent(Agent):
                                                                        sender_workref=ping_request.work_ref))
         return
 
-    def _do_manage_presence(self) -> None:
+    def _do_manage_presence(self,
+                            current_activity_interval: float) -> float:
         """
-        Ensure that we are known on the ether & that we have a local pool address.
+        Ensure that we are known on the ether & our address book has the name of at least one local pool in it.
+        :param current_activity_interval: The current delay in seconds before activity is re-triggered.
+        :return: The new delay in seconds before the activity is re-triggered.
         """
+        back_off_reset = False
         if self._get_recent_ether_address() is None:
             logging.info("{} not linked to Ether - sending discovery Ping".format(self.name))
+            back_off_reset = True
             pub.sendMessage(topicName=Ether.back_plane_topic(),
                             notification=SimpleSrcSinkPing(sender_srcsink=self,
                                                            required_capabilities=[
                                                                SimpleCapability(str(CapabilityRegister.ETHER))]))
         if self._get_recent_pool_address() is None:
             logging.info("{} Missing local Pool address - sending discovery Ping to Ether".format(self.name))
+            back_off_reset = True
             pub.sendMessage(topicName=Ether.back_plane_topic(),
                             notification=SimpleSrcSinkPing(sender_srcsink=self,
                                                            required_capabilities=[
                                                                SimpleCapability(str(CapabilityRegister.POOL))]))
-        return
+
+        return NotificationHandler.back_off(reset=back_off_reset,
+                                            curr_interval=current_activity_interval,
+                                            min_interval=Agent.PRS_TIMER,
+                                            max_interval=Agent.PRD_TIMER_MAX)
 
     def reset(self) -> None:
         """
@@ -247,18 +258,27 @@ class SimpleAgent(Agent):
         """
         return
 
-    def _work_to_do(self) -> None:
+    def _work_to_do(self,
+                    current_activity_interval: float) -> float:
         """
-        Are there any tasks associated with the Agent that need working on ? if so invoke the do_work method for
-        every task that needs work.
+        Are there any tasks associated with the Agent that need working on ? of so schedule them by calling work
+        execute handler.
+        :param current_activity_interval: The current delay in seconds before activity is re-triggered.
+        :return: The new delay in seconds before the activity is re-triggered.
         """
+        back_off_reset = False
         if not self._work_in_progress.empty():
             wtd = self._work_in_progress.get()
             logging.info("{} work_to_do for task ref {}".format(self._agent_name, wtd.work_ref.id))
+            back_off_reset = True
             self._do_work(wtd)
         else:
             logging.info("{} work_to_do - nothing to do".format(self._agent_name))
-        return
+
+        return NotificationHandler.back_off(reset=back_off_reset,
+                                            curr_interval=current_activity_interval,
+                                            min_interval=Agent.WORK_TIMER,
+                                            max_interval=Agent.WORK_TIMER_MAX)
 
     def work_initiate(self, work_notification: WorkNotificationDo) -> None:
         """

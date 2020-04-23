@@ -10,7 +10,6 @@ from journey11.src.interface.notification import Notification
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
-from journey11.src.interface.ether import Ether
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
 from journey11.src.lib.notificationhandler import NotificationHandler
@@ -22,7 +21,9 @@ from journey11.src.lib.addressbook import AddressBook
 
 class TaskPool(SrcSink):
     PUB_TIMER = float(.25)
+    PUB_TIMER_MAX = float(30)
     PRS_TIMER = float(.25)
+    PRS_TIMER_MAX = float(30)
     POOL_TOPIC_PREFIX = "TaskPool"
 
     def __init__(self,
@@ -108,17 +109,23 @@ class TaskPool(SrcSink):
 
     @purevirtual
     @abstractmethod
-    def _do_pub(self) -> None:
+    def _do_pub(self,
+                current_interval: float) -> float:
         """
         Check for any pending tasks and advertise or re-advertise them on the relevant topic
+        :param current_interval: The current activity interval
+        :return: The optionally revised interval before the action is invoked again
         """
         pass
 
     @purevirtual
     @abstractmethod
-    def _do_manage_presence(self) -> None:
+    def _do_manage_presence(self,
+                            current_interval: float) -> float:
         """
         Ensure that we are known on the ether.
+        :param current_interval: The current activity interval
+        :return: The optionally revised interval before the action is invoked again
         """
         pass
 

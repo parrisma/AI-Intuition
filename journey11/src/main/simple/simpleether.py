@@ -42,7 +42,8 @@ class SimpleEther(Ether):
         Handle a ping response from a srcsink
         :param: The srcsink notification
         """
-        logging.info("Ether {} RX ping response for {}".format(self.name, ping_notification.src_sink.name))
+        logging.info(
+            "Ether {}-{} RX ping response for {}".format(self.name, self.topic, ping_notification.src_sink.name))
         if ping_notification.src_sink.topic != self.topic:
             # Don't count ping response from our self.
             for srcsink in ping_notification.responder_address_book:
@@ -55,7 +56,8 @@ class SimpleEther(Ether):
         Handle a ping request from a SrcSink
         :param: The srcsink notification
         """
-        logging.info("Ether {} RX ping request for {}".format(self.name, ping_request.sender_srcsink.name))
+        logging.info(
+            "Ether {}-{} RX ping request for {}".format(self.name, self.topic, ping_request.sender_srcsink.name))
         # Don't count pings from our self.
         if ping_request.sender_srcsink.topic != self.topic:
             # Note the sender is alive
@@ -108,3 +110,9 @@ class SimpleEther(Ether):
         """
         # TODO: this will be target of Ether Activity to ping and refresh expired addresses
         pass
+
+    def __str__(self) -> str:
+        return "Ether {} on Topic {} with Capabilities {}".format(self._name, self._unique_topic, self._capabilities)
+
+    def __repr__(self) -> str:
+        return self.__str__()

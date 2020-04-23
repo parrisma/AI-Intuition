@@ -11,7 +11,6 @@ from journey11.src.interface.worknotificationinitiate import WorkNotificationIni
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
-from journey11.src.interface.ether import Ether
 from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.lib.purevirtual import purevirtual
 from journey11.src.lib.state import State
@@ -23,7 +22,9 @@ from journey11.src.lib.addressbook import AddressBook
 
 class Agent(SrcSink):
     WORK_TIMER = float(.25)
+    WORK_TIMER_MAX = float(30)
     PRS_TIMER = float(.25)
+    PRD_TIMER_MAX = float(60)
     AGENT_TOPIC_PREFIX = "agent"
 
     def __init__(self,
@@ -132,11 +133,15 @@ class Agent(SrcSink):
 
     @abstractmethod
     @purevirtual
-    def _work_to_do(self) -> WorkNotificationDo:
+    def _work_to_do(self,
+                    current_activity_interval: float) -> float:
         """
-        Are there any tasks associated with the Agent that need working on ?
-        :return: A WorkNotification event or None if there is no work to do
+        Are there any tasks associated with the Agent that need working on ? of so schedule them by calling work
+        execute handler.
+        :param current_activity_interval: The current delay in seconds before activity is re-triggered.
+        :return: The new delay in seconds before the activity is re-triggered.
         """
+
         pass
 
     @abstractmethod
@@ -150,9 +155,12 @@ class Agent(SrcSink):
 
     @purevirtual
     @abstractmethod
-    def _do_manage_presence(self) -> None:
+    def _do_manage_presence(self,
+                            current_activity_interval: float) -> float:
         """
         Ensure that we are known on the ether & our address book has the name of at least one local pool in it.
+        :param current_activity_interval: The current delay in seconds before activity is re-triggered.
+        :return: The new delay in seconds before the activity is re-triggered.
         """
         pass
 
