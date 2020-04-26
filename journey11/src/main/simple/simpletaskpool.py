@@ -218,15 +218,6 @@ class SimpleTaskPool(TaskPool):
                         notification=work_notification_final)
         return
 
-    def topic_for_capability(self,
-                             state: State) -> str:
-        """
-        The topic string on which tasks needing work in that state are published on
-        :param state: The state for which the topic is required
-        :return: The topic string for the given state
-        """
-        return "topic-{}".format(str(state.id()))
-
     def set_pool_capabilities(self,
                               additional_capabilities: List[Capability] = None) -> None:
         """ Set the given capabilities for the Agent and add the base capabilities that all Agents have.

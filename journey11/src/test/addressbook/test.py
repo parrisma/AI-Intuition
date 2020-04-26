@@ -102,7 +102,6 @@ class TestAddressBook(unittest.TestCase):
                      [18, [cap3, cap4, capx], 1.0, [None], 10],
                      [19, [cap3, cap4, capx], 0.33, [ss4, ss3], 10]
                      ]
-        # TODO finish adding tests.
 
         for scenario in scenarios:
             case_num, caps, threshold, expected, n = scenario

@@ -5,7 +5,7 @@ from journey11.src.interface.task import Task
 from journey11.src.lib.state import State
 
 
-class TestTask(Task):
+class SimpleTask(Task):
     _process_start_state = State.S0
     _process_terminal_state = State.S9
     _global_id = 1
@@ -21,87 +21,22 @@ class TestTask(Task):
         Constructor
         :param effort: The amount of effort needed to complete the task
         """
-        self._state = TestTask._process_start_state
-        self._id = TestTask._global_id
-        TestTask._global_id += 1
+        self._state = SimpleTask._process_start_state
+        self._id = SimpleTask._global_id
+        SimpleTask._global_id += 1
         if start_state is None:
             self._state_orig = self._process_start_state
         else:
             self._state_orig = start_state
         # Things with mutable state
         self._initial_effort = effort
-        self._remaining_effort = None
-        self._failed = None
-        self._lead_time = None
-        self._lock = threading.RLock()
-        self._state = None
-        self._trans = None
-        self.reset()
-        TestTask.global_sync_inc()
-        self._finalised = False
-
-    @classmethod
-    def global_sync_reset(cls) -> None:
-        """
-        Reset the Class sync status - this allows testing where the test needs to wait for all tasks
-        to reach their terminal state before concluding
-        :return:
-        """
-        cls._global_sync = 0
-        cls._global_lock = threading.Lock()
-        with cls._global_lock:
-            cls._global_trigger = threading.Event()
-        return
-
-    @classmethod
-    def global_sync_wait(cls) -> None:
-        """
-        Block until master trigger is released
-        :return:
-        """
-        logging.info("Waiting for global task completion Event")
-        cls._global_trigger.wait()
-        logging.info("Global task completion Event done")
-        return
-
-    @classmethod
-    def global_sync_inc(cls) -> None:
-        """
-        Task being constructed increments count
-        :return:
-        """
-        with cls._global_lock:
-            cls._global_sync += 1
-        return
-
-    @classmethod
-    def global_sync_dec(cls) -> None:
-        """
-        Class moving into terminal process state decrements count. If all tasks have reached terminal state
-        then release mater lock.
-        :return:
-        """
-        with cls._global_lock:
-            cls._global_sync -= 1
-            if cls._global_sync == 0:
-                cls._global_trigger.set()
-        return
-
-    def reset(self) -> None:
-        """
-        Return the Actor to the same state at which it was constructed
-        """
         self._remaining_effort = self._initial_effort
         self._failed = False
         self._lead_time = float(0)
-        self._state = self._state_orig
+        self._lock = threading.RLock()
+        self._state = start_state
         self._trans = list()
-        if self._lock is not None:
-            try:
-                self._lock.release()
-            except RuntimeError:
-                pass  # Ignore error id lock is not already acquired
-        return
+        self._finalised = False
 
     @property
     def id(self) -> int:
@@ -140,9 +75,6 @@ class TestTask(Task):
             self._remaining_effort = 0
             if s.value != self._process_terminal_state.value:
                 self._remaining_effort = self._initial_effort
-            else:
-                # Terminal process state
-                TestTask.global_sync_dec()
         return
 
     @property

@@ -123,11 +123,3 @@ class Task(ABC):
     def process_end_state(cls,
                           end_state: State = None) -> State:
         pass
-
-    @abstractmethod
-    @purevirtual
-    def reset(self) -> None:
-        """
-        Return the Task to the same state at which it was constructed
-        """
-        pass

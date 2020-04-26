@@ -1,3 +1,5 @@
+import threading
+from copy import deepcopy
 from abc import abstractmethod
 from pubsub import pub
 from typing import List
@@ -25,15 +27,18 @@ class Agent(SrcSink):
     WORK_TIMER_MAX = float(30)
     PRS_TIMER = float(.25)
     PRD_TIMER_MAX = float(60)
+    WORK_INIT_TIMER = float(.25)
+    WORK_INIT_TIMER_MAX = float(180)
     AGENT_TOPIC_PREFIX = "agent"
 
     def __init__(self,
                  agent_name: str):
         """
-        Check this or child class has correctly implemented callable __call__ as needed to handle both the
-        PubSub listener events and the work timer events.
+        Register all notification handlers & activities.
         """
         self._address_book = AddressBook()
+        self._lock = threading.RLock()
+        self._subscribed_topics = list()
 
         super().__init__()
 
@@ -47,12 +52,15 @@ class Agent(SrcSink):
         self._handler.register_handler(self._do_work_initiate, WorkNotificationInitiate)
         self._handler.register_handler(self._do_srcsink_ping, SrcSinkPing)
         self._handler.register_handler(self._do_srcsink_ping_notification, SrcSinkPingNotification)
-        self._handler.register_activity(handler_for_activity=self._work_to_do,
+        self._handler.register_activity(handler_for_activity=self._activity_check_work_to_do,
                                         activity_interval=self._work_timer,
-                                        activity_name="{}-do_work_activity".format(agent_name))
-        self._handler.register_activity(handler_for_activity=self._do_manage_presence,
+                                        activity_name="{}-activity-work-to-do".format(agent_name))
+        self._handler.register_activity(handler_for_activity=self._activity_manage_presence,
                                         activity_interval=Agent.PRS_TIMER,
-                                        activity_name="{}-do_manage_presence".format(agent_name))
+                                        activity_name="{}-activity-manage-presence".format(agent_name))
+        self._handler.register_activity(handler_for_activity=self._activity_initiate_work,
+                                        activity_interval=Agent.WORK_INIT_TIMER,
+                                        activity_name="{}-activity-work-init".format(agent_name))
         self._unique_topic = self._create_topic_and_subscriptions()
         self._capabilities = self._get_capabilities()
         return
@@ -62,7 +70,10 @@ class Agent(SrcSink):
         Shut down
         """
         self._handler.activity_state(paused=True)
-        pub.unsubscribe(self, self._unique_topic)
+        with self._lock:
+            sub_list = deepcopy(self._subscribed_topics)
+        for topic in sub_list:
+            pub.unsubscribe(self, topic)
         return
 
     def __call__(self, notification: Notification):
@@ -80,9 +91,26 @@ class Agent(SrcSink):
         Create the unique topic for the agent that it will listen on for work (task) deliveries that it has
         requested from the task-pool
         """
+        topics = list()
         unique_topic = UniqueTopic().topic(Agent.AGENT_TOPIC_PREFIX)
-        pub.subscribe(self, unique_topic)
+        topics.append(unique_topic)
+        for topic in self._work_topics():
+            topics.append(topic)
+        self.add_subscription_topics(topics=topics)
+        for topic in topics:  # do potentially high latency subscriptions outside of the lock.
+            pub.subscribe(self, topic)
         return unique_topic
+
+    def add_subscription_topics(self,
+                                topics: List[str]) -> None:
+        """
+        Add the given list of topics to the list of topics agent is subscribed to
+        """
+        with self._lock:
+            for topic in topics:
+                if topic not in self._subscribed_topics:
+                    self._subscribed_topics.append(topic)
+        return
 
     @staticmethod
     def _get_capabilities() -> List[Capability]:
@@ -133,8 +161,17 @@ class Agent(SrcSink):
 
     @abstractmethod
     @purevirtual
-    def _work_to_do(self,
-                    current_activity_interval: float) -> float:
+    def work_initiate(self,
+                      work_notification: WorkNotificationDo) -> None:
+        """
+        Initiate the given work item with the agent as the owner of the work.
+        """
+        pass
+
+    @abstractmethod
+    @purevirtual
+    def _activity_check_work_to_do(self,
+                                   current_activity_interval: float) -> float:
         """
         Are there any tasks associated with the Agent that need working on ? of so schedule them by calling work
         execute handler.
@@ -144,23 +181,35 @@ class Agent(SrcSink):
 
         pass
 
-    @abstractmethod
     @purevirtual
-    def work_initiate(self,
-                      work_notification: WorkNotificationDo) -> None:
+    @abstractmethod
+    def _activity_manage_presence(self,
+                                  current_activity_interval: float) -> float:
         """
-        Initiate the given work item with the agent as the owner of the work.
+        Ensure that we are known on the ether & our address book has the name of at least one local pool in it.
+        :param current_activity_interval: The current delay in seconds before activity is re-triggered.
+        :return: The new delay in seconds before the activity is re-triggered.
         """
         pass
 
     @purevirtual
     @abstractmethod
-    def _do_manage_presence(self,
-                            current_activity_interval: float) -> float:
+    def _activity_initiate_work(self,
+                                current_activity_interval: float) -> float:
         """
-        Ensure that we are known on the ether & our address book has the name of at least one local pool in it.
+        If the agent is a source (origin) of work then this activity will create and inject the new tasks. Zero
+        or more tasks may be created depending on the specific task creation policy.
         :param current_activity_interval: The current delay in seconds before activity is re-triggered.
         :return: The new delay in seconds before the activity is re-triggered.
+        """
+        pass
+
+    @purevirtual
+    @abstractmethod
+    def _work_topics(self) -> List[str]:
+        """
+        The list of topics to subscribe to based on the Work Topics (status transitions) supported by the
+        agent.
         """
         pass
 

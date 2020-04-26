@@ -11,14 +11,19 @@ from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.main.simple.simpleagent import SimpleAgent
-from journey11.src.test.task.testtask import TestTask
+from journey11.src.main.simple.simpletask import SimpleTask
 from journey11.src.test.agent.dummysrcsink import DummySrcSink
+from journey11.src.main.simple.simpleether import SimpleEther
+from journey11.src.main.simple.simpletaskpool import SimpleTaskPool
 from journey11.src.main.simple.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.main.simple.simpleworknotificationinitiate import SimpleWorkNotificationInitiate
 from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
 
 
 class TestTheAgent(unittest.TestCase):
+    _ether = None
+    _task_pool = None
+    _i = 1
 
     @classmethod
     def setUpClass(cls):
@@ -26,11 +31,17 @@ class TestTheAgent(unittest.TestCase):
 
     def setUp(self) -> None:
         print("SetUp")
-        TestTask.global_sync_reset()
+        self._ether = SimpleEther("TestEther-{}".format(self._i))
+        self._task_pool = SimpleTaskPool("TestTaskPool-{}".format(self._i))
+        self._i += 1
         return
 
     def tearDown(self) -> None:
         pub.unsubAll()
+        if self._ether is not None:
+            del self._ether
+        if self._task_pool is not None:
+            del self._task_pool
         return
 
     def test_basic_capability(self):
@@ -40,6 +51,7 @@ class TestTheAgent(unittest.TestCase):
                                  capacity=1,
                                  task_consumption_policy=GreedyTaskConsumptionPolicy(),
                                  trace=True)
+        time.sleep(1)  # Time for Agent discovery to settle.
         self.assertEqual(float(1),
                          Capability.equivalence_factor([SimpleCapability(CapabilityRegister.AGENT.name)],
                                                        test_agent.capabilities))
@@ -60,6 +72,7 @@ class TestTheAgent(unittest.TestCase):
                              capacity=1,
                              task_consumption_policy=GreedyTaskConsumptionPolicy(),
                              trace=True)
+            time.sleep(.5)
 
             ping_srcsink = DummySrcSink("PingSrcSink", ping_topic=sa.topic)
             ping_workref = ping_srcsink.send_ping(required_capabilities=reqd_cap)
@@ -75,12 +88,12 @@ class TestTheAgent(unittest.TestCase):
         effort = 3
         capacity = 1
         source_name = "Dummy-Test-Source-Inject"
-        TestTask.process_start_state(State.S0)
-        TestTask.process_end_state(State.S1)
+        SimpleTask.process_start_state(State.S0)
+        SimpleTask.process_end_state(State.S1)
 
         for i in range(3):
             logging.info("\n\n- - - - - T E S T  C A S E {} - - - -\n\n".format(i))
-            test_task = TestTask(effort=effort)
+            test_task = SimpleTask(effort=effort)
             test_srcsink = DummySrcSink(source_name)
 
             test_agent = SimpleAgent('agent {}'.format(i),
@@ -95,6 +108,7 @@ class TestTheAgent(unittest.TestCase):
                                                          originator=test_agent,
                                                          source=test_srcsink,
                                                          task=test_task)
+            time.sleep(1)
             if i == 0:
                 # Publish to agent via it's private topic.
                 # test_agent(test_notification)
@@ -124,11 +138,11 @@ class TestTheAgent(unittest.TestCase):
     def test_simple_task_initiate(self):
         effort = 5
         capacity = 2
-        TestTask.process_start_state(State.S0)
-        TestTask.process_end_state(State.S1)
+        SimpleTask.process_start_state(State.S0)
+        SimpleTask.process_end_state(State.S1)
 
         logging.info("\n\n- - - - - T E S T  C A S E - I N I T I A T E - - - -\n\n")
-        test_task = TestTask(effort=effort)
+        test_task = SimpleTask(effort=effort)
 
         test_agent = SimpleAgent('agent-initiate-1',
                                  start_state=State.S0,
@@ -136,7 +150,7 @@ class TestTheAgent(unittest.TestCase):
                                  capacity=capacity,
                                  task_consumption_policy=GreedyTaskConsumptionPolicy(),
                                  trace=True)
-
+        time.sleep(.5)
         test_initiate = SimpleWorkNotificationInitiate(task=test_task, originator=test_agent)
 
         pub.sendMessage(topicName=test_agent.topic, notification=test_initiate)

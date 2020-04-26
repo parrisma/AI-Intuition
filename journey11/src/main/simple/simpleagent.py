@@ -1,11 +1,14 @@
 import logging
 import threading
+import datetime
 from queue import Queue
 from pubsub import pub
 from typing import Type, Dict, List
+from journey11.src.interface.srcsink import SrcSink
 from journey11.src.interface.agent import Agent
 from journey11.src.interface.ether import Ether
-from journey11.src.interface.srcsink import SrcSink
+from journey11.src.interface.task import Task
+from journey11.src.interface.taskpool import TaskPool
 from journey11.src.interface.tasknotification import TaskNotification
 from journey11.src.interface.worknotificationdo import WorkNotificationDo
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
@@ -14,13 +17,16 @@ from journey11.src.interface.worknotificationinitiate import WorkNotificationIni
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.interface.srcsinkping import SrcSinkPing
+from journey11.src.interface.taskfactory import TaskFactory
 from journey11.src.lib.state import State
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.lib.notificationhandler import NotificationHandler
+from journey11.src.lib.countdownbarrier import CountDownBarrier
 from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkNotification
 from journey11.src.main.simple.simpleworkrequest import SimpleWorkRequest
 from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
+from journey11.src.main.simple.simpleworknotificationinitiate import SimpleWorkNotificationInitiate
 from journey11.src.main.simple.simpleworknotificationdo import SimpleWorkNotificationDo
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
@@ -37,7 +43,9 @@ class SimpleAgent(Agent):
                  capacity: int,
                  task_consumption_policy: TaskConsumptionPolicy,
                  agent_capabilities: List[Capability] = None,
-                 trace: bool = False):
+                 task_factory: TaskFactory = None,
+                 trace: bool = False,
+                 count_down_barrier: CountDownBarrier = None):
         """
         """
         self._work_lock = threading.RLock()
@@ -57,15 +65,16 @@ class SimpleAgent(Agent):
         self._work_in_progress = Queue()
         self._work_done = Queue()
 
-        self._num_notification = 0
-        self._num_work = 0
-
         self._task_consumption_policy = task_consumption_policy
 
         self._trace = trace
         self._trace_log = dict()
 
         self._ping_factor_threshold = float(1)
+
+        self._task_factory = task_factory
+
+        self._count_down_barrier = count_down_barrier
 
         return
 
@@ -96,9 +105,8 @@ class SimpleAgent(Agent):
         processing but there is no guarantee as another agent may have already requested the task.
         :param task_notification: The notification event for task requiring attention
         """
-        self._trace_log_update("_do_notification", type(task_notification), task_notification.work_ref.id)
+        self._trace_log_update("_do_notification", task_notification)
         logging.info("{} do_notification for work ref {}".format(self._agent_name, task_notification.work_ref.id))
-        self._num_notification += 1
         if self._task_consumption_policy.process_task(task_notification.task_meta):
             if task_notification.originator is not None:
                 work_request = SimpleWorkRequest(task_notification.work_ref, self)
@@ -111,7 +119,6 @@ class SimpleAgent(Agent):
                     self._agent_name,
                     task_notification.work_ref.id))
         else:
-            self._num_notification -= 1
             logging.info("{} Rx TaskNotification Ignored by Consumption Policy{}".format(self.name,
                                                                                          task_notification.work_ref.id))
         return
@@ -121,8 +128,7 @@ class SimpleAgent(Agent):
         """
         Process any out standing tasks associated with the agent.
         """
-        self._trace_log_update("_do_work", type(work_notification), work_notification.work_ref.id)
-        self._num_work += 1
+        self._trace_log_update("_do_work", work_notification)
         if work_notification.task.work_in_state_remaining > 0:
             logging.info("{} do_work for work_ref {}".format(self._agent_name, work_notification.work_ref.id))
             if work_notification.task.do_work(self.capacity) > 0:
@@ -161,9 +167,7 @@ class SimpleAgent(Agent):
         """
         Handle the initiation the given work item from this agent
         """
-        self._trace_log_update("_do_work_initiate",
-                               type(work_notification_initiate),
-                               work_notification_initiate.task.id)
+        self._trace_log_update("_do_work_initiate", work_notification_initiate)
         task_to_do = work_notification_initiate.task
         work_notification_do = SimpleWorkNotificationDo(unique_work_ref=UniqueWorkRef(prefix=str(task_to_do.id),
                                                                                       suffix=self.name),
@@ -179,9 +183,7 @@ class SimpleAgent(Agent):
         Take receipt of the given completed work item that was initiated from this agent and do any
         final processing.
         """
-        self._trace_log_update("_do_work_finalise",
-                               type(work_notification_final),
-                               work_notification_final.task.id)
+        self._trace_log_update("_do_work_finalise", work_notification_final)
 
         work_notification_final.task.finalised = True
         logging.info("{} Rx Finalised task {} from source {} in state {}".format(self._agent_name,
@@ -189,7 +191,9 @@ class SimpleAgent(Agent):
                                                                                  work_notification_final.originator.name,
                                                                                  work_notification_final.task.state))
         with self._work_lock:
-            self._work_done.put(work_notification_final)
+            self._work_done.put(work_notification_final.task)
+            if self._count_down_barrier is not None:
+                self._count_down_barrier.decr()
         return
 
     def _do_srcsink_ping_notification(self,
@@ -198,6 +202,7 @@ class SimpleAgent(Agent):
         Handle a ping response from a srcsink
         :param: The srcsink notification
         """
+        self._trace_log_update("_do_srcsink_ping_notification", ping_notification)
         logging.info("Agent {} RX ping response for {}".format(self.name, ping_notification.src_sink.name))
         if ping_notification.src_sink.topic != self.topic:
             # Don't count ping response from our self.
@@ -211,6 +216,7 @@ class SimpleAgent(Agent):
         Respond to a ping request and share details of self + capabilities
         :param: The srcsink notification
         """
+        self._trace_log_update("_do_srcsink_ping", type(ping_request), ping_request)
         logging.info("Agent {} RX ping request for {}".format(self.name, ping_request.sender_srcsink.name))
         # Don't count pings from our self.
         if ping_request.sender_srcsink.topic != self.topic:
@@ -224,13 +230,14 @@ class SimpleAgent(Agent):
                                                                        sender_workref=ping_request.work_ref))
         return
 
-    def _do_manage_presence(self,
-                            current_activity_interval: float) -> float:
+    def _activity_manage_presence(self,
+                                  current_activity_interval: float) -> float:
         """
         Ensure that we are known on the ether & our address book has the name of at least one local pool in it.
         :param current_activity_interval: The current delay in seconds before activity is re-triggered.
         :return: The new delay in seconds before the activity is re-triggered.
         """
+        self._trace_log_update("_activity_manage_presence", current_activity_interval)
         back_off_reset = False
         if self._get_recent_ether_address() is None:
             logging.info("{} not linked to Ether - sending discovery Ping".format(self.name))
@@ -239,18 +246,55 @@ class SimpleAgent(Agent):
                             notification=SimpleSrcSinkPing(sender_srcsink=self,
                                                            required_capabilities=[
                                                                SimpleCapability(str(CapabilityRegister.ETHER))]))
-        if self._get_recent_pool_address() is None:
-            logging.info("{} Missing local Pool address - sending discovery Ping to Ether".format(self.name))
-            back_off_reset = True
-            pub.sendMessage(topicName=Ether.back_plane_topic(),
-                            notification=SimpleSrcSinkPing(sender_srcsink=self,
-                                                           required_capabilities=[
-                                                               SimpleCapability(str(CapabilityRegister.POOL))]))
+        else:
+            # We have an Ether address so we can now ping the Ether for a task pool address.
+            if self._get_recent_pool_address() is None:
+                logging.info("{} Missing local Pool address - sending discovery Ping to Ether".format(self.name))
+                back_off_reset = True
+                pub.sendMessage(topicName=Ether.back_plane_topic(),
+                                notification=SimpleSrcSinkPing(sender_srcsink=self,
+                                                               required_capabilities=[
+                                                                   SimpleCapability(str(CapabilityRegister.POOL))]))
 
         return NotificationHandler.back_off(reset=back_off_reset,
                                             curr_interval=current_activity_interval,
                                             min_interval=Agent.PRS_TIMER,
                                             max_interval=Agent.PRD_TIMER_MAX)
+
+    def _activity_initiate_work(self,
+                                current_activity_interval: float) -> float:
+        """
+        If the agent is a source (origin) of work then this activity will create and inject the new tasks. Zero
+        or more tasks may be created depending on the specific task creation policy.
+        :param current_activity_interval: The current delay in seconds before activity is re-triggered.
+        :return: The new delay in seconds before the activity is re-triggered.
+        """
+        self._trace_log_update("_activity_initiate_work", current_activity_interval)
+        back_off_reset = False
+        if self._task_factory is not None:
+            if self._get_recent_pool_address() is None:
+                back_off_reset = True
+                logging.info("{} Task Init waiting for Pool address".format(self._agent_name))
+            else:
+                tasks_to_initiate = self._task_factory.generate()
+                logging.info("{} Initiating {} Tasks".format(self.name, len(tasks_to_initiate)))
+                for task in tasks_to_initiate:
+                    back_off_reset = True
+                    self._do_work_initiate(SimpleWorkNotificationInitiate(task=task, originator=self))
+
+        return NotificationHandler.back_off(reset=back_off_reset,
+                                            curr_interval=current_activity_interval,
+                                            min_interval=Agent.WORK_INIT_TIMER,
+                                            max_interval=Agent.WORK_INIT_TIMER_MAX)
+
+    def _work_topics(self) -> List[str]:
+        """
+        The list of topics to subscribe to based on the Work Topics (status transitions) supported by the
+        agent.
+        """
+        topics = list()
+        topics.append(TaskPool.topic_for_capability(self._start_state))
+        return topics
 
     def reset(self) -> None:
         """
@@ -258,14 +302,15 @@ class SimpleAgent(Agent):
         """
         return
 
-    def _work_to_do(self,
-                    current_activity_interval: float) -> float:
+    def _activity_check_work_to_do(self,
+                                   current_activity_interval: float) -> float:
         """
         Are there any tasks associated with the Agent that need working on ? of so schedule them by calling work
         execute handler.
         :param current_activity_interval: The current delay in seconds before activity is re-triggered.
         :return: The new delay in seconds before the activity is re-triggered.
         """
+        self._trace_log_update("_activity_check_work_to_do", current_activity_interval)
         back_off_reset = False
         if not self._work_in_progress.empty():
             wtd = self._work_in_progress.get()
@@ -288,35 +333,17 @@ class SimpleAgent(Agent):
 
     def _trace_log_update(self,
                           func: str,
-                          action_type: Type,
-                          work_ref_id) -> None:
+                          closure) -> None:
         """ Keep a record of all the notification events for this agent
         For unit testing only
         :param func: The notification function called
-        :param action_type: The type of the action passed to the notification function
-        :param work_ref_id: the work ref id of the notification
+        :param closure: Details specific to the function type.
         """
         if self._trace:
-            tlid = self.trace_log_id(func, action_type, work_ref_id)
-            if tlid not in self._trace_log:
-                self._trace_log[tlid] = 1
-            else:
-                cnt = self._trace_log[tlid]
-                self._trace_log[tlid] = cnt + 1
+            if func not in self._trace_log:
+                self._trace_log[func] = list()
+            self._trace_log[func].append([datetime.datetime, closure])
         return
-
-    @staticmethod
-    def trace_log_id(func: str,
-                     action_type: Type,
-                     work_ref_id) -> str:
-        """ Create a key to hold a trace log record against
-
-        :param func: The notification function called
-        :param action_type: The type of the action passed to the notification function
-        :param work_ref_id: the work ref id of the notification
-        :return: The key
-        """
-        return "{}{}{}".format(func, action_type.__name__, work_ref_id)
 
     # ----- P R O P E R T I E S -----
 
@@ -379,22 +406,6 @@ class SimpleAgent(Agent):
         return s
 
     @property
-    def num_notification(self) -> int:
-        """
-        How many task notifications did the agent get
-        :return: num notifications
-        """
-        return self._num_notification
-
-    @property
-    def num_work(self) -> int:
-        """
-        How many tasks did the agent work on
-        :return: num tasks worked on
-        """
-        return self._num_work
-
-    @property
     def work_done(self) -> List[WorkNotificationFinalise]:
         """
         A list of the finalised work notifications, which contain the task that was
@@ -454,3 +465,38 @@ class SimpleAgent(Agent):
         if ss is not None:
             ss = ss[0]
         return ss
+
+    def finalised_tasks(self) -> List[Task]:
+        """
+        The finalised tasks (at the point of call) for the agent
+        :return: List of finalised tasks
+        """
+        res = list()
+        with self._work_lock:
+            for task in self._work_done.queue:
+                res.append(task)
+        return res
+
+    @property
+    def tasks_initiated(self) -> int:
+        ky = "_do_work_initiate"
+        if self.trace_log is not None:
+            if ky not in self.trace_log.keys():
+                return 0
+        return len(self.trace_log[ky])
+
+    @property
+    def tasks_worked_on(self) -> int:
+        ky = '_do_work'
+        if self.trace_log is not None:
+            if ky not in self.trace_log.keys():
+                return 0
+        return len(self.trace_log[ky])
+
+    @property
+    def tasks_finalised(self) -> int:
+        ky = '_do_work_finalise'
+        if self.trace_log is not None:
+            if ky not in self.trace_log.keys():
+                return 0
+        return len(self.trace_log[ky])

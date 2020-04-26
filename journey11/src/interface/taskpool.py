@@ -139,17 +139,16 @@ class TaskPool(SrcSink):
         """
         pass
 
-    @purevirtual
-    @abstractmethod
-    def topic_for_capability(self,
+    @classmethod
+    def topic_for_capability(cls,
                              state: State) -> str:
-        # TODO: Expose as a request base notification rather them method of the class.
         """
         The topic string on which tasks needing work in that state are published on
         :param state: The state for which the topic is required
         :return: The topic string for the given state
         """
-        pass
+        # TODO https://github.com/parrisma/AI-Intuition/issues/1
+        return "topic-{}".format(str(state.id()))
 
     @property
     @abstractmethod
