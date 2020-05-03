@@ -63,6 +63,7 @@ class SimpleAgent(Agent):
         self._capacity = capacity
 
         self._work_in_progress = Queue()
+        self._work_initiate = Queue()
         self._work_done = Queue()
 
         self._task_consumption_policy = task_consumption_policy
@@ -136,7 +137,7 @@ class SimpleAgent(Agent):
                     self._agent_name, work_notification.work_ref.id,
                     work_notification.task.work_in_state_remaining,
                     work_notification.task.state))
-                self._add_work_item_to_queue(work_notification)
+                self._add_item_to_work_queue(work_notification)
         else:
             logging.info("{} do_work nothing left to do for task {} in state {}".format(self._agent_name,
                                                                                         work_notification.work_ref.id,
@@ -156,8 +157,12 @@ class SimpleAgent(Agent):
                             notification=work_notification_finalise)
         return
 
-    def _add_work_item_to_queue(self,
+    def _add_item_to_work_queue(self,
                                 work_notification: WorkNotificationDo) -> None:
+        """
+        Add the notification to the queue of pending work.
+        :param work_notification:
+        """
         with self._work_lock:
             self._work_in_progress.put(work_notification)
         return
@@ -168,13 +173,41 @@ class SimpleAgent(Agent):
         Handle the initiation the given work item from this agent
         """
         self._trace_log_update("_do_work_initiate", work_notification_initiate)
-        task_to_do = work_notification_initiate.task
-        work_notification_do = SimpleWorkNotificationDo(unique_work_ref=UniqueWorkRef(prefix=str(task_to_do.id),
-                                                                                      suffix=self.name),
-                                                        task=task_to_do,
-                                                        source=self,
-                                                        originator=self)
-        self._add_work_item_to_queue(work_notification=work_notification_do)
+        pool = self._get_recent_pool_address()
+        if pool is None:
+            task = work_notification_initiate.task
+            logging.info("{} Do Work Initiate waiting for Pool address task {} queued".format(self._agent_name,
+                                                                                              task.id))
+            self._add_item_to_initiate_queue(SimpleWorkNotificationInitiate(task=task,
+                                                                            originator=self))
+        else:
+            pool_topic = pool.topic
+            to_do = list()
+            to_do.append(work_notification_initiate)
+            with self._work_lock:
+                while not self._work_initiate.empty():
+                    to_do.append(self._work_initiate.get_nowait())
+            for wni in to_do:
+                task_to_do = wni.task
+                wnd = SimpleWorkNotificationDo(unique_work_ref=UniqueWorkRef(prefix=str(task_to_do.id),
+                                                                             suffix=self.name),
+                                               task=task_to_do,
+                                               source=self,
+                                               originator=self)
+                logging.info("{} Task {} Initiate sent to Pool {}".format(self.name,
+                                                                          self._agent_name,
+                                                                          pool_topic))
+                pub.sendMessage(topicName=pool_topic, notification=wnd)
+        return
+
+    def _add_item_to_initiate_queue(self,
+                                    initiate_notification: WorkNotificationInitiate) -> None:
+        """
+        Add the notification to the queue of work needing initiation
+        :param work_notification:
+        """
+        with self._work_lock:
+            self._work_initiate.put(initiate_notification)
         return
 
     def _do_work_finalise(self,
@@ -272,15 +305,11 @@ class SimpleAgent(Agent):
         self._trace_log_update("_activity_initiate_work", current_activity_interval)
         back_off_reset = False
         if self._task_factory is not None:
-            if self._get_recent_pool_address() is None:
+            tasks_to_initiate = self._task_factory.generate()
+            logging.info("{} Initiating {} Tasks".format(self.name, len(tasks_to_initiate)))
+            for task in tasks_to_initiate:
                 back_off_reset = True
-                logging.info("{} Task Init waiting for Pool address".format(self._agent_name))
-            else:
-                tasks_to_initiate = self._task_factory.generate()
-                logging.info("{} Initiating {} Tasks".format(self.name, len(tasks_to_initiate)))
-                for task in tasks_to_initiate:
-                    back_off_reset = True
-                    self._do_work_initiate(SimpleWorkNotificationInitiate(task=task, originator=self))
+                self._do_work_initiate(SimpleWorkNotificationInitiate(task=task, originator=self))
 
         return NotificationHandler.back_off(reset=back_off_reset,
                                             curr_interval=current_activity_interval,

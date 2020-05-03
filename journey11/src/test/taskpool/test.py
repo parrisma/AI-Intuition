@@ -151,7 +151,7 @@ class TestTheTaskPool(unittest.TestCase):
                      [10, 2, 100, 10, State.S0, State.S8, greedy_policy],
                      [10, 2, 200, 50, State.S0, State.S8, greedy_policy]]
 
-        scenarios = [[5, 1, 2, 2, State.S0, State.S1, greedy_policy]]
+        scenarios = [[1, 1, 1, 1, State.S0, State.S2, greedy_policy]]
         case_num = 1
         for task_effort, agent_capacity, num_tasks, num_agents, start_state, end_state, cons_policy in scenarios:
             case_description \
@@ -228,11 +228,14 @@ class TestTheTaskPool(unittest.TestCase):
         ctb = CountDownBarrier(len(State.range(start_state, end_state)[1:]) * num_agents)
         for es in State.range(start_state, end_state)[1:]:
             for _ in range(num_agents):
-                # Create Task Factory for Agents
-                task_factory = SimpleTaskFactory(start_state=State.S0,
-                                                 task_gen_policy=SimpleTaskGenerationPolicyOneOffBatchUniform(
-                                                     batch_size=tasks_per_agent,
-                                                     effort=task_effort))
+                # Create Task Factory for Agents. We only need a task factory for the agents handling the
+                # start state. All of the other agents are just processing task transitions
+                task_factory = None
+                if st == start_state:
+                    task_factory = SimpleTaskFactory(start_state=State.S0,
+                                                     task_gen_policy=SimpleTaskGenerationPolicyOneOffBatchUniform(
+                                                         batch_size=tasks_per_agent,
+                                                         effort=task_effort))
 
                 agent = SimpleAgent(agent_name="Agent {}".format(i),
                                     start_state=st,
