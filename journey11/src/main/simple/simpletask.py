@@ -47,7 +47,7 @@ class SimpleTask(Task):
         return self._id
 
     @property
-    def lead_time(self) -> State:
+    def lead_time(self) -> float:
         """
         The lead time between task starting and task finishing
         :return: Lead Time

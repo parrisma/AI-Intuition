@@ -4,6 +4,7 @@
 
 import sys
 _b=sys.version_info[0]<3 and (lambda x:x) or (lambda x:x.encode('latin1'))
+from google.protobuf.internal import enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
@@ -20,14 +21,12 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='journey11',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x0bstate.proto\x12\tjourney11\"(\n\x05State\"\x1f\n\x05state\x12\x06\n\x02S1\x10\x00\x12\x06\n\x02S2\x10\x01\x12\x06\n\x02S3\x10\x02\x62\x06proto3')
+  serialized_pb=_b('\n\x0bstate.proto\x12\tjourney11*\x1f\n\x05State\x12\x06\n\x02S1\x10\x00\x12\x06\n\x02S2\x10\x01\x12\x06\n\x02S3\x10\x02\x62\x06proto3')
 )
 
-
-
-_STATE_STATE = _descriptor.EnumDescriptor(
-  name='state',
-  full_name='journey11.State.state',
+_STATE = _descriptor.EnumDescriptor(
+  name='State',
+  full_name='journey11.State',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -46,46 +45,19 @@ _STATE_STATE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=35,
-  serialized_end=66,
-)
-_sym_db.RegisterEnumDescriptor(_STATE_STATE)
-
-
-_STATE = _descriptor.Descriptor(
-  name='State',
-  full_name='journey11.State',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-    _STATE_STATE,
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
   serialized_start=26,
-  serialized_end=66,
+  serialized_end=57,
 )
+_sym_db.RegisterEnumDescriptor(_STATE)
 
-_STATE_STATE.containing_type = _STATE
-DESCRIPTOR.message_types_by_name['State'] = _STATE
+State = enum_type_wrapper.EnumTypeWrapper(_STATE)
+S1 = 0
+S2 = 1
+S3 = 2
+
+
+DESCRIPTOR.enum_types_by_name['State'] = _STATE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
-
-State = _reflection.GeneratedProtocolMessageType('State', (_message.Message,), {
-  'DESCRIPTOR' : _STATE,
-  '__module__' : 'state_pb2'
-  # @@protoc_insertion_point(class_scope:journey11.State)
-  })
-_sym_db.RegisterMessage(State)
 
 
 # @@protoc_insertion_point(module_scope)

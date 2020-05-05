@@ -1,8 +1,7 @@
 from journey11.src.experiments.protobuf.helloworld_pb2 import HelloWorld
-from journey11.src.experiments.protobuf.task_pb2 import Task
+from journey11.src.experiments.protobuf.state_pb2 import State
 import journey11.src.experiments.protobuf.task_pb2 as task__pb2
 import journey11.src.experiments.protobuf.complex_pb2 as complex_pb2
-import journey11.src.experiments.protobuf.state_pb2 as state__pb2
 
 import unittest
 
@@ -37,22 +36,30 @@ class TestProtoHelloWorld(unittest.TestCase):
         self.assertTrue(task_orig.task_id == task_copy.task_id)
         return
 
-    def test_state_2_state(self):
-        state_orig = state__pb2.State()
-        state_copy = state__pb2.State()
-        state_copy.CopyFrom(state_orig)
-        return
-
     def test_complex(self):
-        task_m = Task()
-        task_m.task_name = "Task1"
-        task_m.task_id = 1
 
-        complex_m = complex_pb2.Complex()
-        complex_m.complex_name = "Complex-1"
-        complex_m.complex_trigger = 31415
-        complex_m.tasks.extend([task_m])
-        complex_m.complex_state.CopyFrom(state__pb2.State().S1)
+        num_tasks = 5
+
+        complex_expected = complex_pb2.Complex()
+        complex_expected.complex_name = "Complex-1"
+        complex_expected.complex_trigger = 31415
+        for i in range(num_tasks):
+            task_m = complex_expected.tasks.add()
+            task_m.task_name = "Task{}".format(i)
+            task_m.task_id = i
+        complex_expected.state = State.S2
+        asbin = complex_expected.SerializeToString()
+
+        # De-serialize
+        complex_actual = complex_pb2.Complex()
+        complex_actual.ParseFromString(asbin)
+        self.assertTrue(complex_expected.complex_name == complex_actual.complex_name)
+        self.assertTrue(complex_expected.complex_trigger == complex_actual.complex_trigger)
+        self.assertTrue(complex_expected.state == complex_actual.state)
+        self.assertTrue(len(complex_actual.tasks) == num_tasks)
+        for n in range(num_tasks):
+            self.assertTrue(complex_expected.tasks[n].task_name == complex_actual.tasks[n].task_name)
+            self.assertTrue(complex_expected.tasks[n].task_id == complex_actual.tasks[n].task_id)
 
         return
 

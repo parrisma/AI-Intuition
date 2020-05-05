@@ -5,3 +5,4 @@ protoc --proto_path=. --python_out=. ./helloworld.proto
 protoc --proto_path=. --python_out=. ./state.proto
 protoc --proto_path=. --python_out=. ./task.proto
 protoc --proto_path=. --python_out=. ./complex.proto
+protoc --proto_path=. --python_out=. ./addressbook.proto

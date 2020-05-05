@@ -13,8 +13,8 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-import journey11.src.experiments.protobuf.state_pb2 as state__pb2
-import journey11.src.experiments.protobuf.task_pb2 as task__pb2
+import state_pb2 as state__pb2
+import task_pb2 as task__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='journey11',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\rcomplex.proto\x12\tjourney11\x1a\x0bstate.proto\x1a\ntask.proto\"\x81\x01\n\x07\x43omplex\x12\x14\n\x0c\x63omplex_name\x18\x01 \x01(\t\x12\x17\n\x0f\x63omplex_trigger\x18\x02 \x01(\x03\x12\'\n\rcomplex_state\x18\x03 \x01(\x0b\x32\x10.journey11.State\x12\x1e\n\x05tasks\x18\x04 \x03(\x0b\x32\x0f.journey11.Taskb\x06proto3')
+  serialized_pb=_b('\n\rcomplex.proto\x12\tjourney11\x1a\x0bstate.proto\x1a\ntask.proto\"y\n\x07\x43omplex\x12\x14\n\x0c\x63omplex_name\x18\x01 \x01(\t\x12\x17\n\x0f\x63omplex_trigger\x18\x02 \x01(\x03\x12\x1f\n\x05state\x18\x03 \x01(\x0e\x32\x10.journey11.State\x12\x1e\n\x05tasks\x18\x04 \x03(\x0b\x32\x0f.journey11.Taskb\x06proto3')
   ,
   dependencies=[state__pb2.DESCRIPTOR,task__pb2.DESCRIPTOR,])
 
@@ -51,9 +51,9 @@ _COMPLEX = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='complex_state', full_name='journey11.Complex.complex_state', index=2,
-      number=3, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='state', full_name='journey11.Complex.state', index=2,
+      number=3, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
@@ -76,11 +76,11 @@ _COMPLEX = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=54,
-  serialized_end=183,
+  serialized_start=53,
+  serialized_end=174,
 )
 
-_COMPLEX.fields_by_name['complex_state'].message_type = state__pb2._STATE
+_COMPLEX.fields_by_name['state'].enum_type = state__pb2._STATE
 _COMPLEX.fields_by_name['tasks'].message_type = task__pb2._TASK
 DESCRIPTOR.message_types_by_name['Complex'] = _COMPLEX
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
