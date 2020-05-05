@@ -1,0 +1,1 @@
+ docker build -f .\Dockerfile-kafka-all-in-one . -t kafka-ubuntu/1.0
