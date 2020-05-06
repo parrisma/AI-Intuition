@@ -9,6 +9,8 @@ RUN usermod -aG sudo zookeeper
 
 # Create structure
 
+RUN mkdir -p /var/logs/zookeeper
+RUN chown -R zookeeper:zookeeper /var/logs/zookeeper
 RUN mkdir -p /data/zookeeper
 RUN chown -R zookeeper:zookeeper /data/zookeeper
 
@@ -17,3 +19,18 @@ RUN chown -R zookeeper:zookeeper /data/zookeeper
 RUN cd /opt && wget https://archive.apache.org/dist/zookeeper/zookeeper-3.4.9/zookeeper-3.4.9.tar.gz && tar -xvzf zookeeper-3.4.9.tar.gz && rm -f zookeeper-3.4.9.tar.gz
 RUN cd /opt && mv zookeeper-3.4.9 zookeeper && chown -R zookeeper:zookeeper /opt/zookeeper
 RUN cd /opt/zookeeper/conf && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/kafka/docker/zoo.cfg
+RUN cd /opt/zookeeper/conf && rm log4j.properties && wget 
+
+# network utils.
+
+RUN apt-get install -y iputils-ping
+RUN apt-get install -y telnetd
+RUN apt-get install -y net-tools
+
+# Editor
+RUN apt-get install -y vim
+
+# Switch to zookeeper & run the server
+
+USER zookeeper
+
