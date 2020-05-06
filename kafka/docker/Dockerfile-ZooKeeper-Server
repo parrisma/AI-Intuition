@@ -2,4 +2,4 @@ FROM zookeeper:1.0
 
 RUN cd /home/zookeeper && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/kafka/docker/zkrun.sh && chmod +x /home/zookeeper/zkrun.sh
 
-#[CMD ["/home/zookeeper/zkrun.sh"]
+[CMD ["/home/zookeeper/zkrun.sh"]
