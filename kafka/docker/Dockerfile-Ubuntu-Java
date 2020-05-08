@@ -13,6 +13,10 @@ RUN apt-get update -y
 RUN add-apt-repository ppa:linuxuprising/java
 RUN apt-get install -y default-jre
 
+# Wget
+
+RUN apt-get install -y wget
+
 # network utils.
 
 RUN apt-get install -y iputils-ping

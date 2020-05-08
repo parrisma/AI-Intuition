@@ -1,3 +1,25 @@
 FROM ubuntu-java:1.0
 
+# Create kafka user
+
+RUN useradd kafka -m
+RUN usermod --shell /bin/bash kafka
+RUN passwd -d kafka
+RUN usermod -aG sudo kafka
+
+# Create structure
+
+RUN mkdir -p /var/logs/kafka
+RUN chown -R kafka:kafka /var/logs/kafka
+RUN mkdir -p /data/kafka
+RUN chown -R kafka:kafka /data/kafka
+
+# Get & Install Kafka
+RUN cd /opt && wget http://www-us.apache.org/dist/kafka/2.4.0/kafka_2.13-2.4.0.tgz && tar -xvzf kafka_2.13-2.4.0.tgz && rm -f kafka_2.13-2.4.0.tgz
+RUN cd /opt && mv kafka_2.13-2.4.0 kafka && chown -R kafka:kafka /opt/kafka
+
+# Pull server.properties
+RUN cd /opt/kafka/config && rm -f server.properties && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/kafka/docker/kafka/server.properties
+RUN cd /opt/kafka/config && rm -f log4j.properties && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/kafka/docker/kafka/log4j.properties
+
 

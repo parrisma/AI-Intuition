@@ -1,0 +1,6 @@
+from kafka:1.0
+
+# Get run script
+RUN cd /home/kafka && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/kafka/docker/kafka/kafka-run.sh && chmod +x kafka-run.sh
+
+CMD ["/home/kafka/kafka-run.sh"]
