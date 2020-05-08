@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-zookeeper
+  labels:
+    app: apache_zookeeper
+spec:
+  containers:
+    - name: zookeeper
+      image: zookeeper-serer:1.0
+      ports:
+        - containerPort: 2181
