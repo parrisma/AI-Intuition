@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: ai-intuition
+  name: kafka-pod
+  labels:
+    app: kafka
+spec:
+  containers:
+    - name: zookeeper
+      image: zookeeper-server:1.0
+      ports:
+        - containerPort: 2181
+    - name: kafka
+      image: kafka-server:1.0
+      ports:
+        - containerPort: 9092
+      env:
+        - name: ZOOKEEPER_SERVER
+          value: kafka-pod:2181
