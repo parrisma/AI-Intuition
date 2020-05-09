@@ -1,0 +1,5 @@
+Do not get this working.
+Could not fix the Kafka server.properties to get the EXTERNAL listener to pick up the NodePort of the Service
+
+https://suraj-blogging.blogspot.com/2019/07/what-is-advertisedlisteners-in-kafka.html
+https://medium.com/@iamsuraj/what-is-advertised-listeners-in-kafka-72e6fae7d68e
