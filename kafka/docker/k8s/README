@@ -3,3 +3,5 @@ Could not fix the Kafka server.properties to get the EXTERNAL listener to pick u
 
 https://suraj-blogging.blogspot.com/2019/07/what-is-advertisedlisteners-in-kafka.html
 https://medium.com/@iamsuraj/what-is-advertised-listeners-in-kafka-72e6fae7d68e
+
+docker run -d --rm -h kafka-server --name kafka-server -p 9092:9092 --network ai-net -e ZOOKEEPER_SERVER=zookeeper-server:2181 -e KAFKA_PLAINTEXT=localhost:9092 -e KAFKA_EXTERNAL=localhost:30105 kafka-server:1.0

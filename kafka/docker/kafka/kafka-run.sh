@@ -11,3 +11,11 @@ else
 fi
 
 ./bin/kafka-server-start.sh ./config/server.properties
+
+# Just for testing, so we can stop the current Kafka and fix settings etc
+# without the container exiting.
+
+while true; do
+  sleep 10
+  echo Tick
+done
