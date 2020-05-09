@@ -18,8 +18,8 @@ RUN chown -R zookeeper:zookeeper /data/zookeeper
 
 RUN cd /opt && wget https://archive.apache.org/dist/zookeeper/zookeeper-3.4.9/zookeeper-3.4.9.tar.gz && tar -xvzf zookeeper-3.4.9.tar.gz && rm -f zookeeper-3.4.9.tar.gz
 RUN cd /opt && mv zookeeper-3.4.9 zookeeper && chown -R zookeeper:zookeeper /opt/zookeeper
-RUN cd /opt/zookeeper/conf && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/zoo.cfg
-RUN cd /opt/zookeeper/conf && rm log4j.properties && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/log4j.properties
+RUN cd /opt/zookeeper/conf && https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/zookeeper/zoo.cfg
+RUN cd /opt/zookeeper/conf && rm log4j.properties && https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/zookeeper/log4j.properties
 
 # Switch to zookeeper & run the server
 

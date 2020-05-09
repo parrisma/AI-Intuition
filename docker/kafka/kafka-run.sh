@@ -15,7 +15,9 @@ fi
 # Just for testing, so we can stop the current Kafka and fix settings etc
 # without the container exiting.
 
-while true; do
-  sleep 10
-  echo Tick
-done
+# Un comment for testing, where Kafka fails to start and you want to see logs & restart with new settings
+# docker exec -it <kafka container id> /bin/bash
+#while true; do
+#  sleep 10
+#  echo Tick
+#done
