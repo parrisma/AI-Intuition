@@ -1,4 +1,4 @@
-FROM zookeeper:1.0
+FROM parrisma/zookeeper:1.0
 
 RUN cd /home/zookeeper && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/zookeeper/zkrun.sh && chmod +x /home/zookeeper/zkrun.sh
 
