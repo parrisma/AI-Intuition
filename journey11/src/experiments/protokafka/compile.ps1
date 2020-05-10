@@ -1,7 +1,7 @@
 # conda activate notebook_gpu_netx
 # make sure conda\bin conda\scripts are on the system file path
 #
-$local = "//d/Dev/devroot/AI-Intuition/journey11/src/experiments/proto-kafka"
+$local = "//d/Dev/devroot/AI-Intuition/journey11/src/experiments/protokafka"
 $rmt = "/var/data"
 
 Function ProtoCompile
