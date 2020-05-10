@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package journey11;
+
+import "state.proto";
+import "task.proto";
+
+message Complex {
+    string complex_name = 1;
+    int64 complex_trigger = 2;
+    State state = 3;
+    repeated Task tasks = 4;
+}
