@@ -23,6 +23,8 @@ if (!$error) {
 echo "Docker network ai-net already exists, no need to create"
 }
 
+# Both of these images are on docker hub in public repositories
+
 echo "Starting Zookeeper"
 docker run -d --rm -h zookeeper-server --name zookeeper-server --network ai-net parrisma/zookeeper-server:1.0
 

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package journey11;
+package journey11.experiment.proto_kafka;
 
 message Task {
     string task_name = 1;

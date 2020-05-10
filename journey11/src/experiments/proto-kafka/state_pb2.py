@@ -18,15 +18,15 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='state.proto',
-  package='journey11',
+  package='journey11.experiment.proto_kafka',
   syntax='proto3',
-  serialized_pb=_b('\n\x0bstate.proto\x12\tjourney11*\x1f\n\x05State\x12\x06\n\x02S1\x10\x00\x12\x06\n\x02S2\x10\x01\x12\x06\n\x02S3\x10\x02\x62\x06proto3')
+  serialized_pb=_b('\n\x0bstate.proto\x12 journey11.experiment.proto_kafka*\x1f\n\x05State\x12\x06\n\x02S1\x10\x00\x12\x06\n\x02S2\x10\x01\x12\x06\n\x02S3\x10\x02\x62\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 _STATE = _descriptor.EnumDescriptor(
   name='State',
-  full_name='journey11.State',
+  full_name='journey11.experiment.proto_kafka.State',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -45,8 +45,8 @@ _STATE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=26,
-  serialized_end=57,
+  serialized_start=49,
+  serialized_end=80,
 )
 _sym_db.RegisterEnumDescriptor(_STATE)
 

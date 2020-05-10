@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package journey11;
+package journey11.experiment.proto_kafka;
 
 enum State {
     S1 = 0;

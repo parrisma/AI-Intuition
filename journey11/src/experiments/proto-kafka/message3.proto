@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package journey11.experiment.proto_kafka;
+
+import "state.proto";
+import "task.proto";
+
+message Message3 {
+    string field = 1;
+    State state = 2;
+    repeated Task tasks = 3;
+}
