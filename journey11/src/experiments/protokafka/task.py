@@ -9,8 +9,8 @@ class Task:
         return self._task_name
 
     @property
-    def task_id(self) -> str:
-        return self._task_name
+    def task_id(self) -> int:
+        return self._task_id
 
     def __str__(self):
         return "Task:(task_name:{} task_id:{})".format(self._task_name, self._task_id)

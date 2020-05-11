@@ -10,7 +10,7 @@ class TestProtoKafka(unittest.TestCase):
         pc.add_target(object_type=Task, proto_buf_type=PBTask)
         task = Task(task_name="Task-3142", task_id=3142)
         bs = pc.serialize(task)
-        print(bs)
+        self.assertEqual(b'\n\tTask-3142\x10\xc6\x18', bs)
         return
 
 

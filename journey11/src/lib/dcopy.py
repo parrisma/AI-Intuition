@@ -74,7 +74,5 @@ class Dcopy:
                           not callable(getattr(src, x)) and re.search("^__.*__$", x) is None])
             for vsk, vsv in v_src.items():
                 if vsk in v_tgt:
-                    print("{} - {}".format(str(vsk), str(vsv)))
                     setattr(tgt, vsk, Dcopy.deep_corresponding_copy(vsv, v_tgt[vsk]))
-                    print(str(v_tgt[vsk]))
         return result
