@@ -18,6 +18,18 @@ class A:
         self.d = d
         self._ae = "Fixed-A"
 
+    def __str__(self):
+        return "A:(_a:{} __b:{} _ca:{} d:{} _ae{}".format(self._a, self.__b, self._ca, self.d, self._ae)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self._a == other._a and self.__b == other.__b and self._ca == other._ca and self.d == other.d and self._ae == other._ae
+        else:
+            return False
+
 
 class B:
     def __init__(self, a, b, c, d):
@@ -26,6 +38,18 @@ class B:
         self._cb = c
         self.d = d
         self._be = "Fixed-B"
+
+    def __str__(self):
+        return "B:(_a:{} __b:{} _cb:{} d:{} _ae{}".format(self._a, self.__b, self._cb, self.d, self._be)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self._a == other._a and self.__b == other.__b and self._cb == other._cb and self.d == other.d and self._be == other._be
+        else:
+            return False
 
 
 class Base:
@@ -128,6 +152,13 @@ class TestDcopy(unittest.TestCase):
                 _ = Dcopy.deep_corresponding_copy(src=src, tgt=tgt)
         return
 
+    def test_simple_obj(self):
+        src = Z(A(1, 2, 3, 4), B(5, 6, 7, 8))
+        tgt = Z(A(10, 12, 13, 14), B(15, 16, 17, 18))
+        tgt = Dcopy.deep_corresponding_copy(src=src, tgt=tgt)
+        self.assertEqual(src, tgt)
+        return
+
     def test_simple(self):
         scenarios = [[int(678), int(0), int(678)],
                      [[1, 2], [6, 7], [1, 2]],
@@ -137,8 +168,8 @@ class TestDcopy(unittest.TestCase):
                      [{1: 2}, {1: 3}, {1: 2}],
                      [{1: 2, 2: 3}, {1: 2, 2: 5, 3: 4}, {1: 2, 2: 3, 3: 4}],
                      [{1: [Z({1: 2, 2: 3}, [3, 4, 5])], 3: "4", 4: True},
-                      {1: [Z({1: 3, 3: 4}, [1, 4, 5, 4])], 3: "5", 4: False},
-                      {1: [Z({1: 2, 2: 3, 3: 4}, [3, 4, 5, 4])], 3: "4", 4: True}],
+                      {1: [Z({1: 3, 3: 4}, [1, 4, 5, 4])], 3: "5", 4: False, 7: AnEnum.S1},
+                      {1: [Z({1: 2, 2: 3, 3: 4}, [3, 4, 5, 4])], 3: "4", 4: True, 7: AnEnum.S1}],
                      [Z(Z(Z(Z(Z(1, 2), 3), 4), 5), 6), Z(Z(Z(Z(Z(9, 8), 7), 6), 5), 4),
                       Z(Z(Z(Z(Z(1, 2), 3), 4), 5), 6)],
                      [[[1, 2], 3], [[4, 5], 6], [[1, 2], 3]],
@@ -188,7 +219,8 @@ class TestDcopy(unittest.TestCase):
         # Top Level - no over lap or hidden
         self.assertEqual(target_unmodified._y, actual._y)  # ._y not shared, should not be overridden
         self.assertEqual(getattr(target_unmodified, "_{}__hidden".format(type(target_unmodified).__name__)),
-                         getattr(actual, "_{}__hidden".format(type(actual).__name__)))  # ._hidden should be same
+                         getattr(actual,
+                                 "_{}__hidden".format(type(actual).__name__)))  # ._hidden should be same
 
         # Contained object
         self.assertEqual(expected._z._a, actual._z._a)

@@ -1,3 +1,4 @@
+import re
 from typing import List, Dict
 from enum import Enum
 from copy import deepcopy
@@ -53,6 +54,7 @@ class Dcopy:
         :param src: The source object
         :param tgt: The target object to be updated with corresponding source memebers
         :return: The updated version of Target.
+        ToDo : consider change to allow mapping of private members.
         """
         result = None
         if isinstance(src, (int, float, type(None), str, bool, Enum)):
@@ -65,9 +67,14 @@ class Dcopy:
             result = Dcopy._copy_map[type(src).__name__](src, tgt)
         else:
             result = tgt
-            v_tgt = vars(tgt)
-            for vsk, vsv in vars(src).items():
+            v_tgt = dict([(x, getattr(tgt, x)) for x in dir(tgt) if
+                          not callable(getattr(tgt, x)) and re.search("^__.*__$", x) is None])
+
+            v_src = dict([(x, getattr(src, x)) for x in dir(src) if
+                          not callable(getattr(src, x)) and re.search("^__.*__$", x) is None])
+            for vsk, vsv in v_src.items():
                 if vsk in v_tgt:
                     print("{} - {}".format(str(vsk), str(vsv)))
-                    v_tgt[vsk] = Dcopy.deep_corresponding_copy(vsv, v_tgt[vsk])
+                    setattr(tgt, vsk, Dcopy.deep_corresponding_copy(vsv, v_tgt[vsk]))
+                    print(str(v_tgt[vsk]))
         return result

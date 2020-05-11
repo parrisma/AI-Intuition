@@ -3,7 +3,7 @@ syntax = "proto3";
 package journey11;
 
 import "state.proto";
-import "task.proto";
+import "pb_task.proto";
 
 message Complex {
     string complex_name = 1;

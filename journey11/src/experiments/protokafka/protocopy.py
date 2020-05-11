@@ -1,4 +1,5 @@
 from typing import Type, ByteString
+from journey11.src.lib.dcopy import Dcopy
 
 
 class ProtoCopy:
@@ -47,7 +48,5 @@ class ProtoCopy:
         if pbt not in self._serialize_map:
             raise ValueError("Objects pf type {} have not registered serializer".format(pbt))
         pbt = self._serialize_map[pbt]
-
-        tgt = pbt()
-
-        return ByteString()
+        tgt = Dcopy.deep_corresponding_copy(src=src, tgt=pbt())
+        return tgt.SerializeToString()

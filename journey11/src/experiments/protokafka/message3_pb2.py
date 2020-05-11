@@ -14,16 +14,16 @@ _sym_db = _symbol_database.Default()
 
 
 import state_pb2 as state__pb2
-import task_pb2 as task__pb2
+import pb_task_pb2 as pb__task__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='message3.proto',
   package='journey11.experiment.proto_kafka',
   syntax='proto3',
-  serialized_pb=_b('\n\x0emessage3.proto\x12 journey11.experiment.proto_kafka\x1a\x0bstate.proto\x1a\ntask.proto\"\x88\x01\n\x08Message3\x12\r\n\x05\x66ield\x18\x01 \x01(\t\x12\x36\n\x05state\x18\x02 \x01(\x0e\x32\'.journey11.experiment.proto_kafka.State\x12\x35\n\x05tasks\x18\x03 \x03(\x0b\x32&.journey11.experiment.proto_kafka.Taskb\x06proto3')
+  serialized_pb=_b('\n\x0emessage3.proto\x12 journey11.experiment.proto_kafka\x1a\x0bstate.proto\x1a\rpb_task.proto\"\x8a\x01\n\x08Message3\x12\r\n\x05\x66ield\x18\x01 \x01(\t\x12\x36\n\x05state\x18\x02 \x01(\x0e\x32\'.journey11.experiment.proto_kafka.State\x12\x37\n\x05tasks\x18\x03 \x03(\x0b\x32(.journey11.experiment.proto_kafka.PBTaskb\x06proto3')
   ,
-  dependencies=[state__pb2.DESCRIPTOR,task__pb2.DESCRIPTOR,])
+  dependencies=[state__pb2.DESCRIPTOR,pb__task__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
@@ -69,12 +69,12 @@ _MESSAGE3 = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=78,
-  serialized_end=214,
+  serialized_start=81,
+  serialized_end=219,
 )
 
 _MESSAGE3.fields_by_name['state'].enum_type = state__pb2._STATE
-_MESSAGE3.fields_by_name['tasks'].message_type = task__pb2._TASK
+_MESSAGE3.fields_by_name['tasks'].message_type = pb__task__pb2._PBTASK
 DESCRIPTOR.message_types_by_name['Message3'] = _MESSAGE3
 
 Message3 = _reflection.GeneratedProtocolMessageType('Message3', (_message.Message,), dict(
