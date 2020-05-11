@@ -10,6 +10,24 @@ class AnEnum(Enum):
     S2 = 2
 
 
+class A:
+    def __init__(self, a, b, c, d):
+        self._a = a
+        self.__b = b
+        self._ca = c
+        self.d = d
+        self._ae = "Fixed-A"
+
+
+class B:
+    def __init__(self, a, b, c, d):
+        self._a = a
+        self.__b = b
+        self._cb = c
+        self.d = d
+        self._be = "Fixed-B"
+
+
 class Base:
     def __init__(self,
                  s_in: str,
@@ -94,9 +112,71 @@ class Z:
             return False
 
 
-class Test(unittest.TestCase):
+class TestDcopy(unittest.TestCase):
+    def test_fails(self):
+        scenarios = [[int(0), float(0)],
+                     [AnEnum.S1, bool(True)],
+                     [list(), dict()],
+                     [[int(0), float(0)], [int(0), int(0)]],
+                     [list(), Z(1, 2)],
+                     [Z(1.0, 2), Z(3, 4)],
+                     [Z([1, 2, 3], "Hi"), Z([1, 2.0], "Lo")]
+                     ]
+        for scenario in scenarios:
+            src, tgt = scenario
+            with self.assertRaises(TypeError):
+                _ = Dcopy.deep_corresponding_copy(src=src, tgt=tgt)
+        return
 
-    def test_1(self):
+    def test_simple(self):
+        scenarios = [[int(678), int(0), int(678)],
+                     [[1, 2], [6, 7], [1, 2]],
+                     [[1, 2], [6, 7, 8], [1, 2, 8]],
+                     [[1, 2, 3, 4], [6, 7, 8], [1, 2, 3, 4]],
+                     [dict(), dict(), dict()],
+                     [{1: 2}, {1: 3}, {1: 2}],
+                     [{1: 2, 2: 3}, {1: 2, 2: 5, 3: 4}, {1: 2, 2: 3, 3: 4}],
+                     [{1: [Z({1: 2, 2: 3}, [3, 4, 5])], 3: "4", 4: True},
+                      {1: [Z({1: 3, 3: 4}, [1, 4, 5, 4])], 3: "5", 4: False},
+                      {1: [Z({1: 2, 2: 3, 3: 4}, [3, 4, 5, 4])], 3: "4", 4: True}],
+                     [Z(Z(Z(Z(Z(1, 2), 3), 4), 5), 6), Z(Z(Z(Z(Z(9, 8), 7), 6), 5), 4),
+                      Z(Z(Z(Z(Z(1, 2), 3), 4), 5), 6)],
+                     [[[1, 2], 3], [[4, 5], 6], [[1, 2], 3]],
+                     [[[[[[float(0)]]]]], [[[[[float(1)]]]]], [[[[[float(0)]]]]]]
+                     ]
+        for scenario in scenarios:
+            src, tgt, expected = scenario
+            self.assertEqual(expected, Dcopy.deep_corresponding_copy(src=src, tgt=tgt))
+        return
+
+    def test_fields_fwd(self):
+        # A - > B
+        src = A(1, 2.0, "3", AnEnum.S0)
+        tgt = B(4, 5.0, "6", AnEnum.S2)
+        tgt_unmod = B(4, 5.0, "6", AnEnum.S2)
+        actual = Dcopy.deep_corresponding_copy(src, tgt)
+        self.assertEqual(src._a, actual._a)  # Corresponding & updated
+        self.assertEqual(getattr(tgt_unmod, "_{}__b".format(type(tgt_unmod).__name__)),
+                         getattr(actual, "_{}__b".format(type(actual).__name__)))  # .__b hidden & not updated
+        self.assertEqual(tgt_unmod._cb, actual._cb)  # Not corresponding & not updated
+        self.assertEqual(src.d, actual.d)  # Corresponding & updated
+        self.assertEqual(tgt._be, actual._be)  # Not Corresponding & const on __init__
+
+    def test_fields_rev(self):
+        # B -> A
+        src = B(4, 5.0, "6", AnEnum.S2)
+        tgt = A(1, 2.0, "3", AnEnum.S0)
+        tgt_unmod = A(1, 2.0, "3", AnEnum.S0)
+        actual = Dcopy.deep_corresponding_copy(src, tgt)
+        self.assertEqual(src._a, actual._a)  # Corresponding & updated
+        self.assertEqual(getattr(tgt_unmod, "_{}__b".format(type(tgt_unmod).__name__)),
+                         getattr(actual, "_{}__b".format(type(actual).__name__)))  # .__b hidden & not updated
+        self.assertEqual(tgt_unmod._ca, actual._ca)  # Not corresponding & not updated
+        self.assertEqual(src.d, actual.d)  # Corresponding & updated
+        self.assertEqual(tgt._ae, actual._ae)  # Not Corresponding & const on __init__
+        return
+
+    def test_complex_nested(self):
         actual = Dcopy.deep_corresponding_copy(X(), Y())
         expected = X()
         target_unmodified = Y()

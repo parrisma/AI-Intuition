@@ -1,5 +1,6 @@
 from typing import List, Dict
 from enum import Enum
+from copy import deepcopy
 
 
 class _Dcopyf:
@@ -17,7 +18,7 @@ class _Dcopyf:
             tgt[i] = Dcopy.deep_corresponding_copy(src[i], tgt[i])
         if len(src) > n:
             for i in range(n, len(src)):
-                tgt.append(src[i])
+                tgt.append(deepcopy(src[i]))
         return tgt
 
     @staticmethod
@@ -32,7 +33,7 @@ class _Dcopyf:
             if k in tgt:
                 tgt[k] = Dcopy.deep_corresponding_copy(src[k], tgt[k])
             else:
-                tgt[k] = src[k]
+                tgt[k] = deepcopy(src[k])
         return tgt
 
 
@@ -56,11 +57,11 @@ class Dcopy:
         result = None
         if isinstance(src, (int, float, type(None), str, bool, Enum)):
             if not isinstance(src, type(tgt)):
-                raise ValueError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
+                raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
             result = src
         elif type(src).__name__ in Dcopy._copy_map:
             if not isinstance(src, type(tgt)):
-                raise ValueError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
+                raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
             result = Dcopy._copy_map[type(src).__name__](src, tgt)
         else:
             result = tgt
