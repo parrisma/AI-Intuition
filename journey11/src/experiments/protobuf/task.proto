@@ -3,6 +3,6 @@ syntax = "proto3";
 package journey11;
 
 message Task {
-    string task_name = 1;
-    int64 task_id = 2;
+    string _task_name = 1;
+    int64 _task_id = 2;
 }

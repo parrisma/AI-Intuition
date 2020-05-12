@@ -17,3 +17,9 @@ class Task:
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self._task_id == other._task_id and self._task_name == other._task_name
+        else:
+            return False

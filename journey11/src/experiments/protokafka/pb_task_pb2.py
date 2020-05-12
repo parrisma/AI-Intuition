@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='pb_task.proto',
   package='journey11.experiment.proto_kafka',
   syntax='proto3',
-  serialized_pb=_b('\n\rpb_task.proto\x12 journey11.experiment.proto_kafka\",\n\x06PBTask\x12\x11\n\ttask_name\x18\x01 \x01(\t\x12\x0f\n\x07task_id\x18\x02 \x01(\x03\x62\x06proto3')
+  serialized_pb=_b('\n\rpb_task.proto\x12 journey11.experiment.proto_kafka\".\n\x06PBTask\x12\x12\n\n_task_name\x18\x01 \x01(\t\x12\x10\n\x08_task_id\x18\x02 \x01(\x03\x62\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -34,14 +34,14 @@ _PBTASK = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='task_name', full_name='journey11.experiment.proto_kafka.PBTask.task_name', index=0,
+      name='_task_name', full_name='journey11.experiment.proto_kafka.PBTask._task_name', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='task_id', full_name='journey11.experiment.proto_kafka.PBTask.task_id', index=1,
+      name='_task_id', full_name='journey11.experiment.proto_kafka.PBTask._task_id', index=1,
       number=2, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -60,7 +60,7 @@ _PBTASK = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=51,
-  serialized_end=95,
+  serialized_end=97,
 )
 
 DESCRIPTOR.message_types_by_name['PBTask'] = _PBTASK
