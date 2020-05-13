@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package journey11;
 
-import "state.proto";
+import "pb_state.proto";
 import "pb_task.proto";
 
 message Complex {

@@ -6,10 +6,10 @@
 $local = "d:/Dev/devroot/AI-Intuition/journey11/src/experiments/protokafka"
 $rmt = "/var/data"
 
-ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename state.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_state.proto
 ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_task.proto
-ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename message1.proto
-ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename message2.proto
-ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename message3.proto
-ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename notification.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_message1.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_message2.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_message3.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_notification.proto
 

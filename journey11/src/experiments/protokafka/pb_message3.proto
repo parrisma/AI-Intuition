@@ -5,8 +5,8 @@ package journey11.experiment.proto_kafka;
 import "pb_state.proto";
 import "pb_task.proto";
 
-message PBMessage1 {
-  string _field = 1;
-  PBState _state = 2;
-  repeated PBTask _tasks = 3;
+message PBMessage3 {
+    string _field = 1;
+    PBState _state = 2;
+    repeated PBTask _tasks = 3;
 }

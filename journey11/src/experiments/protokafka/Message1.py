@@ -1,4 +1,3 @@
-from journey11.src.experiments.protokafka.task import Task
 from journey11.src.experiments.protokafka.state import State
 
 
@@ -9,7 +8,7 @@ class Message1:
         self._tasks = kwargs.get('tasks', list())
 
     def __str__(self):
-        return "Message1:(field: {} state:{}, tasks:{})".format(self._tasks, self._state, len(self._tasks))
+        return "Message1:(field: {} state:{}, tasks:{})".format(self._field, self._state, str(self._tasks))
 
     def __repr__(self):
         return self.__str__()

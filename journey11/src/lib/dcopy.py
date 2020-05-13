@@ -37,6 +37,22 @@ class _Dcopyf:
                 tgt[k] = deepcopy(src[k])
         return tgt
 
+    @staticmethod
+    def copy_enum(src: Enum, tgt: object) -> int:
+        """
+        Convert Enum to integer equiv - assumes integer values between src/tgt are the same.
+        :param src: Enum to convert
+        :param tgt: Integer target in Protobuf
+        :return:
+        """
+        if isinstance(tgt, Enum):
+            tgt = src
+        elif isinstance(tgt, type(src.value)):
+            tgt = src.value
+        else:
+            raise TypeError("Cannot copy type {} to Enum with .value type {}".format(type(tgt), type(src.value)))
+        return tgt
+
 
 class Dcopy:
     _copy_map = {type(list()).__name__: _Dcopyf.copy_list,
@@ -57,7 +73,7 @@ class Dcopy:
         ToDo : consider change to allow mapping of private members.
         """
         result = None
-        if isinstance(src, (int, float, type(None), str, bool, Enum)):
+        if isinstance(src, (int, float, type(None), str, bool)):
             if not isinstance(src, type(tgt)):
                 raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
             result = src
