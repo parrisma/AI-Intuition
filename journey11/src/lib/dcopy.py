@@ -38,16 +38,18 @@ class _Dcopyf:
         return tgt
 
     @staticmethod
-    def copy_enum(src: Enum, tgt: object) -> int:
+    def copy_enum(src: Enum, tgt: object) -> object:
         """
         Convert Enum to integer equiv - assumes integer values between src/tgt are the same.
         :param src: Enum to convert
         :param tgt: Integer target in Protobuf
-        :return:
+        :return: The updated target object
+        Note: We don't use isinstance() in the value type check as we want to be explicit and for example
+        bool is instance of int and we dont want to allow translation of int value Enum to bool.
         """
         if isinstance(tgt, Enum):
             tgt = src
-        elif isinstance(tgt, type(src.value)):
+        elif type(tgt) == type(src.value):  # We don't use isinstance() by design
             tgt = src.value
         else:
             raise TypeError("Cannot copy type {} to Enum with .value type {}".format(type(tgt), type(src.value)))
@@ -59,7 +61,24 @@ class Dcopy:
                  type(dict()).__name__: _Dcopyf.copy_dict}
 
     @staticmethod
-    def deep_corresponding_copy(src, tgt):
+    def prune(member_names: Dict,
+              **kwargs) -> Dict:
+        """
+        Remove special member names if passed as kwrgs param.
+        :param member_names: Current list of member names
+        :param kwargs: Look for 'prune' :parameter optionally passed
+        :return: member names with any prune names removed.
+        """
+        names_to_prune = kwargs.get('prune', list())
+        for name in names_to_prune:
+            if name in member_names:
+                del member_names[name]
+        return member_names
+
+    @staticmethod
+    def deep_corresponding_copy(src,
+                                tgt,
+                                **kwargs):
         """
         Iterate all member variables of target and where there are corresponding member variables update target
         with source.
@@ -73,14 +92,16 @@ class Dcopy:
         ToDo : consider change to allow mapping of private members.
         """
         result = None
-        if isinstance(src, (int, float, type(None), str, bool)):
-            if not isinstance(src, type(tgt)):
-                raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
-            result = src
-        elif type(src).__name__ in Dcopy._copy_map:
+        if type(src).__name__ in Dcopy._copy_map:
             if not isinstance(src, type(tgt)):
                 raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
             result = Dcopy._copy_map[type(src).__name__](src, tgt)
+        elif issubclass(type(src), Enum):
+            result = _Dcopyf.copy_enum(src=src, tgt=tgt)
+        elif isinstance(src, (int, float, type(None), str, bool)):
+            if not isinstance(src, type(tgt)):
+                raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
+            result = src
         else:
             result = tgt
             v_tgt = dict([(x, getattr(tgt, x)) for x in dir(tgt) if
@@ -88,7 +109,11 @@ class Dcopy:
 
             v_src = dict([(x, getattr(src, x)) for x in dir(src) if
                           not callable(getattr(src, x)) and re.search("^__.*__$", x) is None])
+
+            v_src = Dcopy.prune(v_src, **kwargs)
+
             for vsk, vsv in v_src.items():
+                print(vsk)
                 if vsk in v_tgt:
                     setattr(tgt, vsk, Dcopy.deep_corresponding_copy(vsv, v_tgt[vsk]))
         return result

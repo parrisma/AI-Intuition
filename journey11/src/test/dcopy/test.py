@@ -1,13 +1,38 @@
 import unittest
+import logging
 from enum import Enum, unique
 from journey11.src.lib.dcopy import Dcopy
+from journey11.src.lib.loggingsetup import LoggingSetup
 
 
 @unique
-class AnEnum(Enum):
+class AnEnumInt(Enum):
     S0 = 0
     S1 = 1
     S2 = 2
+
+
+@unique
+class AnEnumStr(Enum):
+    S0 = "0"
+    S1 = "1"
+    S2 = "2"
+
+
+@unique
+class AnEnumWithMembers(Enum):
+    S0 = (1, 2)
+    S1 = (2, 3)
+    S2 = (3, 4)
+
+    def __init__(self, p1, p2):
+        self._p1 = p1
+        self._p2 = p2
+        return
+
+    @property
+    def func(self):
+        return self._p1 * self._p2
 
 
 class A:
@@ -73,7 +98,7 @@ class X(Base):
         self._x = 3142
         self.__hidden = 789
         self._z = Z(999, "_999_")
-        self._an_enum = AnEnum.S1
+        self._an_enum = AnEnumInt.S1
         self._l_1 = list()
         self._l_2 = [1, 3, 5]
         self._l_3 = [.2, .4, .6]
@@ -101,7 +126,7 @@ class Y(Base):
         self._y = 6284  # Not shared member & will not be copied
         self.__hidden = 345  # Hidden member & will not be copied
         self._z = Z(888, "_888_")
-        self._an_enum = AnEnum.S2
+        self._an_enum = AnEnumInt.S2
         self._l_1 = [7, 8, 9, 0]
         self._l_2 = list()
         self._l_3 = [.1, .3, .5]
@@ -137,9 +162,16 @@ class Z:
 
 
 class TestDcopy(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        LoggingSetup()
+
     def test_fails(self):
+        logging.info("Test failure cases for type mismatch")
         scenarios = [[int(0), float(0)],
-                     [AnEnum.S1, bool(True)],
+                     [AnEnumInt.S1, bool(True)],
+                     [AnEnumStr.S2, int(0)],
                      [list(), dict()],
                      [[int(0), float(0)], [int(0), int(0)]],
                      [list(), Z(1, 2)],
@@ -153,13 +185,54 @@ class TestDcopy(unittest.TestCase):
         return
 
     def test_simple_obj(self):
+        logging.info("Test simple, un-nested object")
         src = Z(A(1, 2, 3, 4), B(5, 6, 7, 8))
         tgt = Z(A(10, 12, 13, 14), B(15, 16, 17, 18))
         tgt = Dcopy.deep_corresponding_copy(src=src, tgt=tgt)
         self.assertEqual(src, tgt)
         return
 
+    def test_enum(self):
+        logging.info("Test enum specifics")
+        # Pass case
+        src = Z(AnEnumInt.S1, AnEnumStr.S2)
+        tgt = Z(AnEnumInt.S0, AnEnumStr.S0)
+        tgt = Dcopy.deep_corresponding_copy(src, tgt)
+        self.assertEqual(tgt, src)
+
+        # Pass case reverse as it's valid to copy a str Enum over an Int Enum
+        src = Z(AnEnumInt.S1, AnEnumStr.S2)
+        tgt = Z(AnEnumStr.S0, AnEnumInt.S0)  # Reverse int/str type Enum
+        tgt = Dcopy.deep_corresponding_copy(src, tgt)
+        self.assertEqual(tgt, src)
+        return
+
+    def test_enum_with_members(self):
+        src = Z(AnEnumWithMembers.S0, AnEnumInt.S0)
+        tgt = Z(AnEnumWithMembers.S1, AnEnumInt.S2)
+        tgt = Dcopy.deep_corresponding_copy(src, tgt)
+        self.assertEqual(tgt, src)
+        self.assertEqual((1 * 2), src._a.func)
+        return
+
+    def test_enum_to_value_type(self):
+        # Pass case, target types align with value type
+        src = Z(AnEnumInt.S2, AnEnumStr.S1)
+        tgt = Z(int(3142), "3142")
+        tgt = Dcopy.deep_corresponding_copy(src, tgt)
+        self.assertEqual(tgt._a, src._a.value)
+        self.assertEqual(tgt._b, src._b.value)
+
+        # Fail case target type not same as value type
+        src = Z(AnEnumInt.S2, AnEnumStr.S1)
+        tgt = Z("3142", int(3142))
+        with self.assertRaises(TypeError):
+            _ = Dcopy.deep_corresponding_copy(src=src, tgt=tgt)
+
+        return
+
     def test_simple(self):
+        logging.info("Test simple base types and collections")
         scenarios = [[int(678), int(0), int(678)],
                      [[1, 2], [6, 7], [1, 2]],
                      [[1, 2], [6, 7, 8], [1, 2, 8]],
@@ -168,8 +241,8 @@ class TestDcopy(unittest.TestCase):
                      [{1: 2}, {1: 3}, {1: 2}],
                      [{1: 2, 2: 3}, {1: 2, 2: 5, 3: 4}, {1: 2, 2: 3, 3: 4}],
                      [{1: [Z({1: 2, 2: 3}, [3, 4, 5])], 3: "4", 4: True},
-                      {1: [Z({1: 3, 3: 4}, [1, 4, 5, 4])], 3: "5", 4: False, 7: AnEnum.S1},
-                      {1: [Z({1: 2, 2: 3, 3: 4}, [3, 4, 5, 4])], 3: "4", 4: True, 7: AnEnum.S1}],
+                      {1: [Z({1: 3, 3: 4}, [1, 4, 5, 4])], 3: "5", 4: False, 7: AnEnumInt.S1},
+                      {1: [Z({1: 2, 2: 3, 3: 4}, [3, 4, 5, 4])], 3: "4", 4: True, 7: AnEnumInt.S1}],
                      [Z(Z(Z(Z(Z(1, 2), 3), 4), 5), 6), Z(Z(Z(Z(Z(9, 8), 7), 6), 5), 4),
                       Z(Z(Z(Z(Z(1, 2), 3), 4), 5), 6)],
                      [[[1, 2], 3], [[4, 5], 6], [[1, 2], 3]],
@@ -181,10 +254,11 @@ class TestDcopy(unittest.TestCase):
         return
 
     def test_fields_fwd(self):
+        logging.info("Test simple object to object with only partial member field overlap A -> B")
         # A - > B
-        src = A(1, 2.0, "3", AnEnum.S0)
-        tgt = B(4, 5.0, "6", AnEnum.S2)
-        tgt_unmod = B(4, 5.0, "6", AnEnum.S2)
+        src = A(1, 2.0, "3", AnEnumInt.S0)
+        tgt = B(4, 5.0, "6", AnEnumInt.S2)
+        tgt_unmod = B(4, 5.0, "6", AnEnumInt.S2)
         actual = Dcopy.deep_corresponding_copy(src, tgt)
         self.assertEqual(src._a, actual._a)  # Corresponding & updated
         self.assertEqual(getattr(tgt_unmod, "_{}__b".format(type(tgt_unmod).__name__)),
@@ -192,12 +266,14 @@ class TestDcopy(unittest.TestCase):
         self.assertEqual(tgt_unmod._cb, actual._cb)  # Not corresponding & not updated
         self.assertEqual(src.d, actual.d)  # Corresponding & updated
         self.assertEqual(tgt._be, actual._be)  # Not Corresponding & const on __init__
+        return
 
     def test_fields_rev(self):
+        logging.info("Test simple object to object with only partial member field overlap B -> A")
         # B -> A
-        src = B(4, 5.0, "6", AnEnum.S2)
-        tgt = A(1, 2.0, "3", AnEnum.S0)
-        tgt_unmod = A(1, 2.0, "3", AnEnum.S0)
+        src = B(4, 5.0, "6", AnEnumInt.S2)
+        tgt = A(1, 2.0, "3", AnEnumInt.S0)
+        tgt_unmod = A(1, 2.0, "3", AnEnumInt.S0)
         actual = Dcopy.deep_corresponding_copy(src, tgt)
         self.assertEqual(src._a, actual._a)  # Corresponding & updated
         self.assertEqual(getattr(tgt_unmod, "_{}__b".format(type(tgt_unmod).__name__)),
@@ -208,6 +284,7 @@ class TestDcopy(unittest.TestCase):
         return
 
     def test_complex_nested(self):
+        logging.info("Test complex nested object, with base types, collections, Enum etc")
         actual = Dcopy.deep_corresponding_copy(X(), Y())
         expected = X()
         target_unmodified = Y()
