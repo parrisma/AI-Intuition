@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package journey11.experiment.proto_kafka;
+
+enum PBState {
+  S1 = 0;
+  S2 = 1;
+  S3 = 2;
+}

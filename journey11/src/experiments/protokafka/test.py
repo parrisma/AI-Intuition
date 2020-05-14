@@ -3,7 +3,7 @@ from journey11.src.experiments.protokafka.protocopy import ProtoCopy
 from journey11.src.experiments.protokafka.task import Task
 from journey11.src.experiments.protokafka.pb_task_pb2 import PBTask
 from journey11.src.experiments.protokafka.pb_message1_pb2 import PBMessage1
-from journey11.src.experiments.protokafka.Message1 import Message1
+from journey11.src.experiments.protokafka.message1 import Message1
 from journey11.src.experiments.protokafka.state import State
 from journey11.src.experiments.protokafka.pb_state_pb2 import PBState
 

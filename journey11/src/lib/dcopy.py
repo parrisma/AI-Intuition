@@ -1,10 +1,39 @@
 import re
-from typing import List, Dict
+from typing import List, Dict, Type, AnyStr
 from enum import Enum
 from copy import deepcopy
 
 
 class _Dcopyf:
+    LIST_TYPE = type(list())
+    DICT_TYPE = type(dict())
+
+    @staticmethod
+    def _tname(t) -> str:
+        """
+        Return the name of the type t or return t is t is as string on assumption it is a type name already
+        :param t: Type or name of type as string
+        :return: Type name as string
+        """
+        if isinstance(t, type):
+            tn = t.__name__
+        elif isinstance(t, str):
+            tn = t
+        else:
+            raise TypeError("from type must be a Type or a Type name - given {}".format(type(t)))
+        return tn
+
+    @staticmethod
+    def key(t_from,
+            t_to) -> str:
+        """
+        Return look-up key for Type to Type mapping function
+        :param t_from: Type to map from
+        :param t_to: Type to map to
+        :return: Mapping Key
+        """
+        return "{}:{}".format(_Dcopyf._tname(t_from), _Dcopyf._tname(t_to))
+
     @staticmethod
     def copy_list(src: List, tgt: List) -> List:
         """
@@ -20,6 +49,24 @@ class _Dcopyf:
         if len(src) > n:
             for i in range(n, len(src)):
                 tgt.append(deepcopy(src[i]))
+        return tgt
+
+    @staticmethod
+    def copy_list_2_protobuf_repeat(src: List, tgt: object) -> object:
+        """
+        Where there are corresponding list[i] update Target with Source
+        Where Source is longer than Target append Source elements to Target elements
+        :param src: Source list
+        :param tgt: Target list to merge / update
+        :return: Updated Target
+        """
+        n = min(len(src), len(tgt))
+        for i in range(n):
+            tgt[i] = Dcopy.deep_corresponding_copy(src[i], tgt[i])
+        if len(src) > n:
+            for i in range(n, len(src)):
+                nw = tgt.add()
+                nw = Dcopy.deep_corresponding_copy(src[i], tgt[i])
         return tgt
 
     @staticmethod
@@ -57,8 +104,12 @@ class _Dcopyf:
 
 
 class Dcopy:
-    _copy_map = {type(list()).__name__: _Dcopyf.copy_list,
-                 type(dict()).__name__: _Dcopyf.copy_dict}
+    _collection = {_Dcopyf.LIST_TYPE.__name__: True,
+                   _Dcopyf.DICT_TYPE.__name__: True}
+    _ref_type = {"RepeatedCompositeFieldContainer": True}
+    _copy_map = {_Dcopyf.key(_Dcopyf.LIST_TYPE, _Dcopyf.LIST_TYPE): _Dcopyf.copy_list,
+                 _Dcopyf.key(_Dcopyf.DICT_TYPE, _Dcopyf.DICT_TYPE): _Dcopyf.copy_dict,
+                 _Dcopyf.key(_Dcopyf.LIST_TYPE, "RepeatedCompositeFieldContainer"): _Dcopyf.copy_list_2_protobuf_repeat}
 
     @staticmethod
     def prune(member_names: Dict,
@@ -92,10 +143,11 @@ class Dcopy:
         ToDo : consider change to allow mapping of private members.
         """
         result = None
-        if type(src).__name__ in Dcopy._copy_map:
-            if not isinstance(src, type(tgt)):
+        if type(src).__name__ in Dcopy._collection:
+            if _Dcopyf.key(type(src), type(tgt)) in Dcopy._copy_map:
+                result = Dcopy._copy_map[_Dcopyf.key(type(src), type(tgt))](src, tgt)
+            elif not isinstance(src, type(tgt)):
                 raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
-            result = Dcopy._copy_map[type(src).__name__](src, tgt)
         elif issubclass(type(src), Enum):
             result = _Dcopyf.copy_enum(src=src, tgt=tgt)
         elif isinstance(src, (int, float, type(None), str, bool)):
@@ -115,5 +167,7 @@ class Dcopy:
             for vsk, vsv in v_src.items():
                 print(vsk)
                 if vsk in v_tgt:
-                    setattr(tgt, vsk, Dcopy.deep_corresponding_copy(vsv, v_tgt[vsk]))
+                    res = Dcopy.deep_corresponding_copy(vsv, v_tgt[vsk])
+                    if type(res).__name__ not in Dcopy._ref_type:
+                        setattr(tgt, vsk, res)
         return result

@@ -3,6 +3,10 @@ import logging
 from enum import Enum, unique
 from journey11.src.lib.dcopy import Dcopy
 from journey11.src.lib.loggingsetup import LoggingSetup
+from journey11.src.test.dcopy.state import State
+from journey11.src.test.dcopy.task import Task
+from journey11.src.test.dcopy.message1 import Message1
+from journey11.src.test.dcopy.pb_message1_pb2 import PBMessage1
 
 
 @unique
@@ -331,6 +335,15 @@ class TestDcopy(unittest.TestCase):
         self.assertEqual(target_unmodified._d_4, actual._d_4)
         self.assertEqual({'1': 1, '2': True, '3': 1.2, '4': ['a', 1, True, 'xray'], '5': Z(5, 6), '6': 'added'},
                          actual._d_5)
+        return
+
+    def test_protobuf_copy(self):
+        message1 = Message1(field='Message-687',
+                            state=State.S2,
+                            tasks=[Task(task_name="Task-1", task_id=1), Task(task_name="Task-2", task_id=2)])
+        pb_message1 = PBMessage1()
+
+        actual = Dcopy.deep_corresponding_copy(message1, pb_message1)
         return
 
 
