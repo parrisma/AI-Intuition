@@ -338,12 +338,20 @@ class TestDcopy(unittest.TestCase):
         return
 
     def test_protobuf_copy(self):
+        """
+        Copy to and back from a Protobuf type and ensure the original object is the same as the copy.
+        :return:
+        """
         message1 = Message1(field='Message-687',
                             state=State.S2,
                             tasks=[Task(task_name="Task-1", task_id=1), Task(task_name="Task-2", task_id=2)])
-        pb_message1 = PBMessage1()
 
+        pb_message1 = PBMessage1()
         actual = Dcopy.deep_corresponding_copy(message1, pb_message1)
+        message2 = Message1()
+        final = Dcopy.deep_corresponding_copy(actual, message2)
+        self.assertEqual(final, message1)
+
         return
 
 

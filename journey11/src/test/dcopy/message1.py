@@ -1,7 +1,13 @@
-from journey11.src.experiments.protokafka.state import State
+from typing import List
+from journey11.src.test.dcopy.state import State
+from journey11.src.test.dcopy.task import Task
 
 
 class Message1:
+    _field: str
+    _state: State
+    _tasks: List[Task]
+
     def __init__(self, **kwargs):
         self._field = kwargs.get('field', str())
         self._state = kwargs.get('state', State.S1)
@@ -15,6 +21,11 @@ class Message1:
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self._field == other._field and self._state == other._state and self._tasks == other._tasks
+            if self._field == other._field and self._state == other._state:
+                if len(self._tasks) == len(other._tasks):
+                    for s, o in zip(self._tasks, other._tasks):
+                        if s != o:
+                            return False
+            return True
         else:
             return False

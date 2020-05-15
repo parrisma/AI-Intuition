@@ -1,5 +1,6 @@
 import re
-from typing import List, Dict, Type, AnyStr
+from typing import List, Dict, get_type_hints
+from pydoc import locate
 from enum import Enum
 from copy import deepcopy
 
@@ -7,6 +8,7 @@ from copy import deepcopy
 class _Dcopyf:
     LIST_TYPE = type(list())
     DICT_TYPE = type(dict())
+    ANNOTATION_ARG = 'annotation'
 
     @staticmethod
     def _tname(t) -> str:
@@ -35,7 +37,33 @@ class _Dcopyf:
         return "{}:{}".format(_Dcopyf._tname(t_from), _Dcopyf._tname(t_to))
 
     @staticmethod
-    def copy_list(src: List, tgt: List) -> List:
+    def new_from_annotation(**kwargs):
+        """
+        Locate the annotation type and return a new object of that type. This assumes object has default
+        (parameter less constrictor).
+
+        -param- **kwargs: expect key annotation= to be passed as string
+        :return: A new object matching the type of the annotation
+
+        TODO: Find out how to extract type of the list element from the List annotation directly.
+        """
+        annotation = str(kwargs.get(_Dcopyf.ANNOTATION_ARG, None))
+        t = None
+        if annotation != "None":
+            if re.search("^typing.List.*]$", annotation):  # Yuk
+                annotation = annotation[12: -1]
+            try:
+                t = locate(annotation)()
+            except Exception:
+                t = None
+        if t is None:
+            raise TypeError("Failed to instantiate type from annotation {}".format(str(annotation)))
+        return t
+
+    @staticmethod
+    def copy_list(src: List,
+                  tgt: List,
+                  **kwargs) -> List:
         """
         Where there are corresponding list[i] update Target with Source
         Where Source is longer than Target append Source elements to Target elements
@@ -52,11 +80,34 @@ class _Dcopyf:
         return tgt
 
     @staticmethod
-    def copy_list_2_protobuf_repeat(src: List, tgt: object) -> object:
+    def copy_list_2_protobuf_repeat(src: List,
+                                    tgt,
+                                    **kwargs) -> object:
         """
         Where there are corresponding list[i] update Target with Source
         Where Source is longer than Target append Source elements to Target elements
         :param src: Source list
+        :param tgt: Protobuf repeat to merge to.
+        :return: Updated Target
+        """
+        n = min(len(src), len(tgt))
+        for i in range(n):
+            tgt[i] = Dcopy.deep_corresponding_copy(src[i], tgt[i])
+        if len(src) > n:
+            for i in range(n, len(src)):
+                _ = tgt.add()  # extend the protobuf repeat
+                _ = Dcopy.deep_corresponding_copy(src[i], tgt[i])  # Direct update via reference
+        return tgt
+
+    @staticmethod
+    def copy_protobuf_repeat_2_list(src,
+                                    tgt: List,
+                                    **kwargs) -> List:
+        """
+        Translate a protobuf-repeat into a List
+        Where there are corresponding list[i] update Target with Source
+        Where Source is longer than Target append Source elements to Target elements
+        :param src: Source Protobuf repeat
         :param tgt: Target list to merge / update
         :return: Updated Target
         """
@@ -65,12 +116,14 @@ class _Dcopyf:
             tgt[i] = Dcopy.deep_corresponding_copy(src[i], tgt[i])
         if len(src) > n:
             for i in range(n, len(src)):
-                nw = tgt.add()
-                nw = Dcopy.deep_corresponding_copy(src[i], tgt[i])
+                tgt.append(_Dcopyf.new_from_annotation(**kwargs))
+                tgt[i] = Dcopy.deep_corresponding_copy(src[i], tgt[i])
         return tgt
 
     @staticmethod
-    def copy_dict(src: Dict, tgt: Dict) -> Dict:
+    def copy_dict(src: Dict,
+                  tgt: Dict,
+                  **kwargs) -> Dict:
         """
         Update the Target where keys overlap with source or insert where they are missing
         :param src: Source Dictionary
@@ -85,11 +138,13 @@ class _Dcopyf:
         return tgt
 
     @staticmethod
-    def copy_enum(src: Enum, tgt: object) -> object:
+    def copy_enum_to_value(src: Enum,
+                           tgt: object,
+                           **kwargs) -> object:
         """
         Convert Enum to integer equiv - assumes integer values between src/tgt are the same.
         :param src: Enum to convert
-        :param tgt: Integer target in Protobuf
+        :param tgt: Value target (int, str etc)
         :return: The updated target object
         Note: We don't use isinstance() in the value type check as we want to be explicit and for example
         bool is instance of int and we dont want to allow translation of int value Enum to bool.
@@ -102,14 +157,49 @@ class _Dcopyf:
             raise TypeError("Cannot copy type {} to Enum with .value type {}".format(type(tgt), type(src.value)))
         return tgt
 
+    @staticmethod
+    def copy_value_to_enum(src: object,
+                           tgt: Enum,
+                           **kwargs) -> Enum:
+        """
+        Convert value to Enum, assumes the Enum can be constructed from the given src object type
+        :param src: value type (int, src etc)
+        :param tgt: Enum to convert to.
+        :return: The Enum target
+        Note: We don't use isinstance() in the value type check as we want to be explicit and for example
+        bool is instance of int and we dont want to allow translation of int value Enum to bool.
+        """
+        try:
+            tgt = type(tgt)(src)
+        except Exception as e:
+            raise TypeError(
+                "Cannot construct Enum type {} from .value type {} with error {}".format(type(tgt), type(src), str(e)))
+        return tgt
+
 
 class Dcopy:
     _collection = {_Dcopyf.LIST_TYPE.__name__: True,
-                   _Dcopyf.DICT_TYPE.__name__: True}
+                   _Dcopyf.DICT_TYPE.__name__: True,
+                   "RepeatedCompositeFieldContainer": True}
     _ref_type = {"RepeatedCompositeFieldContainer": True}
     _copy_map = {_Dcopyf.key(_Dcopyf.LIST_TYPE, _Dcopyf.LIST_TYPE): _Dcopyf.copy_list,
                  _Dcopyf.key(_Dcopyf.DICT_TYPE, _Dcopyf.DICT_TYPE): _Dcopyf.copy_dict,
+                 _Dcopyf.key("RepeatedCompositeFieldContainer", _Dcopyf.LIST_TYPE): _Dcopyf.copy_protobuf_repeat_2_list,
                  _Dcopyf.key(_Dcopyf.LIST_TYPE, "RepeatedCompositeFieldContainer"): _Dcopyf.copy_list_2_protobuf_repeat}
+
+    @staticmethod
+    def get_annotations(obj) -> Dict:
+        """
+        If the given object has annotations return them else an empty dictionary
+        :param obj: The object to extract annotations for (if it has them)
+        :return: Annotations as dictionary
+        """
+        annotations = None
+        try:
+            annotations = get_type_hints(obj)
+        except Exception as _:
+            annotations = dict()
+        return annotations
 
     @staticmethod
     def prune(member_names: Dict,
@@ -140,16 +230,18 @@ class Dcopy:
         :param src: The source object
         :param tgt: The target object to be updated with corresponding source memebers
         :return: The updated version of Target.
-        ToDo : consider change to allow mapping of private members.
+        ToDo : consider change to allow mapping of private __ members.
         """
         result = None
         if type(src).__name__ in Dcopy._collection:
             if _Dcopyf.key(type(src), type(tgt)) in Dcopy._copy_map:
-                result = Dcopy._copy_map[_Dcopyf.key(type(src), type(tgt))](src, tgt)
+                result = Dcopy._copy_map[_Dcopyf.key(type(src), type(tgt))](src, tgt, **kwargs)
             elif not isinstance(src, type(tgt)):
                 raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
         elif issubclass(type(src), Enum):
-            result = _Dcopyf.copy_enum(src=src, tgt=tgt)
+            result = _Dcopyf.copy_enum_to_value(src=src, tgt=tgt, **kwargs)
+        elif issubclass(type(tgt), Enum):
+            result = _Dcopyf.copy_value_to_enum(src=src, tgt=tgt, **kwargs)
         elif isinstance(src, (int, float, type(None), str, bool)):
             if not isinstance(src, type(tgt)):
                 raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
@@ -164,10 +256,15 @@ class Dcopy:
 
             v_src = Dcopy.prune(v_src, **kwargs)
 
+            annotations = Dcopy.get_annotations(tgt)
+
             for vsk, vsv in v_src.items():
                 print(vsk)
                 if vsk in v_tgt:
-                    res = Dcopy.deep_corresponding_copy(vsv, v_tgt[vsk])
+                    annotation = annotations.get(vsk, None)
+                    if annotation is not None:
+                        kwargs[_Dcopyf.ANNOTATION_ARG] = annotation
+                    res = Dcopy.deep_corresponding_copy(vsv, v_tgt[vsk], **kwargs)
                     if type(res).__name__ not in Dcopy._ref_type:
                         setattr(tgt, vsk, res)
         return result
