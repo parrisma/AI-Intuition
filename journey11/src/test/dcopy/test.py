@@ -346,7 +346,13 @@ class TestDcopy(unittest.TestCase):
         message1 = Message1(field='Message-687',
                             state=State.S2,
                             tasks=[Task(task_name="Task-1", task_id=1), Task(task_name="Task-2", task_id=2)],
-                            strings=["A", "2", "c", "4", "D"])
+                            strings=["A", "2", "c", "4", "D"],
+                            _double=3.142,
+                            _float=6.284,
+                            _int32=496,
+                            _int64=8128,
+                            _bool=True,
+                            _bytes=b'A Byte String')
 
         pb_message1 = PBMessage1()
         actual = Copy.deep_corresponding_copy(message1, pb_message1)

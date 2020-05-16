@@ -1,4 +1,7 @@
 class Task:
+    _task_name: str
+    _task_id: int
+
     def __init__(self, **kwargs):
         self._task_name = kwargs.get('task_name', str())
         self._task_id = kwargs.get('task_id', int())

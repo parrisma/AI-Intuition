@@ -1,4 +1,4 @@
-from typing import Type, ByteString
+from typing import Type
 from journey11.src.lib.dcopy.copy import Copy
 
 
@@ -38,7 +38,7 @@ class ProtoCopy:
         return
 
     def serialize(self,
-                  src: object) -> ByteString:
+                  src: object) -> bytes:
         """
         Take the given object and serialise it using it's registered protobuf partner object
         :param src: The object to be serialised. The object type must have been registered with
@@ -52,7 +52,7 @@ class ProtoCopy:
         return tgt.SerializeToString()
 
     def deserialize(self,
-                    serialized_src: ByteString,
+                    serialized_src: bytes,
                     target_type: Type) -> object:
         """
         Take the given ByteString and deserialize it as the given type
@@ -61,7 +61,7 @@ class ProtoCopy:
         protobuf partner.
         :return:
         """
-        if serialized_src is None or len(serialized_src) == 0 or not isinstance(serialized_src, ByteString):
+        if serialized_src is None or len(serialized_src) == 0 or not isinstance(serialized_src, bytes):
             raise ValueError("serialized_src must be a non zero length ByteString")
         obj_type = target_type.__name__
         if obj_type not in self._transform_map:

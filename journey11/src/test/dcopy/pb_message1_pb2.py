@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='pb_message1.proto',
   package='journey11.experiment.proto_kafka',
   syntax='proto3',
-  serialized_pb=_b('\n\x11pb_message1.proto\x12 journey11.experiment.proto_kafka\x1a\x0epb_state.proto\x1a\rpb_task.proto\"\xa3\x01\n\nPBMessage1\x12\x0e\n\x06_field\x18\x01 \x01(\t\x12\x39\n\x06_state\x18\x02 \x01(\x0e\x32).journey11.experiment.proto_kafka.PBState\x12\x38\n\x06_tasks\x18\x03 \x03(\x0b\x32(.journey11.experiment.proto_kafka.PBTask\x12\x10\n\x08_strings\x18\x04 \x03(\tb\x06proto3')
+  serialized_pb=_b('\n\x11pb_message1.proto\x12 journey11.experiment.proto_kafka\x1a\x0epb_state.proto\x1a\rpb_task.proto\"\x83\x02\n\nPBMessage1\x12\x0e\n\x06_field\x18\x01 \x01(\t\x12\x39\n\x06_state\x18\x02 \x01(\x0e\x32).journey11.experiment.proto_kafka.PBState\x12\x38\n\x06_tasks\x18\x03 \x03(\x0b\x32(.journey11.experiment.proto_kafka.PBTask\x12\x10\n\x08_strings\x18\x04 \x03(\t\x12\x0f\n\x07_double\x18\x05 \x01(\x01\x12\x0e\n\x06_float\x18\x06 \x01(\x02\x12\x0e\n\x06_int32\x18\x07 \x01(\x05\x12\x0e\n\x06_int64\x18\x08 \x01(\x03\x12\r\n\x05_bool\x18\t \x01(\x08\x12\x0e\n\x06_bytes\x18\n \x01(\x0c\x62\x06proto3')
   ,
   dependencies=[pb__state__pb2.DESCRIPTOR,pb__task__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -64,6 +64,48 @@ _PBMESSAGE1 = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='_double', full_name='journey11.experiment.proto_kafka.PBMessage1._double', index=4,
+      number=5, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='_float', full_name='journey11.experiment.proto_kafka.PBMessage1._float', index=5,
+      number=6, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='_int32', full_name='journey11.experiment.proto_kafka.PBMessage1._int32', index=6,
+      number=7, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='_int64', full_name='journey11.experiment.proto_kafka.PBMessage1._int64', index=7,
+      number=8, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='_bool', full_name='journey11.experiment.proto_kafka.PBMessage1._bool', index=8,
+      number=9, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='_bytes', full_name='journey11.experiment.proto_kafka.PBMessage1._bytes', index=9,
+      number=10, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -77,7 +119,7 @@ _PBMESSAGE1 = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=87,
-  serialized_end=250,
+  serialized_end=346,
 )
 
 _PBMESSAGE1.fields_by_name['_state'].enum_type = pb__state__pb2._PBSTATE

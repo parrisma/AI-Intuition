@@ -453,6 +453,7 @@ class Copy:
         :param tgt: The target object to be updated with corresponding source memebers
         :return: The updated version of Target.
         ToDo : consider change to allow mapping of private __ members.
+        ToDo : Throw exception if src does not agree with type hint & make src type hints mandatory
         """
         result = None
         if type(src).__name__ in Copy._collection:
@@ -482,7 +483,6 @@ class Copy:
             src_annotations = Copy.get_annotations(src)
 
             for vsk, vsv in v_src.items():
-                print(vsk)
                 if vsk in v_tgt:
                     kwargs = {**kwargs, **Copy.member_annotations(vsk, src_annotations, tgt_annotations)}
                     res = Copy.deep_corresponding_copy(vsv, v_tgt[vsk], **kwargs)

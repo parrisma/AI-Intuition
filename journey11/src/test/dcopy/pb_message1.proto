@@ -10,4 +10,10 @@ message PBMessage1 {
   PBState _state = 2;
   repeated PBTask _tasks = 3;
   repeated string _strings = 4;
+  double _double = 5;
+  float _float = 6;
+  int32 _int32 = 7;
+  int64 _int64 = 8;
+  bool _bool = 9;
+  bytes _bytes = 10;
 }
