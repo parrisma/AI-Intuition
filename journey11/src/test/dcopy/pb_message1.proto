@@ -9,4 +9,5 @@ message PBMessage1 {
   string _field = 1;
   PBState _state = 2;
   repeated PBTask _tasks = 3;
+  repeated string _strings = 4;
 }

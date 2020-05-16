@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='pb_message1.proto',
   package='journey11.experiment.proto_kafka',
   syntax='proto3',
-  serialized_pb=_b('\n\x11pb_message1.proto\x12 journey11.experiment.proto_kafka\x1a\x0epb_state.proto\x1a\rpb_task.proto\"\x91\x01\n\nPBMessage1\x12\x0e\n\x06_field\x18\x01 \x01(\t\x12\x39\n\x06_state\x18\x02 \x01(\x0e\x32).journey11.experiment.proto_kafka.PBState\x12\x38\n\x06_tasks\x18\x03 \x03(\x0b\x32(.journey11.experiment.proto_kafka.PBTaskb\x06proto3')
+  serialized_pb=_b('\n\x11pb_message1.proto\x12 journey11.experiment.proto_kafka\x1a\x0epb_state.proto\x1a\rpb_task.proto\"\xa3\x01\n\nPBMessage1\x12\x0e\n\x06_field\x18\x01 \x01(\t\x12\x39\n\x06_state\x18\x02 \x01(\x0e\x32).journey11.experiment.proto_kafka.PBState\x12\x38\n\x06_tasks\x18\x03 \x03(\x0b\x32(.journey11.experiment.proto_kafka.PBTask\x12\x10\n\x08_strings\x18\x04 \x03(\tb\x06proto3')
   ,
   dependencies=[pb__state__pb2.DESCRIPTOR,pb__task__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -57,6 +57,13 @@ _PBMESSAGE1 = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='_strings', full_name='journey11.experiment.proto_kafka.PBMessage1._strings', index=3,
+      number=4, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -70,7 +77,7 @@ _PBMESSAGE1 = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=87,
-  serialized_end=232,
+  serialized_end=250,
 )
 
 _PBMESSAGE1.fields_by_name['_state'].enum_type = pb__state__pb2._PBSTATE

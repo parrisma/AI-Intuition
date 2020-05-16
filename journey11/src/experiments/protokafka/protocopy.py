@@ -1,5 +1,5 @@
 from typing import Type, ByteString
-from journey11.src.lib.dcopy import Dcopy
+from journey11.src.lib.dcopy.copy import Copy
 
 
 class ProtoCopy:
@@ -48,7 +48,7 @@ class ProtoCopy:
         obj_type = type(src).__name__
         if obj_type not in self._transform_map:
             raise ValueError("Object of type {} has no registered serializer".format(obj_type))
-        tgt = Dcopy.deep_corresponding_copy(src=src, tgt=self._transform_map[obj_type][ProtoCopy._PROTOBUF_TYPE]())
+        tgt = Copy.deep_corresponding_copy(src=src, tgt=self._transform_map[obj_type][ProtoCopy._PROTOBUF_TYPE]())
         return tgt.SerializeToString()
 
     def deserialize(self,
@@ -69,5 +69,5 @@ class ProtoCopy:
         pbt = self._transform_map[obj_type][ProtoCopy._PROTOBUF_TYPE]()
         tgt = self._transform_map[obj_type][ProtoCopy._OBJECT_TYPE]()
         pbt.ParseFromString(serialized_src)
-        tgt = Dcopy.deep_corresponding_copy(src=pbt, tgt=tgt)
+        tgt = Copy.deep_corresponding_copy(src=pbt, tgt=tgt)
         return tgt
