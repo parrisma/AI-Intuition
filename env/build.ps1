@@ -1,0 +1,1 @@
+ docker build -f .\Dockerfile-Ubuntu-PyEnv . -t parrisma/pyenv:1.0
