@@ -51,4 +51,7 @@ RUN cd /home/appuser && venv/bin/pip install --upgrade kafka-python
 # This will exit non zero if it cannot excerice tensorflow etc - so this will cause the conatiner build
 # to fail.
 RUN cd /home/appuser && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/env/test.py && \
-    /bin/bash -c "source venv/bin/activate; python ./test.py"
+    /bin/bash -c "source .bashrc; source venv/bin/activate; python ./test.py"
+
+RUN echo 'cd ~' >> /home/appuser/.bashrc
+USER appuser
