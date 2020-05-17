@@ -41,3 +41,7 @@ RUN useradd appuser -m && usermod --shell /bin/bash appuser && usermod -aG sudo 
 RUN pip3 install --upgrade tensorflow
 RUN pip3 install --upgrade protobuf
 RUN pip3 install --upgrade kafka-python
+
+RUN cd /home/appuser && \
+    wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/env/test.py &&\
+    python ./test.py
