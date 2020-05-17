@@ -39,21 +39,25 @@ def tf_check() -> int:
 
 
 def keras_check() -> int:
-    x = np.random.rand(5000, 1) * (np.pi * 2.0)
-    y = np.sin(x)
-    model = tf.keras.Sequential()
-    model.add(
-        tf.keras.layers.Dense(units=25, activation="relu", input_dim=1))
-    model.add(tf.keras.layers.Dense(units=50, activation="relu"))
-    model.add(tf.keras.layers.Dense(units=1))
-    optimizer = tf.keras.optimizers.RMSprop(0.001)
-    model.compile(loss='mse', optimizer=optimizer, metrics=['accuracy'])
-    model.summary()
-    _ = model.fit(x, y, epochs=50, batch_size=32, verbose=2, validation_split=0.2)
-    xe = np.random.rand(500, 1) * (np.pi * 2.0)
-    ye = np.sin(xe)
-    model.evaluate(xe, ye, verbose=2)
-    return 0
+    res = -1
+    try:
+        x = np.random.rand(5000, 1) * (np.pi * 2.0)
+        y = np.sin(x)
+        model = tf.keras.Sequential()
+        model.add(tf.keras.layers.Dense(units=25, activation="relu", input_dim=1))
+        model.add(tf.keras.layers.Dense(units=50, activation="relu"))
+        model.add(tf.keras.layers.Dense(units=1))
+        optimizer = tf.keras.optimizers.RMSprop(0.001)
+        model.compile(loss='mse', optimizer=optimizer, metrics=['accuracy'])
+        model.summary()
+        _ = model.fit(x, y, epochs=50, batch_size=32, verbose=2, validation_split=0.2)
+        xe = np.random.rand(500, 1) * (np.pi * 2.0)
+        ye = np.sin(xe)
+        model.evaluate(xe, ye, verbose=2)
+        res = 0
+    except Exception as e:
+        print("Failed run a simple Keras model run with error :{}".format(str(e)))
+    return res
 
 
 if tf_check() != 0:
