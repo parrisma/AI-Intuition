@@ -54,4 +54,6 @@ RUN cd /home/appuser && wget https://raw.githubusercontent.com/parrisma/AI-Intui
     /bin/bash -c "source .bashrc; source venv/bin/activate; python ./test.py"
 
 RUN echo 'cd ~' >> /home/appuser/.bashrc
+RUN echo 'export PYTHONPATH=/home/appuser:/home/appuser/journey11/src/experiments/protokafka' >> /home/appuser/.bashrc
+RUN echo 'source /home/appuser/venv/bin/activate' >> /home/appuser/.bashrc
 USER appuser

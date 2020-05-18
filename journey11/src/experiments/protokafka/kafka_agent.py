@@ -107,7 +107,19 @@ class Do:
 
         if self._topic is None or len(self._topic) == 0:
             logging.fatal("Topic must be a non zero length string : {}".format(self._topic))
+
+        logging.info(str(self))
+
         return
+
+    def __str__(self):
+        res = ""
+        if self._consumer:
+            res = "Consumer talking to server [{}] from group [{}] on topic [{}]".format(self._server, self._group_id,
+                                                                                         self._topic)
+        else:
+            res = "Producer talking to server [{}] on topic [{}]".format(self._server, self._topic)
+        return res
 
     def run(self):
         if self._consumer:

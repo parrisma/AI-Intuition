@@ -324,6 +324,10 @@ class _DcopyProto(_DcopyCore):
         :param copy_map:
         :return: Updated copy_map
         """
+        copy_map[_DcopyCore.key("RepeatedCompositeContainer",
+                                _DcopyCollection.LIST_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
+        copy_map[_DcopyCore.key(_DcopyCollection.LIST_TYPE,
+                                "RepeatedCompositeContainer")] = _DcopyProto.copy_list_2_protobuf_composite_repeat
         copy_map[_DcopyCore.key("RepeatedCompositeFieldContainer",
                                 _DcopyCollection.LIST_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
         copy_map[_DcopyCore.key(_DcopyCollection.LIST_TYPE,
@@ -332,6 +336,10 @@ class _DcopyProto(_DcopyCore):
                                 _DcopyCollection.LIST_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
         copy_map[_DcopyCore.key(_DcopyCollection.LIST_TYPE,
                                 "RepeatedScalarFieldContainer")] = _DcopyProto.copy_list_2_protobuf_scalar_repeat
+        copy_map[_DcopyCore.key("RepeatedScalarContainer",
+                                _DcopyCollection.LIST_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
+        copy_map[_DcopyCore.key(_DcopyCollection.LIST_TYPE,
+                                "RepeatedScalarContainer")] = _DcopyProto.copy_list_2_protobuf_scalar_repeat
 
         return copy_map
 
@@ -343,7 +351,9 @@ class _DcopyProto(_DcopyCore):
         :return: the map with (optional) additional collections in
         """
         collection_map["RepeatedCompositeFieldContainer"] = True
+        collection_map["RepeatedCompositeContainer"] = True
         collection_map["RepeatedScalarFieldContainer"] = True
+        collection_map["RepeatedScalarContainer"] = True
         return collection_map
 
     @staticmethod
@@ -354,7 +364,9 @@ class _DcopyProto(_DcopyCore):
         :return: the map with (optional) additional ref types in
         """
         ref_map["RepeatedCompositeFieldContainer"] = True
+        ref_map["RepeatedCompositeContainer"] = True
         ref_map["RepeatedScalarFieldContainer"] = True
+        ref_map["RepeatedScalarContainer"] = True
         return ref_map
 
 
@@ -390,14 +402,16 @@ class Copy:
         return annotations
 
     @staticmethod
-    def prune(member_names: Dict,
-              **kwargs) -> Dict:
+    def pruned_dir(obj,
+                   **kwargs) -> List:
         """
-        Remove special member names if passed as kwrgs param.
-        :param member_names: Current list of member names
-        :param kwargs: Look for 'prune' :parameter optionally passed
+        Extract object member names with dir and remove any member names given in the prune pramater
+        :param obj: the object to extract member names for
+        :param kwargs: Look for 'prune' parameter optionally passed
         :return: member names with any prune names removed.
         """
+        names = dir(obj)
+
         names_to_prune = kwargs.get('prune', list())
 
         if names_to_prune is None:
@@ -406,13 +420,18 @@ class Copy:
         if not isinstance(names_to_prune, list):
             names_to_prune = [names_to_prune]
 
+        names_to_prune.append('Extensions')
+
         for name in names_to_prune:
             if name is not None:
                 if not isinstance(name, str):
                     raise TypeError("Names to prune must be strings but given {}".format(type(name).__name__))
-                if name in member_names:
-                    del member_names[name]
-        return member_names
+
+        pruned_names = list()
+        for name in names:
+            if name not in names_to_prune:
+                pruned_names.append(name)
+        return pruned_names
 
     @staticmethod
     def member_annotations(member_name: str,
@@ -471,13 +490,11 @@ class Copy:
             result = src
         else:
             result = tgt
-            v_tgt = dict([(x, getattr(tgt, x)) for x in dir(tgt) if
-                          not callable(getattr(tgt, x)) and re.search("^__.*__$", x) is None])
+            v_tgt = dict([(x, getattr(tgt, x)) for x in Copy.pruned_dir(tgt, **kwargs) if
+                          re.search("^__.*__$", x) is None and not callable(getattr(tgt, x))])
 
-            v_src = dict([(x, getattr(src, x)) for x in dir(src) if
-                          not callable(getattr(src, x)) and re.search("^__.*__$", x) is None])
-
-            v_src = Copy.prune(v_src, **kwargs)
+            v_src = dict([(x, getattr(src, x)) for x in Copy.pruned_dir(src, **kwargs) if
+                          re.search("^__.*__$", x) is None and not callable(getattr(src, x))])
 
             tgt_annotations = Copy.get_annotations(tgt)
             src_annotations = Copy.get_annotations(src)
