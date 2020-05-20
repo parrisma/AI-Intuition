@@ -2,11 +2,11 @@
 
 cd /opt/kafka || exit
 
-if [[ -z "${ZOOKEEPER_SERVER}" ]]; then
+if [[ -z "${ZOOKEEPER_HOST}" ]]; then
   echo -------------------Use default Zookeeper in server.properties -----------------
 else
   echo -------------------Override ZooKeeper server----------------------
-sed "s/zookeeper-server:2181/${ZOOKEEPER_SERVER}/g" ./config/server.properties > ./config/new_sp
+sed "s/zookeeper-server:2181/${ZOOKEEPER_HOST}/g" ./config/server.properties > ./config/new_sp
 mv ./config/new_sp ./config/server.properties
 fi
 
@@ -31,5 +31,7 @@ sed "s/DOCKER-KAFKA-HOST/${DOCKER_KAFKA_HOST}/g" ./config/server.properties > ./
 mv ./config/new_sp ./config/server.properties
 sed "s/DOCKER-KAFKA-PORT/${DOCKER_KAFKA_PORT}/g" ./config/server.properties > ./config/new_sp
 mv ./config/new_sp ./config/server.properties
+
+/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties
 
 exit 0
