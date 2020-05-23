@@ -1,6 +1,6 @@
 FROM ubuntu:bionic-20200403
 
-RUN apt-get update && apt-get install -y lsb-release && apt-get clean all
+RUN apt-get update &&  && apt-get upgrade -y && apt-get install -y lsb-release && apt-get clean all
 
 # Basics
 
@@ -53,7 +53,17 @@ RUN cd /home/appuser && venv/bin/pip install --upgrade kafka-python
 RUN cd /home/appuser && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/env/test.py && \
     /bin/bash -c "source .bashrc; source venv/bin/activate; python ./test.py"
 
+# Need to pull down experimental source trees.
+RUN apt-get install -y git
+
 RUN echo 'cd ~' >> /home/appuser/.bashrc
 RUN echo 'export PYTHONPATH=/home/appuser:/home/appuser/journey11/src/experiments/protokafka' >> /home/appuser/.bashrc
 RUN echo 'source /home/appuser/venv/bin/activate' >> /home/appuser/.bashrc
+
+RUN echo "appuser\nappuser" | passwd appuser
+RUN echo "root\nroot" | passwd root
+
 USER appuser
+
+RUN cd /home/appuser && mkdir ./ai-journey && cd ./ai-journey && \
+    git init && git remote add origin https://github.com/parrisma/AI-Intuition.git && git pull origin master

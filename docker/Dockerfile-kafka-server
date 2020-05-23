@@ -5,6 +5,6 @@ RUN cd /opt/kafka/config && rm -f server.properties && wget https://raw.githubus
 RUN cd /opt/kafka/config && rm -f log4j.properties && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/kafka/log4j.properties
 
 # Get run script
-RUN cd /home/kafka && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/kafka/kafka-run.sh && chmod +x kafka-run.sh
+RUN cd /home/kafka && wget  https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/kafka/kafka-run.sh && chmod +x kafka-run.sh
 
 CMD ["/home/kafka/kafka-run.sh"]

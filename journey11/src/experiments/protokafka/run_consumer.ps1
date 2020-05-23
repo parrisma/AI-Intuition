@@ -16,4 +16,4 @@ Function RunPyEnv
 $local = "d:/Dev/devroot/AI-Intuition/journey11/src/experiments/protokafka"
 $rmt = "/var/data"
 
-ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_state.proto
+RunPyEnv -LocalDir $local -ConatinerDir $rmt -Filename pb_state.proto

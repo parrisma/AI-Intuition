@@ -1,0 +1,29 @@
+version: '3.1'
+
+services:
+  kafka-server:
+    image: parrisma/kafka-server:1.0
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels == kafka
+    ports:
+      - 9092:9092
+    environment:
+      - ZOOKEEPER_HOST=zookeeper-server
+      - DOCKER_KAFKA_HOST=kafka-server
+      - DOCKER_KAFKA_PORT=19092
+      - EXT_KAFKA_HOST=arther
+      - EXT_KAFKA_PORT=9092
+    networks:
+      - ai-net-o
+  zookeeper-server:
+    image: parrisma/zookeeper-server:1.0
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels == kafka
+    networks:
+      - ai-net-o

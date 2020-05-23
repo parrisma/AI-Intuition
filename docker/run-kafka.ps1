@@ -101,5 +101,7 @@ parrisma/kafka-server:1.0
 Write-Output "Wait for Kafka start"
 Start-Sleep 5
 
-Write-Output "Simple test for Kafka - try to list all topics"
-docker run -it --rm --network=host edenhill/kafkacat:1.5.0 -b ${docker_kafka_server}:${docker_kafka_port} -L
+Write-Output "Done"
+
+#Write-Output "Simple test for Kafka - try to list all topics"
+#docker run -it --rm --network=host edenhill/kafkacat:1.5.0 -b ${docker_kafka_server}:${docker_kafka_port} -L

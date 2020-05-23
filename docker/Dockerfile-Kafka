@@ -18,8 +18,4 @@ RUN chown -R kafka:kafka /data/kafka
 RUN cd /opt && wget http://www-us.apache.org/dist/kafka/2.4.0/kafka_2.13-2.4.0.tgz && tar -xvzf kafka_2.13-2.4.0.tgz && rm -f kafka_2.13-2.4.0.tgz
 RUN cd /opt && mv kafka_2.13-2.4.0 kafka && chown -R kafka:kafka /opt/kafka
 
-# Pull server.properties
-RUN cd /opt/kafka/config && rm -f server.properties && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/kafka/server.properties
-RUN cd /opt/kafka/config && rm -f log4j.properties && wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/kafka/log4j.properties
-
 

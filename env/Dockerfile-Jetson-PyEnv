@@ -1,0 +1,38 @@
+#
+# Nvidia TensorFlow 1.15 & Python3 base image for JetPack 4.2
+#
+# https://github.com/dusty-nv/jetson-containers/blob/master/Dockerfile.tensorflow
+#
+# sudo docker run -it --rm --runtime nvidia --network host
+#
+FROM nvcr.io/nvidia/l4t-tensorflow:r32.4.2-tf1.15-py3
+
+RUN apt-get update && apt-get upgrade -y && apt-get install -y lsb-release && apt-get clean all
+
+# Need sudo if inside the container as appuser
+RUN apt-get install -y sudo
+
+# Install Python Libraries - no virtual env as this is canned environment anyway.
+
+# Create App User
+RUN useradd appuser -m && usermod --shell /bin/bash appuser && usermod -aG sudo appuser
+
+# Protobuf
+RUN cd /home/appuser && pip3 install --upgrade protobuf
+
+# Kafka Python
+RUN cd /home/appuser && pip3 install --upgrade kafka-python
+
+# Need to pull down experimental source trees.
+RUN apt-get install -y git
+
+RUN echo 'cd ~' >> /home/appuser/.bashrc
+RUN echo 'export PYTHONPATH=/home/appuser:/home/appuser/journey11/src/experiments/protokafka' >> /home/appuser/.bashrc
+
+RUN echo "appuser\nappuser" | passwd appuser
+RUN echo "root\nroot" | passwd root
+
+USER appuser
+
+RUN cd /home/appuser && mkdir ./ai-journey && cd ./ai-journey && \
+    git init && git remote add origin https://github.com/parrisma/AI-Intuition.git && git pull origin master
