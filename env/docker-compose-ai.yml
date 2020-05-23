@@ -10,7 +10,10 @@ services:
         constraints:
           - node.labels.kafka==true
     ports:
-      - 9092:9092
+      - target: 9092
+        published: 9092
+        protocol: tcp
+        mode: host
     environment:
       - ZOOKEEPER_HOST=zookeeper-server
       - DOCKER_KAFKA_HOST=kafka-server
