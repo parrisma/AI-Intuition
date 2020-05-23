@@ -1,13 +1,14 @@
-version: '3.1'
+version: '3.8'
 
 services:
-  kafka-server:
-    image: parrisma/kafka-server:1.0
+  kafka-service:
+    image: parrisma/kafka-svr:1.1
+    hostname: kafka-server
     deploy:
       replicas: 1
       placement:
         constraints:
-          - node.labels == kafka
+          - node.labels.kafka==true
     ports:
       - 9092:9092
     environment:
@@ -17,13 +18,25 @@ services:
       - EXT_KAFKA_HOST=arther
       - EXT_KAFKA_PORT=9092
     networks:
-      - ai-net-o
-  zookeeper-server:
+          ai-net-o:
+            aliases:
+               - kafka-server
+    container_name: kafka-server
+  zookeeper-service:
     image: parrisma/zookeeper-server:1.0
+    hostname: zookeeper-server
     deploy:
       replicas: 1
       placement:
         constraints:
-          - node.labels == kafka
+          - node.labels.zookeeper==true
     networks:
-      - ai-net-o
+          ai-net-o:
+            aliases:
+               - zookeeper-server
+    container_name: zookeeper-server
+networks:
+   ai-net-o:
+      external: false
+      name: ai-net-o
+      driver: overlay
