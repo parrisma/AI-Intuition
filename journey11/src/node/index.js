@@ -2,9 +2,14 @@ var express = require('express')
 var app = express()
 
 app.get('/', function (req, res) {
-	  res.send('Hello World!')
+        var os = require("os");
+        var hostname = os.hostname();
+        var response = `Hello World from host [${ hostname }]`
+        res.send(response)
 })
 
 app.listen(8081, function () {
-	  console.log('app listening on port 8081!')
+	  let os = require("os");
+	  let hostname = os.hostname();
+	  console.log('App listening on host:port [%s] : 8081!' , hostname)
 })
