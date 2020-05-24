@@ -1,6 +1,6 @@
 FROM ubuntu:bionic-20200403
 
-RUN apt-get update &&  && apt-get upgrade -y && apt-get install -y lsb-release && apt-get clean all
+RUN apt-get update && apt-get upgrade -y && apt-get install -y lsb-release && apt-get clean all
 
 # Basics
 

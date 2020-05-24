@@ -1,0 +1,34 @@
+FROM ubuntu:bionic-20200403
+
+RUN apt-get update && apt-get upgrade -y && apt-get install -y lsb-release && apt-get clean all
+
+# Basics
+
+RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get install -y software-properties-common
+RUN apt-get update -y
+
+# Wget
+
+RUN apt-get install -y wget
+
+# network utils.
+
+RUN apt-get install -y iputils-ping
+RUN apt-get install -y telnetd
+RUN apt-get install -y net-tools
+
+# Editor
+RUN apt-get install -y vim
+
+# System
+RUN apt-get install -y sudo
+
+# Install Node
+RUN apt-get install -y nodejs
+RUN apt-get install -y npm && npm install --save express
+
+# Create App User
+RUN useradd appuser -m && usermod --shell /bin/bash appuser && usermod -aG sudo appuser
+
+EXPOSE 8080
