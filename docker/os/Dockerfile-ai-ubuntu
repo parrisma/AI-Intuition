@@ -1,5 +1,5 @@
 FROM ubuntu:bionic-20200403
-ARG debug_build
+ARG interactive_build
 
 RUN apt-get update && apt-get install -y lsb-release && apt-get clean all
 

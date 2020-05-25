@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   kafka-service:
-    image: parrisma/kafka-server:1.0
+    image: parrisma/kafka-server:2.0
     hostname: kafka-server
     deploy:
       replicas: 1
@@ -24,7 +24,8 @@ services:
           ai-net-o:
             aliases:
                - kafka-server
-    container_name: kafka-server
+    depends_on:
+      - zookeeper-service
   zookeeper-service:
     image: parrisma/zookeeper-server:1.0
     hostname: zookeeper-server
@@ -37,9 +38,9 @@ services:
           ai-net-o:
             aliases:
                - zookeeper-server
-    container_name: zookeeper-server
 networks:
    ai-net-o:
       external: false
       name: ai-net-o
       driver: overlay
+      attachable: true

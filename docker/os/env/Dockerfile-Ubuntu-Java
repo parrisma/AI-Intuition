@@ -1,28 +1,6 @@
-FROM ubuntu:bionic-20200403
-ARG debug_build
-
-RUN apt-get update && apt-get install -y lsb-release && apt-get clean all
-
-# Basics
-
-RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install -y software-properties-common
-RUN apt-get update -y
+FROM parrisma/ai-ubuntu:1.0
+ARG interactive_build
 
 # Java
-
 RUN add-apt-repository ppa:linuxuprising/java
 RUN apt-get install -y default-jre
-
-# Wget
-
-RUN apt-get install -y wget
-
-# network utils.
-
-RUN apt-get install -y iputils-ping
-RUN apt-get install -y telnetd
-RUN apt-get install -y net-tools
-
-# Editor
-RUN apt-get install -y vim
