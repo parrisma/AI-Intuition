@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  hello-world1:
+    image: parrisma/ai-nodejs:1.0
+    hostname: hello-world1
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.labels.nodejs==true
+    ports:
+      - target: 8081
+        published: 8081
+        protocol: tcp
+        mode: host
+    networks:
+          ai-node-o:
+            aliases:
+               - hello-world
+networks:
+   ai-node-o:
+      external: false
+      name: ai-node-o
+      driver: overlay
+      attachable: true

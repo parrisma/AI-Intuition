@@ -1,0 +1,36 @@
+FROM ubuntu:bionic-20200403
+ARG debug_build
+
+RUN apt-get update && apt-get install -y lsb-release && apt-get clean all
+
+# Basics
+
+RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get install -y software-properties-common
+RUN apt-get update -y
+
+# Java
+
+RUN add-apt-repository ppa:linuxuprising/java
+RUN apt-get install -y default-jre
+
+# Wget
+
+RUN apt-get install -y wget
+
+# network utils.
+
+RUN if [ -n "$interactive_build"]; \
+   then apt-get install -y iputils-ping ; \
+   else echo "Skipping ping"; fi
+RUN if [ -n "$interactive_build"]; \
+   then apt-get install -y telnetd; \
+   else echo "Skipping telnet"; fi
+RUN if [ -n "$interactive_build"]; \
+   then apt-get install -y net-tools; \
+   else echo "Skipping net-tools"; fi
+
+# Editor
+RUN if [ -n "$interactive_build"]; \
+   then apt-get install -y vim; \
+   else echo "Skipping Vim"; fi
