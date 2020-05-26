@@ -7,6 +7,8 @@ Function BuildDockerFile
         [Parameter(Mandatory = $true)][String]$Location,
         [Boolean]$Interactive = $false,
         [Boolean]$NoCache = $false,
+        [Boolean]$PushToHub = $false,
+        [Boolean]$Push = $false,
         [Boolean]$Passive = $false,
         [String]$Indent = ""
     )
@@ -14,35 +16,19 @@ Function BuildDockerFile
         New-Variable -Name _Res -Value "" -Scope Local
         New-Variable -Name _No_cache -Value "" -Scope Local
         New-Variable -Name _Interactive -Value "" -Scope Local
-        New-Variable -Name _Cmd -Value "" -Scope Local
-        New-Variable -Name _Err -Value "" -Scope Local
 
         if ($NoCache)
         {
             $_No_cache = "--no-cache"
         }
-        $_interactive = ""
+        $_Interactive = ""
         if ($Interactive)
         {
             $_Interactive = "--build-arg interactive_build"
         }
 
-        Write-Output "$Indent . . . . . Building : [$Source] . . . . ."
-        $_Cmd = "docker build -f $Location\$Source $Location -t $Target $_Interactive $_No_cache"
-        Write-Output "$Indent . . . . . [$_Cmd]"
-        if (-Not$Passive)
-        {
-            Invoke-Expression $_Cmd *>&1 | Tee-Object -Variable '_Res'
-            if ($_Res -match "(.*)Successfully built(.*)(\d+)(.*)")
-            {
-                Write-Output "$Indent . . . . . Built & Tagged OK: [$Source] to [$Target] . . . . ."
-            }
-            else
-            {
-                $_Err = "Docker Build Failed for: [$Source] to [$Target]"
-                throw $_Err
-            }
-        }
+        DockerBuild -Source $Source -Target $Target -Location $Location -NoCache $_No_cache -Interactive $_Interactive -Indent $Indent -Passive $Passive
+        DockerPush -Target $Target -PushToHub $PushToHub -Push $Push -Passive $Passive -Indent $Indent
         return
     }
 }
@@ -55,6 +41,7 @@ Function BuildDockerFiles
         [Parameter(Mandatory = $true)][String]$Location,
         [Boolean]$Interactive = $false,
         [Boolean]$NoCache = $false,
+        [Boolean]$PushToHub = $false,
         [Boolean]$Passive = $false,
         [String]$Indent = "   "
     )
@@ -69,6 +56,7 @@ Function BuildDockerFiles
             New-Variable -Name _Rep -Value $null -Scope Local
             New-Variable -Name _Target -Value $null -Scope Local
             New-Variable -Name _Ver -Value $null -Scope Local
+            New-Variable -Name _Push -Value $null -Scope Local
             Foreach ($build_file in $BuildFiles)
             {
                 Write-Output "`r`n$Indent - - - - < Processing: [$build_file] - - - - -"
@@ -79,7 +67,9 @@ Function BuildDockerFiles
                     $_Rep = $line | Select-Object -ExpandProperty "Repository"
                     $_Target = $line | Select-Object -ExpandProperty "Target"
                     $_Ver = $line | Select-Object -ExpandProperty "Version"
-                    BuildDockerFile -Source $_Source -Location $Location -Target "${_Rep}/${_Target}:${_Ver}" -Interactive $Interactive -NoCache $NoCache -Indent $Indent+"   " -Passive $Passive
+                    $_Push = $line | Select-Object -ExpandProperty "Push"
+                    $_Push = CSVArgToBool -Arg $_Push
+                    BuildDockerFile -Source $_Source -Location $Location -Target "${_Rep}/${_Target}:${_Ver}" -Interactive $Interactive -NoCache $NoCache -Indent "$Indent   " -Passive $Passive -Push $_Push -PushToHub $PushToHub
                 }
             }
         }
@@ -124,5 +114,103 @@ Function GetAllSubDirectories
             $_Res += $d.FullName
         }
         return ,$_Res
+    }
+}
+
+Function DockerBuild
+{
+    [cmdletbinding()]
+    Param (
+        [Parameter(Mandatory = $true)][String]$Source,
+        [Parameter(Mandatory = $true)][String]$Target,
+        [Parameter(Mandatory = $true)][String]$Location,
+        [Parameter(Mandatory = $true)][AllowEmptyString()][String]$NoCache,
+        [Parameter(Mandatory = $true)][AllowEmptyString()][String]$Interactive,
+        [Boolean]$Passive = $false,
+        [String]$Indent = ""
+    )
+    Process {
+        New-Variable -Name _Cmd -Value "" -Scope Local
+        New-Variable -Name _Err -Value "" -Scope Local
+
+        Write-Output "$Indent . . . . . Building : [$Source] . . . . ."
+        $_Cmd = "docker build -f $Location\$Source $Location -t $Target $Interactive $NoCache"
+        Write-Output "$Indent . . . . . [$_Cmd]"
+
+        if (-not$Passive)
+        {
+            Invoke-Expression $_Cmd *>&1 | Tee-Object -Variable '_Res'
+            if ($_Res -match "(.*)Successfully built(.*)(\d+)(.*)")
+            {
+                Write-Output "$Indent . . . . . Built & Tagged OK: [$Source] to [$Target] . . . . ."
+            }
+            else
+            {
+                $_Err = "Docker Build Failed for: [$Source] to [$Target]"
+                throw $_Err
+            }
+        }
+        else
+        {
+            Write-Output "$Indent . . . . . Passive OK . . . . ."
+        }
+    }
+}
+
+Function DockerPush
+{
+    [cmdletbinding()]
+    Param (
+        [Parameter(Mandatory = $true)][String]$Target,
+        [Parameter(Mandatory = $true)][Boolean]$PushToHub,
+        [Parameter(Mandatory = $true)][Boolean]$Push,
+        [Boolean]$Passive = $false,
+        [String]$Indent = ""
+    )
+    Process {
+        if ($PushToHub -AND $Push)
+        {
+            New-Variable -Name _Cmd -Value "" -Scope Local
+            New-Variable -Name _Err -Value "" -Scope Local
+
+            Write-Output "$Indent . . . . . Pushing : [$Source] . . . . ."
+            $_Cmd = "docker push $Target"
+            Write-Output "$Indent . . . . . [$_Cmd]"
+
+            if (-Not$Passive)
+            {
+                Invoke-Expression $_Cmd *>&1 | Tee-Object -Variable '_Res'
+                if ($_Res -match "(.*)digest: sha256:(.*)(\d+)(.*)")
+                {
+                    Write-Output "$Indent . . . . . Built & Tagged OK: [$Source] to [$Target] . . . . ."
+                }
+                else
+                {
+                    $_Err = "Docker Build Failed for: [$Source] to [$Target]"
+                    throw $_Err
+                }
+            }
+            else
+            {
+                Write-Output "$Indent . . . . . Passive OK . . . . ."
+            }
+        }
+    }
+}
+
+Function CSVArgToBool
+{
+    [cmdletbinding()]
+    Param (
+        [Parameter(Mandatory = $true)][String]$Arg
+    )
+    Process {
+        New-Variable -Name _Res -Value $false -Scope Local
+        $Arg = $Arg.ToLower()
+        if ($Arg -eq "true" -OR $Arg -eq "1" -OR $Arg -eq "`$true" -OR $Arg -eq "yes")
+        {
+            $_Res = $true
+        }
+        return $_Res
     }
 }
