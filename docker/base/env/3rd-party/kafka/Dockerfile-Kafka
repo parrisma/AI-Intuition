@@ -4,8 +4,9 @@ FROM parrisma/ubuntu-java:1.0
 
 RUN useradd kafka -m
 RUN usermod --shell /bin/bash kafka
-RUN passwd -d kafka
 RUN usermod -aG sudo kafka
+RUN echo "kafka\nkafka" | passwd kafka
+RUN echo "root\nroot" | passwd root
 
 # Create structure
 

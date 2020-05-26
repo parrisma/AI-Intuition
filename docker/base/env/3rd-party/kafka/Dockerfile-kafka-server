@@ -1,0 +1,24 @@
+FROM parrisma/kafka:1.0
+
+# Install Kafka instance specific configuration
+RUN cd /opt/kafka/config && \
+    rm -f server.properties &&\
+    rm -f log4j.properties
+ADD ./kafka-config/server.properties /opt/kafka/config
+ADD ./kafka-config/log4j.properties /opt/kafka/config
+
+# Get & Put Run script in kafka home
+ADD ./kafka-config/kafka-run.sh /home/kafka
+ADD ./kafka-config/forever.sh /home/kafka
+RUN chmod +x /home/kafka/*.sh
+
+USER kafka
+CMD ["/home/kafka/kafka-run.sh"]
+
+#
+# If you need to debug Kafka start - comment out the run script, un comment this. Then when the Kafka container
+# starts it will sit idle but wont exit. Then "docker exec -it <container-id> /bin/bash" you can then start
+# kafka with the kafka-run.sh watch the logs and exit setting etc & re-start the Kafka server.
+#
+# CMD ["/home/kafka/forever.sh"]
+#

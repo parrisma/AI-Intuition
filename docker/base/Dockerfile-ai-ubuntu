@@ -1,18 +1,10 @@
 FROM ubuntu:bionic-20200403
 ARG interactive_build
 
-RUN apt-get update && apt-get install -y lsb-release && apt-get clean all
-
-# Basics
-
-RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install -y software-properties-common
-RUN apt-get update -y
-
-# Java
-
-RUN add-apt-repository ppa:linuxuprising/java
-RUN apt-get install -y default-jre
+RUN apt-get update -y && \
+    apt-get install -y lsb-release && \
+    apt-get install -y software-properties-common && \
+    apt-get clean all
 
 # Wget
 

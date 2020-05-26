@@ -6,27 +6,44 @@ Function BuildDockerFile
         [Parameter(Mandatory = $true)][string]$Target,
         [Parameter(Mandatory = $true)][String]$Location,
         [Boolean]$Interactive = $false,
-        [Boolean]$NoCache = $false
+        [Boolean]$NoCache = $false,
+        [Boolean]$Passive = $false,
+        [String]$Indent = ""
     )
     Process {
-        $_no_cache = ""
+        New-Variable -Name _Res -Value "" -Scope Local
+        New-Variable -Name _No_cache -Value "" -Scope Local
+        New-Variable -Name _Interactive -Value "" -Scope Local
+        New-Variable -Name _Cmd -Value "" -Scope Local
+        New-Variable -Name _Err -Value "" -Scope Local
+
         if ($NoCache)
         {
-            $_no_cache = "--no-cache"
+            $_No_cache = "--no-cache"
         }
         $_interactive = ""
         if ($Interactive)
         {
-            $_interactive = "--build-arg interactive_build"
+            $_Interactive = "--build-arg interactive_build"
         }
 
-        Write-Output "Building : [$Source]"
-        $cmd = "docker build -f $Location\$Source $Location -t $Target $_interactive $_no_cache"
-        Write-Output $cmd
-        Invoke-Expression $cmd *>&1
-        # ToDo: Check image was updated
-        #     : docker inspect -f '{{ .Created }}' $Target
-        Write-Output "Built : [$Source] to [$Target]"
+        Write-Output "$Indent . . . . . Building : [$Source] . . . . ."
+        $_Cmd = "docker build -f $Location\$Source $Location -t $Target $_Interactive $_No_cache"
+        Write-Output "$Indent . . . . . [$_Cmd]"
+        if (-Not$Passive)
+        {
+            Invoke-Expression $_Cmd *>&1 | Tee-Object -Variable '_Res'
+            if ($_Res -match "(.*)Successfully built(.*)(\d+)(.*)")
+            {
+                Write-Output "$Indent . . . . . Built & Tagged OK: [$Source] to [$Target] . . . . ."
+            }
+            else
+            {
+                $_Err = "Docker Build Failed for: [$Source] to [$Target]"
+                throw $_Err
+            }
+        }
+        return
     }
 }
 
@@ -34,26 +51,40 @@ Function BuildDockerFiles
 {
     [cmdletbinding()]
     Param (
-        [Parameter(Mandatory = $true)][Array]$BuildFiles,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][Array]$BuildFiles,
         [Parameter(Mandatory = $true)][String]$Location,
         [Boolean]$Interactive = $false,
-        [Boolean]$NoCache = $false
+        [Boolean]$NoCache = $false,
+        [Boolean]$Passive = $false,
+        [String]$Indent = "   "
     )
     Process {
-        Foreach ($build_file in $BuildFiles)
+        if ($BuildFiles.Count -eq 0)
         {
-            Write-Output "Processing: $build_file`r`n"
-            $build_options = Import-Csv -path $build_file -Header "Dockerfile", "Repository", "Target", "Version"
-            Foreach ($line in $build_options)
-            {
-                $Source = $line | Select-Object -ExpandProperty "Dockerfile"
-                $Rep = $line | Select-Object -ExpandProperty "Repository"
-                $Target = $line | Select-Object -ExpandProperty "Target"
-                $Ver = $line | Select-Object -ExpandProperty "Version"
-                BuildDockerFile -Source $Source -Location $Location -Target "${Rep}/${Target}:${Ver}" -Interactive $Interactive -NoCache $NoCache
-            }
-            Write-Output "Done: $build_file`r`n"
+            Write-Output "`r`n$Indent - - - - < Nothing to do"
         }
+        else
+        {
+            New-Variable -Name _Source -Value $null -Scope Local
+            New-Variable -Name _Rep -Value $null -Scope Local
+            New-Variable -Name _Target -Value $null -Scope Local
+            New-Variable -Name _Ver -Value $null -Scope Local
+            Foreach ($build_file in $BuildFiles)
+            {
+                Write-Output "`r`n$Indent - - - - < Processing: [$build_file] - - - - -"
+                $build_options = Import-Csv -path $build_file
+                Foreach ($line in $build_options)
+                {
+                    $_Source = $line | Select-Object -ExpandProperty "Dockerfile"
+                    $_Rep = $line | Select-Object -ExpandProperty "Repository"
+                    $_Target = $line | Select-Object -ExpandProperty "Target"
+                    $_Ver = $line | Select-Object -ExpandProperty "Version"
+                    BuildDockerFile -Source $_Source -Location $Location -Target "${_Rep}/${_Target}:${_Ver}" -Interactive $Interactive -NoCache $NoCache -Indent $Indent+"   " -Passive $Passive
+                }
+            }
+        }
+        Write-Output "$Indent - - - - > Done: [$build_file] - - - - -`r`n"
+        return
     }
 }
 
@@ -65,13 +96,15 @@ Function GetBuildFileNames
         [String]$Filter = "build-*.csv"
     )
     Process {
-        $res = @()
-        $files = Get-ChildItem -Path "$build_dir" -Filter $Filter
-        foreach ($f in $files)
+        New-Variable -Name _Res -Value $null -Scope Local
+        New-Variable -Name _File -Value $null -Scope Local
+        $_Res = @()
+        $_Files = Get-ChildItem -Path $BuildDir -Filter $Filter
+        foreach ($f in $_Files)
         {
-            $res+= $f.FullName
+            $_Res += $f.FullName
         }
-        return $res
+        return ,$_Res
     }
 }
 
@@ -82,12 +115,14 @@ Function GetAllSubDirectories
         [Parameter(Mandatory = $true)][String]$RootDir
     )
     Process {
-        $res = @()
-        $dirs = Get-ChildItem -Directory -Recurse $RootDir
-        foreach ($d in $dirs)
+        New-Variable -Name _Res -Value $null -Scope Local
+        New-Variable -Name _Dirs -Value $null -Scope Local
+        $_Res = @()
+        $_Dirs = Get-ChildItem -Directory -Recurse $RootDir
+        foreach ($d in $_Dirs)
         {
-            $res += $d.FullName
+            $_Res += $d.FullName
         }
-        return $res
+        return ,$_Res
     }
 }

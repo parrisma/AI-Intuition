@@ -1,0 +1,15 @@
+FROM parrisma/zookeeper:1.0
+
+# Install Kafka instance specific configuration
+RUN cd /opt/zookeeper/conf && \
+    rm -f zoo.cgf &&\
+    rm -f log4j.properties
+ADD ./zookeeper-config/zoo.cfg /opt/zookeeper/conf
+ADD ./zookeeper-config/log4j.properties /opt/zookeeper/conf
+
+# Get & put zookeeper running
+ADD ./zookeeper-config/zkrun.sh /home/zookeeper
+RUN chmod +x /home/zookeeper/*.sh
+
+USER zookeeper
+CMD ["/home/zookeeper/zkrun.sh"]
