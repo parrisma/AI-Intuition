@@ -198,6 +198,85 @@ Function DockerPush
     }
 }
 
+Function DockerNetworkCreate
+{
+    [cmdletbinding()]
+    Param (
+        [Parameter(Mandatory = $true)][String]$NetworkName,
+        [String]$NetworkType = "bridge",
+        [Boolean]$Passive = $false
+    )
+    Process {
+        New-Variable -Name _Cmd -Value "" -Scope Local
+
+        Write-Output "Checking for network [$NetworkName]"
+        $_Cmd = "docker network ls -f name=$NetworkName -q"
+        Write-Output "Running: [$_Cmd]"
+
+        if (-Not$Passive)
+        {
+            $_Res = Invoke-Expression $_Cmd
+            if ($null -eq $_Res)
+            {
+                Write-Output "Network does not exist, creating"
+                $_Cmd = "docker network create -d $NetworkType --attachable $NetworkName"
+                Write-Output "Running: [$_Cmd]"
+                $_Res = Invoke-Expression $_Cmd
+            }
+            else
+            {
+                Write-Output "Network exists, OK"
+            }
+        }
+    }
+}
+
+Function DockerStopContainerByName
+{
+    [cmdletbinding()]
+    Param (
+        [Parameter(Mandatory = $true)][String]$ContainerName,
+        [Boolean]$Passive = $false
+    )
+    Process {
+        New-Variable -Name _Cmd -Value "" -Scope Local
+
+        Write-Output "Checking for container with name [$ContainerName]"
+        $_Cmd = "docker ps --filter name=$ContainerName -q"
+        Write-Output "Running: [$_Cmd]"
+
+        if (-Not$Passive)
+        {
+            $_Res = Invoke-Expression $_Cmd
+            if ($null -eq $_Res)
+            {
+                Write-Output "No instance of a Container with name [$ContainerName]"
+            }
+            else
+            {
+                $_Cmd = "docker stop $_Res"
+                Write-Output "Running: [$_Cmd]"
+                $_Res = Invoke-Expression $_Cmd
+            }
+        }
+    }
+}
+
+Function DockerPruneContainersAndImages
+{
+    [cmdletbinding()]
+    Param (
+        [Boolean]$Passive = $false
+    )
+    Process {
+        if (-Not$Passive)
+        {
+            docker images prune --force
+            docker container prune --force
+        }
+    }
+}
+
 Function CSVArgToBool
 {
     [cmdletbinding()]

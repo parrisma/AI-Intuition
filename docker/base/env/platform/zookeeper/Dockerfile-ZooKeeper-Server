@@ -4,11 +4,14 @@ FROM parrisma/zookeeper:1.0
 RUN cd /opt/zookeeper/conf && \
     rm -f zoo.cgf &&\
     rm -f log4j.properties
-ADD ./zookeeper-config/zoo.cfg /opt/zookeeper/conf
-ADD ./zookeeper-config/log4j.properties /opt/zookeeper/conf
+
+# Use WGET so we dont have any Windows line end issues
+# ToDo - once tested replace /master/ with branch to capture the 1.0 tag state of this image
+RUN wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/base/env/platform/zookeeper/zookeeper-config/log4j.properties -P /opt/zookeeper/conf
+RUN wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/base/env/platform/zookeeper/zookeeper-config/zoo.cfg -P /opt/zookeeper/conf
 
 # Get & put zookeeper running
-ADD ./zookeeper-config/zkrun.sh /home/zookeeper
+RUN wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/base/env/platform/zookeeper/zookeeper-config/zkrun.sh -P /home/zookeeper
 RUN chmod +x /home/zookeeper/*.sh
 
 USER zookeeper

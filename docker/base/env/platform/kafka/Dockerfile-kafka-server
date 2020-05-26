@@ -4,12 +4,12 @@ FROM parrisma/kafka:1.0
 RUN cd /opt/kafka/config && \
     rm -f server.properties &&\
     rm -f log4j.properties
-ADD ./kafka-config/server.properties /opt/kafka/config
-ADD ./kafka-config/log4j.properties /opt/kafka/config
+RUN wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/base/env/platform/kafka/kafka-config/server.properties -P /opt/kafka/config
+RUN wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/base/env/platform/kafka/kafka-config/log4j.properties -P /opt/kafka/config
 
 # Get & Put Run script in kafka home
-ADD ./kafka-config/kafka-run.sh /home/kafka
-ADD ./kafka-config/forever.sh /home/kafka
+RUN wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/base/env/platform/kafka/kafka-config/kafka-run.sh -P /home/kafka
+RUN wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/docker/base/env/platform/kafka/kafka-config/forever.sh -P /home/kafka
 RUN chmod +x /home/kafka/*.sh
 
 USER kafka

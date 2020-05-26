@@ -37,71 +37,56 @@
 #>
 
 param (
-    [string]$kafka_host = $env:COMPUTERNAME,
-    [string]$kafka_port = "9092",
-    [string]$docker_kafka_server = "kafka-server",
-    [String]$docker_kafka_port = "19092",
-    [string]$zookeeper_server = "zookeeper-server",
-    [string]$zookeeper_port = "2181",
-    [string]$docker_network = "ai-net"
- )
+    [string]$KafkaHost = $env:COMPUTERNAME,
+    [string]$KafkaPort = "9092",
+    [string]$DockerKafkaServer = "kafka-server",
+    [String]$DockerKafkaPort = "19092",
+    [string]$ZookeeperServer = "zookeeper-server",
+    [string]$ZookeeperPort = "2181",
+    [string]$DockerNetwork = "ai-net",
+    [String]$Repository = "parrisma",
+    [String]$KafkaVer = "1.0",
+    [String]$ZookeeperVer = "1.0",
+    [Switch]$StopOnly
+)
 
-Write-Output "Stopping and restarting Kafka and Zookeeper Containers"
+. ..\..\ps1\BuildDockerFile.ps1
 
-$kf = docker ps --filter "name=${docker_kafka_server}" -q
-if ($kf) {
-    Write-Output "Stopping Kafka [${docker_kafka_server}]: $kf"
-    docker stop $kf
-    Write-Output "Kafka container [${docker_kafka_server}] stopped"
-}
+DockerNetworkCreate -NetworkName ai-net
+DockerStopContainerByName -ContainerName ${ZookeeperServer}
+DockerStopContainerByName -ContainerName ${DockerKafkaServer}
+DockerPruneContainersAndImages
 
-
-$zk = docker ps --filter "name=${zookeeper_server}" -q
-if ($zk) {
-    Write-Output "Stopping Zookeeper [${zookeeper_server}] : $zk"
-    docker stop $zk
-    Write-Output "Zookeeper container [${zookeeper_server}] stopped"
-}
-
-$error.clear()
-try { docker network inspect ${docker_network} > $null}
-catch {
-    Write-Output "Docker network ${docker_network} does not exist, creating"
-    docker network create ${docker_network}
-}
-if (!$error) {
-Write-Output "Docker network ${docker_network} already exists, no need to create"
+if ($StopOnly)
+{
+    exit
 }
 
 # Both of these images are on docker hub in public repositories parrisma/<>
 
 Write-Output "Starting Zookeeper"
 docker run -d --rm `
--h ${zookeeper_server} --name ${zookeeper_server} `
---network ${docker_network} `
-parrisma/zookeeper-server:1.0
+--hostname ${ZookeeperServer} --name ${ZookeeperServer} `
+--network ${DockerNetwork} `
+$Repository/$ZookeeperServer`:$ZookeeperVer
 
 Write-Output "Wait for Zookeeper start"
 Start-Sleep 5
 
 Write-Output "Starting Kafka"
-$docker_kafka_server = "kafka-server"
 
 docker run `
 -d --rm `
---hostname ${docker_kafka_server} --name ${docker_kafka_server} `
--p ${kafka_port}:${kafka_port} --network ${docker_network} `
--e ZOOKEEPER_HOST="${zookeeper_server}:${zookeeper_port}" `
--e DOCKER_KAFKA_HOST="${docker_kafka_server}" `
--e DOCKER_KAFKA_PORT="${docker_kafka_port}" `
--e EXT_KAFKA_HOST="${kafka_host}" `
--e EXT_KAFKA_PORT="${kafka_port}" `
-parrisma/kafka-server:1.0
+--hostname ${DockerKafkaServer} --name ${DockerKafkaServer} `
+-p ${KafkaPort}:${KafkaPort} --network ${DockerNetwork} `
+-e ZOOKEEPER_HOST="${ZookeeperServer}:${ZookeeperPort}" `
+-e DOCKER_KAFKA_HOST="${DockerKafkaServer}" `
+-e DOCKER_KAFKA_PORT="${DockerKafkaPort}" `
+-e EXT_KAFKA_HOST="${KafkaHost}" `
+-e EXT_KAFKA_PORT="${KafkaPort}" `
+$Repository/kafka-server:$KafkaVer
 
 Write-Output "Wait for Kafka start"
 Start-Sleep 5
 
 Write-Output "Done"
-
-#Write-Output "Simple test for Kafka - try to list all topics"
-#docker run -it --rm --network=host edenhill/kafkacat:1.5.0 -b ${docker_kafka_server}:${docker_kafka_port} -L
