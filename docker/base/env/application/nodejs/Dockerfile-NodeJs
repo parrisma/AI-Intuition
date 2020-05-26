@@ -1,0 +1,6 @@
+FROM parrisma/ai-ubuntu:1.0
+
+# Install Node
+RUN apt-get install -y nodejs
+RUN apt-get install -y npm && npm install --save express
+

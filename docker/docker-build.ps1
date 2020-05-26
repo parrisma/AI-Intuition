@@ -9,8 +9,10 @@ param (
     [String]$BuildFilter = "build-*.csv" # The file pattern to use to find the build csv file(s)
 )
 
-. ..\..\ps1\GlobalDefaults.ps1
-. ..\..\ps1\BuildDockerFile.ps1
+# ToDo: Add capability to pass in git Branch to pass to WGET pulls of Git content.
+
+. ..\ps1\GlobalDefaults.ps1
+. ..\ps1\BuildDockerFile.ps1
 
 New-Variable -Name _All_dirs -Value $null -Scope Local
 New-Variable -Name _Build_dir -Value $null -Scope Local

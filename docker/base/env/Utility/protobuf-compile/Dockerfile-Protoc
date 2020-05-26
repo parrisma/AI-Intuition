@@ -1,0 +1,13 @@
+FROM parrisma/ai-ubuntu:1.0
+
+# Protobuf
+RUN apt-get install -y libprotobuf-dev protobuf-compiler
+
+# Create App User
+RUN useradd protouser -m && usermod --shell /bin/bash protouser && usermod -aG sudo protouser && \
+    echo "protouser\nprotouser" | passwd protouser && \
+    echo "root\nroot" | passwd root
+    
+USER protouser
+
+CMD ["/bin/bash"]

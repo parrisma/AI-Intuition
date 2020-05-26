@@ -7,15 +7,16 @@
 #
 FROM nvcr.io/nvidia/l4t-tensorflow:r32.4.2-tf1.15-py3
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y lsb-release && apt-get clean all
+RUN apt-get update && apt-get install -y lsb-release && apt-get clean all
 
 # Need sudo if inside the container as appuser
 RUN apt-get install -y sudo
 
 # Install Python Libraries - no virtual env as this is canned environment anyway.
 
-# Create App User
-RUN useradd appuser -m && usermod --shell /bin/bash appuser && usermod -aG sudo appuser
+RUN useradd appuser -m && usermod --shell /bin/bash appuser && usermod -aG sudo appuser && \
+    echo "appuser\nappuser" | passwd appuser && \
+    echo "root\nroot" | passwd root
 
 # Protobuf
 RUN cd /home/appuser && pip3 install --upgrade protobuf
@@ -29,8 +30,7 @@ RUN apt-get install -y git
 RUN echo 'cd ~' >> /home/appuser/.bashrc
 RUN echo 'export PYTHONPATH=/home/appuser:/home/appuser/journey11/src/experiments/protokafka' >> /home/appuser/.bashrc
 
-RUN echo "appuser\nappuser" | passwd appuser
-RUN echo "root\nroot" | passwd root
+RUN chown -R appuser:appuser /home/appuser
 
 USER appuser
 

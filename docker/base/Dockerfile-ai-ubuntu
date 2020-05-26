@@ -6,12 +6,12 @@ RUN apt-get update -y && \
     apt-get install -y software-properties-common && \
     apt-get clean all
 
-# Wget
+# System
+RUN if [ -n "$interactive_build"]; \
+   then apt-get install -y sudo ; \
+   else echo "Skipping sudo"; fi
 
-RUN apt-get install -y wget
-
-# network utils.
-
+# Networking utils.
 RUN if [ -n "$interactive_build"]; \
    then apt-get install -y iputils-ping ; \
    else echo "Skipping ping"; fi
@@ -26,3 +26,7 @@ RUN if [ -n "$interactive_build"]; \
 RUN if [ -n "$interactive_build"]; \
    then apt-get install -y vim; \
    else echo "Skipping Vim"; fi
+
+# Wget
+RUN apt-get install -y wget
+

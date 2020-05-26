@@ -1,0 +1,21 @@
+FROM parrisma/nodejs:1.0
+
+# Create App User
+RUN useradd nodeuser -m && usermod --shell /bin/bash nodeuser && usermod -aG sudo nodeuser && \
+    echo "nodeuser\nnodeuser" | passwd nodeuser && \
+    echo "root\nroot" | passwd root
+
+# Install the App.
+RUN cd /home/nodeuser && mkdir ./app && cd ./app && \
+    wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/journey11/src/node/package.json && \
+    wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/journey11/src/node/index.js && \
+    wget https://raw.githubusercontent.com/parrisma/AI-Intuition/master/env/run-nodejs.sh && \
+    chmod +x run-nodejs.sh
+
+RUN chown -R nodeuser:nodeuser /home/nodeuser/app
+
+USER nodeuser
+
+CMD ["/home/nodeuser/app/run-nodejs.sh"]
+
+EXPOSE 8080
