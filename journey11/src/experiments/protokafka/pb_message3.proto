@@ -6,7 +6,8 @@ import "pb_state.proto";
 import "pb_task.proto";
 
 message PBMessage3 {
-    string _field = 1;
-    PBState _state = 2;
-    repeated PBTask _tasks = 3;
+    string _field_Y = 1;
+    int64 _m3 = 2;
+    PBState _state = 3;
+    repeated PBTask _tasks = 4;
 }

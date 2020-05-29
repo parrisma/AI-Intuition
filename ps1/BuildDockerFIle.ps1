@@ -68,7 +68,7 @@ Function BuildDockerFiles
                     $_Target = $line | Select-Object -ExpandProperty "Target"
                     $_Ver = $line | Select-Object -ExpandProperty "Version"
                     $_Push = $line | Select-Object -ExpandProperty "Push"
-                    $_Push = CSVArgToBool -Arg $_Push
+                    $_Push = StrToBool -Arg $_Push
                     BuildDockerFile -Source $_Source -Location $Location -Target "${_Rep}/${_Target}:${_Ver}" -Interactive $Interactive -NoCache $NoCache -Indent "$Indent   " -Passive $Passive -Push $_Push -PushToHub $PushToHub
                 }
             }
@@ -240,6 +240,7 @@ Function DockerStopContainerByName
     )
     Process {
         New-Variable -Name _Cmd -Value "" -Scope Local
+        New-Variable -Name _Res -Value "" -Scope Local
 
         Write-Output "Checking for container with name [$ContainerName]"
         $_Cmd = "docker ps --filter name=$ContainerName -q"
@@ -271,13 +272,61 @@ Function DockerPruneContainersAndImages
     Process {
         if (-Not$Passive)
         {
-            docker images prune --force
+            docker image prune
             docker container prune --force
         }
     }
 }
 
-Function CSVArgToBool
+Function DockerIsSwarmManager
+{
+    [cmdletbinding()]
+    Param (
+        [Boolean]$Passive = $false
+    )
+    Process {
+        New-Variable -Name _Cmd -Value "" -Scope Local
+        New-Variable -Name _Res -Value "" -Scope Local
+
+        Write-Output "Checking for swarm manager status for localhost"
+        $_Cmd = "docker info --format '{{json .Swarm.ControlAvailable}}'"
+        Write-Output "Running: [$_Cmd]"
+
+        if (-Not$Passive)
+        {
+            $_Res = Invoke-Expression $_Cmd
+            $_Res = StrToBool -Arg $_Res
+        }
+        return $_Res
+    }
+}
+
+Function DockerStartStack
+{
+    [cmdletbinding()]
+    Param (
+        [Parameter(Mandatory = $true)][String]$ComposeYML,
+        [Parameter(Mandatory = $true)][String]$StackName,
+        [Boolean]$Passive = $false
+    )
+    Process {
+        New-Variable -Name _Cmd -Value "" -Scope Local
+        New-Variable -Name _Res -Value "" -Scope Local
+
+        Write-Output "Starting docker stack [$StackName] from [$ComposeYML]"
+        $_Cmd = "docker stack deploy -c $ComposeYML $StackName"
+        Write-Output "Running: [$_Cmd]"
+
+        if (-Not$Passive)
+        {
+            $_Res = Invoke-Expression $_Cmd
+            Write-Output $_Res
+        }
+        return
+    }
+}
+
+Function StrToBool
 {
     [cmdletbinding()]
     Param (

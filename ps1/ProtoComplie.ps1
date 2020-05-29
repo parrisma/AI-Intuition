@@ -8,7 +8,7 @@ Function ProtoCompile
     )
     Process {
         Write-Output "Compiling : [$Filename]"
-        docker run -it -v $LocalDir"":$ConatinerDir parrisma/py-env:1.0 protoc --proto_path=$ConatinerDir --python_out=$ConatinerDir $ConatinerDir/$Filename
+        docker run -it -v $LocalDir"":$ConatinerDir parrisma/protoc:1.0 protoc --proto_path=$ConatinerDir --python_out=$ConatinerDir $ConatinerDir/$Filename
         Write-Output "Done"
     }
 }

@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='pb_notification.proto',
   package='journey11.experiment.proto_kafka',
   syntax='proto3',
-  serialized_pb=_b('\n\x15pb_notification.proto\x12 journey11.experiment.proto_kafka\x1a\x1fgoogle/protobuf/timestamp.proto\"_\n\x0ePBNotification\x12\r\n\x05_type\x18\x01 \x01(\t\x12\x10\n\x08_payload\x18\x02 \x01(\t\x12,\n\x08my_field\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestampb\x06proto3')
+  serialized_pb=_b('\n\x15pb_notification.proto\x12 journey11.experiment.proto_kafka\x1a\x1fgoogle/protobuf/timestamp.proto\"_\n\x0ePBNotification\x12\r\n\x05_type\x18\x01 \x01(\x04\x12\x10\n\x08_payload\x18\x02 \x01(\x0c\x12,\n\x08my_field\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestampb\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -37,15 +37,15 @@ _PBNOTIFICATION = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='_type', full_name='journey11.experiment.proto_kafka.PBNotification._type', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      number=1, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
       name='_payload', full_name='journey11.experiment.proto_kafka.PBNotification._payload', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),

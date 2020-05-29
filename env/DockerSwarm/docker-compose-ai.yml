@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   kafka-service:
-    image: parrisma/kafka-server:2.0
+    image: parrisma/kafka-server:1.0
     hostname: kafka-server
     deploy:
       replicas: 1

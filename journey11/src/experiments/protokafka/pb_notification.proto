@@ -5,7 +5,7 @@ package journey11.experiment.proto_kafka;
 import "google/protobuf/timestamp.proto";
 
 message PBNotification {
-    string _type = 1;
-    string _payload = 2;
+    uint64 _type = 1;
+    bytes _payload = 2;
     google.protobuf.Timestamp my_field = 3;
 }

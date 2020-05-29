@@ -8,9 +8,14 @@ from journey11.src.experiments.protokafka.protocopy import ProtoCopy
 from journey11.src.experiments.protokafka.task import Task
 from journey11.src.experiments.protokafka.pb_task_pb2 import PBTask
 from journey11.src.experiments.protokafka.pb_message1_pb2 import PBMessage1
+from journey11.src.experiments.protokafka.pb_message2_pb2 import PBMessage2
+from journey11.src.experiments.protokafka.pb_message3_pb2 import PBMessage3
 from journey11.src.experiments.protokafka.message1 import Message1
+from journey11.src.experiments.protokafka.message2 import Message2
+from journey11.src.experiments.protokafka.message3 import Message3
 from journey11.src.experiments.protokafka.state import State
 from journey11.src.experiments.protokafka.gibberish import Gibberish
+from journey11.src.experiments.protokafka.pb_notification_pb2 import PBNotification
 from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.lib.loggingsetup import LoggingSetup
 
@@ -73,8 +78,7 @@ class TestProtoKafka(unittest.TestCase):
                             tasks=[Task(task_name="Task-1", task_id=1), Task(task_name="Task-2", task_id=2)])
 
         message1_serialized = pc.serialize(message1)
-        m1_b = bytes(message1_serialized).decode(encoding='utf-8')
-        message1_deserialized = pc.deserialize(m1_b, Message1)
+        message1_deserialized = pc.deserialize(message1_serialized, Message1)
         self.assertEqual(message1_deserialized, message1)
         return
 
@@ -120,6 +124,58 @@ class TestProtoKafka(unittest.TestCase):
                 expected = messages[rx_deserialized.field]
                 self.assertEqual(expected, rx_deserialized)
                 logging.info("Rx'ed and passed message :{}".format(expected.field[0:100]))
+
+        return
+
+    def test_message_in_message(self):
+        """
+        Test to verify we can send different message types over same Kafka topic and re-construct at reciever. To do
+        this we have a simple tunnel message that maps message type to an identifier and takes the pre serialised
+        message and sends as a raw byte string.
+
+        The test has three message types which it picks at random, encodes and sends via Kafka and we then check the
+        rx'ed version is same as was sent.
+        """
+        pc = ProtoCopy()
+        pc.register(object_type=Message1, proto_buf_type=PBMessage1)
+        pc.register(object_type=Message2, proto_buf_type=PBMessage2)
+        pc.register(object_type=Message3, proto_buf_type=PBMessage3)
+
+        # Create an instance of each message type.
+        message1 = Message1(field=Gibberish.more_gibber(),
+                            state=State.S2,
+                            tasks=[Task(task_name="Task-1", task_id=1), Task(task_name="Task-2", task_id=2)])
+        message2 = Message2(field_X=Gibberish.more_gibber(),
+                            m2=3142,
+                            state=State.S1,
+                            tasks=[Task(task_name="Task-3", task_id=3),
+                                   Task(task_name="Task-4", task_id=4),
+                                   Task(task_name="Task-5", task_id=5)])
+        message3 = Message3(field_Y=Gibberish.more_gibber(),
+                            m3=6284,
+                            state=State.S3,
+                            tasks=[Task(task_name="Task-6", task_id=6)])
+
+        msg_map = {0: message1, 1: message2, 2: message3}
+
+        for x in range(0, 25):
+            mtype = np.random.randint(3, size=1)[0]
+            msg_2_send = msg_map[mtype]
+
+            # Create tunnel TX message
+            tunnel_tx = PBNotification()
+            tunnel_tx._type = mtype
+            tunnel_tx._payload = pc.serialize(msg_2_send)
+            serialized_tunnel_message = tunnel_tx.SerializeToString()
+
+            # Create tunnel RX message
+            tunnel_rx = PBNotification()
+            tunnel_rx.ParseFromString(serialized_tunnel_message)
+
+            # Reconstruct Original message after tunnel
+            expected = msg_map[tunnel_rx._type]
+            actual = pc.deserialize(tunnel_rx._payload, target_type=type(expected))
+            self.assertEqual(expected, actual)
 
         return
 
