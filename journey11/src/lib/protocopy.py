@@ -1,5 +1,5 @@
 from typing import Type
-from journey11.src.lib.dcopy.copy import Copy
+from journey11.src.lib.dcopy.dccopy import DCCopy
 
 
 class ProtoCopy:
@@ -48,7 +48,7 @@ class ProtoCopy:
         obj_type = type(src).__name__
         if obj_type not in self._transform_map:
             raise ValueError("Object of type {} has no registered serializer".format(obj_type))
-        tgt = Copy.deep_corresponding_copy(src=src, tgt=self._transform_map[obj_type][ProtoCopy._PROTOBUF_TYPE]())
+        tgt = DCCopy.deep_corresponding_copy(src=src, tgt=self._transform_map[obj_type][ProtoCopy._PROTOBUF_TYPE]())
         return tgt.SerializeToString()
 
     def deserialize(self,
@@ -69,5 +69,17 @@ class ProtoCopy:
         pbt = self._transform_map[obj_type][ProtoCopy._PROTOBUF_TYPE]()
         tgt = self._transform_map[obj_type][ProtoCopy._OBJECT_TYPE]()
         pbt.ParseFromString(serialized_src)
-        tgt = Copy.deep_corresponding_copy(src=pbt, tgt=tgt)
+        tgt = DCCopy.deep_corresponding_copy(src=pbt, tgt=tgt)
         return tgt
+
+    def protobuf_for_object(self,
+                            object_type: Type) -> Type:
+        """
+        Return the type of the protobuf object that is used to manage objects of the given type
+        :param object_type: the type of the object to get the protobuf mapping for
+        :return: The Type of the protobuf object that manages the object type or None
+        """
+        res = self._transform_map.get(object_type.__name__, None)
+        if res is not None:
+            res = res[ProtoCopy._PROTOBUF_TYPE]
+        return res

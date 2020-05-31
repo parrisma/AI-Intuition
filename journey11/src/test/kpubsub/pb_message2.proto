@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package journey11.test.kpubsub;
+
+message PBMessage2 {
+  string _field3 = 1;
+  float _field4 = 2;
+}

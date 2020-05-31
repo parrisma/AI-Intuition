@@ -1,9 +1,9 @@
-from . import copy
+from . import dccopy
 
 """
 Bind all handlers to the core Copy class.
 """
-copy._DcopyCore.register_handler(copy._DcopyCollection)
-copy._DcopyCore.register_handler(copy._DcopyEnum)
-copy._DcopyCore.register_handler(copy._DcopyProto)
-copy.Copy.bootstrap()
+dccopy._DcopyCore.register_handler(dccopy._DcopyCollection)
+dccopy._DcopyCore.register_handler(dccopy._DcopyEnum)
+dccopy._DcopyCore.register_handler(dccopy._DcopyProto)
+dccopy.DCCopy.bootstrap()

@@ -128,7 +128,7 @@ class _DcopyCollection(_DcopyCore):
         """
         n = min(len(src), len(tgt))
         for i in range(n):
-            tgt[i] = Copy.deep_corresponding_copy(src[i], tgt[i])
+            tgt[i] = DCCopy.deep_corresponding_copy(src[i], tgt[i])
         if len(src) > n:
             for i in range(n, len(src)):
                 tgt.append(deepcopy(src[i]))
@@ -146,7 +146,7 @@ class _DcopyCollection(_DcopyCore):
         """
         for k, v in src.items():
             if k in tgt:
-                tgt[k] = Copy.deep_corresponding_copy(src[k], tgt[k])
+                tgt[k] = DCCopy.deep_corresponding_copy(src[k], tgt[k])
             else:
                 tgt[k] = deepcopy(src[k])
         return tgt
@@ -269,11 +269,11 @@ class _DcopyProto(_DcopyCore):
         """
         n = min(len(src), len(tgt))
         for i in range(n):
-            tgt[i] = Copy.deep_corresponding_copy(src[i], tgt[i])
+            tgt[i] = DCCopy.deep_corresponding_copy(src[i], tgt[i])
         if len(src) > n:
             for i in range(n, len(src)):
                 _ = tgt.add()  # Extend the Protobuf repeat
-                _ = Copy.deep_corresponding_copy(src[i], tgt[i])  # Direct update via reference
+                _ = DCCopy.deep_corresponding_copy(src[i], tgt[i])  # Direct update via reference
         return tgt
 
     @staticmethod
@@ -289,11 +289,11 @@ class _DcopyProto(_DcopyCore):
         """
         n = min(len(src), len(tgt))
         for i in range(n):
-            tgt[i] = Copy.deep_corresponding_copy(src[i], tgt[i])
+            tgt[i] = DCCopy.deep_corresponding_copy(src[i], tgt[i])
         if len(src) > n:
             for i in range(n, len(src)):
                 tgt.append(_DcopyCore.new_from_annotation(_DcopyCore.SRC_ANNOTATION_ARG, **kwargs))
-                tgt[i] = Copy.deep_corresponding_copy(src[i], tgt[i])  # Direct update via reference
+                tgt[i] = DCCopy.deep_corresponding_copy(src[i], tgt[i])  # Direct update via reference
         return tgt
 
     @staticmethod
@@ -310,11 +310,11 @@ class _DcopyProto(_DcopyCore):
         """
         n = min(len(src), len(tgt))
         for i in range(n):
-            tgt[i] = Copy.deep_corresponding_copy(src[i], tgt[i])
+            tgt[i] = DCCopy.deep_corresponding_copy(src[i], tgt[i])
         if len(src) > n:
             for i in range(n, len(src)):
                 tgt.append(_DcopyCore.new_from_annotation(_DcopyCore.TGT_ANNOTATION_ARG, **kwargs))
-                tgt[i] = Copy.deep_corresponding_copy(src[i], tgt[i])
+                tgt[i] = DCCopy.deep_corresponding_copy(src[i], tgt[i])
         return tgt
 
     @staticmethod
@@ -370,7 +370,7 @@ class _DcopyProto(_DcopyCore):
         return ref_map
 
 
-class Copy:
+class DCCopy:
     _collection = dict()
     _ref_type = {}
     _copy_map = dict()
@@ -382,9 +382,9 @@ class Copy:
         :return:
         """
         for d in _DcopyCore.get_handlers():
-            d.register_copy_maps(Copy._copy_map)
-            d.register_collection(Copy._collection)
-            d.register_reference_type(Copy._ref_type)
+            d.register_copy_maps(DCCopy._copy_map)
+            d.register_collection(DCCopy._collection)
+            d.register_reference_type(DCCopy._ref_type)
         return
 
     @staticmethod
@@ -475,9 +475,9 @@ class Copy:
         ToDo : Throw exception if src does not agree with type hint & make src type hints mandatory
         """
         result = None
-        if type(src).__name__ in Copy._collection:
-            if _DcopyCore.key(type(src), type(tgt)) in Copy._copy_map:
-                result = Copy._copy_map[_DcopyCore.key(type(src), type(tgt))](src, tgt, **kwargs)
+        if type(src).__name__ in DCCopy._collection:
+            if _DcopyCore.key(type(src), type(tgt)) in DCCopy._copy_map:
+                result = DCCopy._copy_map[_DcopyCore.key(type(src), type(tgt))](src, tgt, **kwargs)
             elif not isinstance(src, type(tgt)):
                 raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
         elif issubclass(type(src), Enum):
@@ -490,19 +490,19 @@ class Copy:
             result = src
         else:
             result = tgt
-            v_tgt = dict([(x, getattr(tgt, x)) for x in Copy.pruned_dir(tgt, **kwargs) if
+            v_tgt = dict([(x, getattr(tgt, x)) for x in DCCopy.pruned_dir(tgt, **kwargs) if
                           re.search("^__.*__$", x) is None and not callable(getattr(tgt, x))])
 
-            v_src = dict([(x, getattr(src, x)) for x in Copy.pruned_dir(src, **kwargs) if
+            v_src = dict([(x, getattr(src, x)) for x in DCCopy.pruned_dir(src, **kwargs) if
                           re.search("^__.*__$", x) is None and not callable(getattr(src, x))])
 
-            tgt_annotations = Copy.get_annotations(tgt)
-            src_annotations = Copy.get_annotations(src)
+            tgt_annotations = DCCopy.get_annotations(tgt)
+            src_annotations = DCCopy.get_annotations(src)
 
             for vsk, vsv in v_src.items():
                 if vsk in v_tgt:
-                    kwargs = {**kwargs, **Copy.member_annotations(vsk, src_annotations, tgt_annotations)}
-                    res = Copy.deep_corresponding_copy(vsv, v_tgt[vsk], **kwargs)
-                    if type(res).__name__ not in Copy._ref_type:
+                    kwargs = {**kwargs, **DCCopy.member_annotations(vsk, src_annotations, tgt_annotations)}
+                    res = DCCopy.deep_corresponding_copy(vsv, v_tgt[vsk], **kwargs)
+                    if type(res).__name__ not in DCCopy._ref_type:
                         setattr(tgt, vsk, res)
         return result

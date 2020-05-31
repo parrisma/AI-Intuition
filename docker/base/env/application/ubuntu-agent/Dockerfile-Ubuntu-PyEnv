@@ -15,6 +15,7 @@ RUN cd /home/appuser && virtualenv venv && \
 RUN cd /home/appuser && venv/bin/pip install --upgrade tensorflow
 RUN cd /home/appuser && venv/bin/pip install --upgrade protobuf
 RUN cd /home/appuser && venv/bin/pip install --upgrade kafka-python
+RUN cd /home/appuser && venv/bin/pip install --upgrade pyyaml
 
 # This will exit non zero if it cannot excerice tensorflow etc - so this will cause the conatiner build
 # to fail.

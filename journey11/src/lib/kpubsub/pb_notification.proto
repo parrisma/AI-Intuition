@@ -3,6 +3,6 @@ syntax = "proto3";
 package journey11.experiment.proto_kafka;
 
 message PBNotification {
-    uint64 _type = 1;
-    bytes _payload = 2;
+  string type_uuid = 1;
+  bytes payload = 2;
 }

@@ -1,10 +1,10 @@
 import logging
 import unittest
 import numpy as np
-from typing import List, ByteString
+from typing import List
 from kafka import KafkaProducer
 from kafka import KafkaConsumer
-from journey11.src.experiments.protokafka.protocopy import ProtoCopy
+from journey11.src.lib.protocopy import ProtoCopy
 from journey11.src.experiments.protokafka.task import Task
 from journey11.src.experiments.protokafka.pb_task_pb2 import PBTask
 from journey11.src.experiments.protokafka.pb_message1_pb2 import PBMessage1
@@ -14,10 +14,11 @@ from journey11.src.experiments.protokafka.message1 import Message1
 from journey11.src.experiments.protokafka.message2 import Message2
 from journey11.src.experiments.protokafka.message3 import Message3
 from journey11.src.experiments.protokafka.state import State
-from journey11.src.experiments.protokafka.gibberish import Gibberish
+from src.test.gibberish.gibberish import Gibberish
 from journey11.src.experiments.protokafka.pb_notification_pb2 import PBNotification
 from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.lib.loggingsetup import LoggingSetup
+from google.protobuf.timestamp_pb2 import Timestamp
 
 
 class KafkaTestProducer:
@@ -158,6 +159,7 @@ class TestProtoKafka(unittest.TestCase):
 
         msg_map = {0: message1, 1: message2, 2: message3}
 
+        timestamp = Timestamp()
         for x in range(0, 25):
             mtype = np.random.randint(3, size=1)[0]
             msg_2_send = msg_map[mtype]
@@ -166,6 +168,7 @@ class TestProtoKafka(unittest.TestCase):
             tunnel_tx = PBNotification()
             tunnel_tx._type = mtype
             tunnel_tx._payload = pc.serialize(msg_2_send)
+            tunnel_tx.my_field = timestamp.GetCurrentTime()
             serialized_tunnel_message = tunnel_tx.SerializeToString()
 
             # Create tunnel RX message

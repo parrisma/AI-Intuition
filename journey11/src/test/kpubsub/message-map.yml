@@ -1,0 +1,22 @@
+#
+# Version: of the mapping
+# Date: Date of the version
+#
+# Message_map : Link between logical messages, and the protobuf object that manages that message
+#             : UUID - the UUID of the logical message type
+#             : name - The name of the logical message
+#             : protobuf - The ProtoBuf Object name.
+#
+header:
+  version: "1.0.0"
+  date: "31 May 2020"
+  description: "Map logical message types to message codes"
+message_map:
+  - message:
+      uuid: "2b352062-a31a-11ea-bb37-0242ac130002"
+      name: "Message Type 1 for Use abc"
+      protobuf: "PBMessage1"
+  - message:
+      uuid: "4395eede-a31a-11ea-bb37-0242ac130002"
+      name: "Message Type 2 for use xyz"
+      protobuf: "PBMessage2"

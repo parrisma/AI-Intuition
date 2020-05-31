@@ -1,7 +1,7 @@
 import unittest
 import logging
 from enum import Enum, unique
-from journey11.src.lib.dcopy.copy import Copy
+from journey11.src.lib.dcopy.dccopy import DCCopy
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.test.dcopy.state import State
 from journey11.src.test.dcopy.task import Task
@@ -185,14 +185,14 @@ class TestDcopy(unittest.TestCase):
         for scenario in scenarios:
             src, tgt = scenario
             with self.assertRaises(TypeError):
-                _ = Copy.deep_corresponding_copy(src=src, tgt=tgt)
+                _ = DCCopy.deep_corresponding_copy(src=src, tgt=tgt)
         return
 
     def test_simple_obj(self):
         logging.info("Test simple, un-nested object")
         src = Z(A(1, 2, 3, 4), B(5, 6, 7, 8))
         tgt = Z(A(10, 12, 13, 14), B(15, 16, 17, 18))
-        tgt = Copy.deep_corresponding_copy(src=src, tgt=tgt)
+        tgt = DCCopy.deep_corresponding_copy(src=src, tgt=tgt)
         self.assertEqual(src, tgt)
         return
 
@@ -201,20 +201,20 @@ class TestDcopy(unittest.TestCase):
         # Pass case
         src = Z(AnEnumInt.S1, AnEnumStr.S2)
         tgt = Z(AnEnumInt.S0, AnEnumStr.S0)
-        tgt = Copy.deep_corresponding_copy(src, tgt)
+        tgt = DCCopy.deep_corresponding_copy(src, tgt)
         self.assertEqual(tgt, src)
 
         # Pass case reverse as it's valid to copy a str Enum over an Int Enum
         src = Z(AnEnumInt.S1, AnEnumStr.S2)
         tgt = Z(AnEnumStr.S0, AnEnumInt.S0)  # Reverse int/str type Enum
-        tgt = Copy.deep_corresponding_copy(src, tgt)
+        tgt = DCCopy.deep_corresponding_copy(src, tgt)
         self.assertEqual(tgt, src)
         return
 
     def test_enum_with_members(self):
         src = Z(AnEnumWithMembers.S0, AnEnumInt.S0)
         tgt = Z(AnEnumWithMembers.S1, AnEnumInt.S2)
-        tgt = Copy.deep_corresponding_copy(src, tgt)
+        tgt = DCCopy.deep_corresponding_copy(src, tgt)
         self.assertEqual(tgt, src)
         self.assertEqual((1 * 2), src._a.func)
         return
@@ -223,7 +223,7 @@ class TestDcopy(unittest.TestCase):
         # Pass case, target types align with value type
         src = Z(AnEnumInt.S2, AnEnumStr.S1)
         tgt = Z(int(3142), "3142")
-        tgt = Copy.deep_corresponding_copy(src, tgt)
+        tgt = DCCopy.deep_corresponding_copy(src, tgt)
         self.assertEqual(tgt._a, src._a.value)
         self.assertEqual(tgt._b, src._b.value)
 
@@ -231,7 +231,7 @@ class TestDcopy(unittest.TestCase):
         src = Z(AnEnumInt.S2, AnEnumStr.S1)
         tgt = Z("3142", int(3142))
         with self.assertRaises(TypeError):
-            _ = Copy.deep_corresponding_copy(src=src, tgt=tgt)
+            _ = DCCopy.deep_corresponding_copy(src=src, tgt=tgt)
 
         return
 
@@ -254,7 +254,7 @@ class TestDcopy(unittest.TestCase):
                      ]
         for scenario in scenarios:
             src, tgt, expected = scenario
-            self.assertEqual(expected, Copy.deep_corresponding_copy(src=src, tgt=tgt))
+            self.assertEqual(expected, DCCopy.deep_corresponding_copy(src=src, tgt=tgt))
         return
 
     def test_fields_fwd(self):
@@ -263,7 +263,7 @@ class TestDcopy(unittest.TestCase):
         src = A(1, 2.0, "3", AnEnumInt.S0)
         tgt = B(4, 5.0, "6", AnEnumInt.S2)
         tgt_unmod = B(4, 5.0, "6", AnEnumInt.S2)
-        actual = Copy.deep_corresponding_copy(src, tgt)
+        actual = DCCopy.deep_corresponding_copy(src, tgt)
         self.assertEqual(src._a, actual._a)  # Corresponding & updated
         self.assertEqual(getattr(tgt_unmod, "_{}__b".format(type(tgt_unmod).__name__)),
                          getattr(actual, "_{}__b".format(type(actual).__name__)))  # .__b hidden & not updated
@@ -278,7 +278,7 @@ class TestDcopy(unittest.TestCase):
         src = B(4, 5.0, "6", AnEnumInt.S2)
         tgt = A(1, 2.0, "3", AnEnumInt.S0)
         tgt_unmod = A(1, 2.0, "3", AnEnumInt.S0)
-        actual = Copy.deep_corresponding_copy(src, tgt)
+        actual = DCCopy.deep_corresponding_copy(src, tgt)
         self.assertEqual(src._a, actual._a)  # Corresponding & updated
         self.assertEqual(getattr(tgt_unmod, "_{}__b".format(type(tgt_unmod).__name__)),
                          getattr(actual, "_{}__b".format(type(actual).__name__)))  # .__b hidden & not updated
@@ -289,7 +289,7 @@ class TestDcopy(unittest.TestCase):
 
     def test_complex_nested(self):
         logging.info("Test complex nested object, with base types, collections, Enum etc")
-        actual = Copy.deep_corresponding_copy(X(), Y())
+        actual = DCCopy.deep_corresponding_copy(X(), Y())
         expected = X()
         target_unmodified = Y()
 
@@ -355,13 +355,13 @@ class TestDcopy(unittest.TestCase):
                             _bytes=b'A Byte String')
 
         pb_message1 = PBMessage1()
-        actual = Copy.deep_corresponding_copy(message1, pb_message1)
+        actual = DCCopy.deep_corresponding_copy(message1, pb_message1)
         try:
             actual.SerializeToString()
         except Exception:
             self.fail("Profbuf object invalid after copy as cannot serialize")
         message2 = Message1()
-        final = Copy.deep_corresponding_copy(actual, message2)
+        final = DCCopy.deep_corresponding_copy(actual, message2)
         self.assertEqual(final, message1)
 
         return
@@ -382,7 +382,7 @@ class TestDcopy(unittest.TestCase):
         for p, expected_a, expected_b in scenarios:
             z1 = Z(z1a, z1b)
             z2 = Z(z2a, z2b)
-            actual = Copy.deep_corresponding_copy(src=z1, tgt=z2, prune=p)
+            actual = DCCopy.deep_corresponding_copy(src=z1, tgt=z2, prune=p)
             self.assertEqual(actual._a, expected_a)
             self.assertEqual(actual._b, expected_b)
         return
@@ -398,7 +398,7 @@ class TestDcopy(unittest.TestCase):
             z1 = Z(z1a, z1b)
             z2 = Z(z2a, z2b)
             with self.assertRaises(TypeError):
-                _ = Copy.deep_corresponding_copy(src=z1, tgt=z2, prune=p)
+                _ = DCCopy.deep_corresponding_copy(src=z1, tgt=z2, prune=p)
         return
 
 

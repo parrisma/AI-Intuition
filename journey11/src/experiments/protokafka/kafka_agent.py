@@ -5,12 +5,12 @@ import argparse
 from typing import List
 from kafka import KafkaProducer
 from kafka import KafkaConsumer
-from journey11.src.experiments.protokafka.protocopy import ProtoCopy
+from src.lib.protocopy import ProtoCopy
 from journey11.src.experiments.protokafka.task import Task
 from journey11.src.experiments.protokafka.pb_message1_pb2 import PBMessage1
 from journey11.src.experiments.protokafka.message1 import Message1
 from journey11.src.experiments.protokafka.state import State
-from journey11.src.experiments.protokafka.gibberish import Gibberish
+from src.test.gibberish.gibberish import Gibberish
 from journey11.src.lib.loggingsetup import LoggingSetup
 
 
