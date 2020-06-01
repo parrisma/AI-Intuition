@@ -16,7 +16,9 @@ message_map:
       uuid: "2b352062-a31a-11ea-bb37-0242ac130002"
       name: "Message Type 1 for Use abc"
       protobuf: "PBMessage1"
+      native: "Message1"
   - message:
       uuid: "4395eede-a31a-11ea-bb37-0242ac130002"
       name: "Message Type 2 for use xyz"
       protobuf: "PBMessage2"
+      native: "Message2"
