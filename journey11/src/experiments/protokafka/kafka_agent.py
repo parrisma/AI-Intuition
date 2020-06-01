@@ -24,7 +24,7 @@ class KafkaTestProducer:
         self._topic = topic
         logging.info("Kafka Producer to topic: {}".format(self._topic))
         self._pc = ProtoCopy()
-        self._pc.register(object_type=Message1, proto_buf_type=PBMessage1)
+        self._pc.register(native_object_type=Message1, proto_buf_type=PBMessage1)
         return
 
     def pub(self, topic: str, msg: str) -> None:
@@ -67,7 +67,7 @@ class KafkaTestConsumer:
                                       auto_offset_reset='earliest')
         self.consumer.subscribe(topics)
         self._pc = ProtoCopy()
-        self._pc.register(object_type=Message1, proto_buf_type=PBMessage1)
+        self._pc.register(native_object_type=Message1, proto_buf_type=PBMessage1)
         return
 
     def sub(self):

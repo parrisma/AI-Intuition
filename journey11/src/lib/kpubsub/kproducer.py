@@ -26,7 +26,7 @@ class Kproducer:
         #
         encoded_message = self._protoc.serialize(msg)
         wrapped_message = PBNotification()
-        wrapped_message.type_uuid = self._message_type_map.get_uuid_by_type(self._protoc.protobuf_for_object(type(msg)))
+        wrapped_message.type_uuid = self._message_type_map.get_uuid_by_type(type(msg))
         wrapped_message.payload = encoded_message
         _ = self.producer.send(topic, value=wrapped_message.SerializeToString())
         self.producer.flush()

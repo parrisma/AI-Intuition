@@ -58,7 +58,7 @@ class TestProtoKafka(unittest.TestCase):
 
     def test_simple_class(self):
         pc = ProtoCopy()
-        pc.register(object_type=Task, proto_buf_type=PBTask)
+        pc.register(native_object_type=Task, proto_buf_type=PBTask)
 
         task = Task(task_name="Task-3142", task_id=3142)
 
@@ -72,7 +72,7 @@ class TestProtoKafka(unittest.TestCase):
 
     def test_nested_class(self):
         pc = ProtoCopy()
-        pc.register(object_type=Message1, proto_buf_type=PBMessage1)
+        pc.register(native_object_type=Message1, proto_buf_type=PBMessage1)
 
         message1 = Message1(field=Gibberish.more_gibber(),
                             state=State.S2,
@@ -90,7 +90,7 @@ class TestProtoKafka(unittest.TestCase):
         # script - where there is also the build script for the containers.
         logging.info("Run large scale test Class over Kafka")
         pc = ProtoCopy()
-        pc.register(object_type=Message1, proto_buf_type=PBMessage1)
+        pc.register(native_object_type=Message1, proto_buf_type=PBMessage1)
 
         kafka_topic = UniqueRef().ref  # Unique topic to ensure queue is empty
         logging.info("Setting up to use topic: {}".format(kafka_topic))
@@ -138,9 +138,9 @@ class TestProtoKafka(unittest.TestCase):
         rx'ed version is same as was sent.
         """
         pc = ProtoCopy()
-        pc.register(object_type=Message1, proto_buf_type=PBMessage1)
-        pc.register(object_type=Message2, proto_buf_type=PBMessage2)
-        pc.register(object_type=Message3, proto_buf_type=PBMessage3)
+        pc.register(native_object_type=Message1, proto_buf_type=PBMessage1)
+        pc.register(native_object_type=Message2, proto_buf_type=PBMessage2)
+        pc.register(native_object_type=Message3, proto_buf_type=PBMessage3)
 
         # Create an instance of each message type.
         message1 = Message1(field=Gibberish.more_gibber(),

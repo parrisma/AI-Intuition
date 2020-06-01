@@ -1,6 +1,6 @@
 import sys
 import yaml
-from typing import Dict, List, Type
+from typing import Dict, List, Type, Tuple
 from datetime import datetime
 
 
@@ -14,8 +14,10 @@ class MessageTypeMap:
     _map_item_name = "name"
     _map_item_uuid = "uuid"
     _map_item_protobuf = "protobuf"
+    _map_item_native = "native"
     _item_name = 0
     _item_protobuf = 1
+    _item_native = 2
     _item_uuid = 1
 
     def __init__(self,
@@ -35,7 +37,8 @@ class MessageTypeMap:
         self._map_version = str()
         self._map_date = str()
         self._map_description = str()
-        self._map_type_to_uuid = dict()
+        self._map_protobuf_type_to_uuid = dict()
+        self._map_native_type_to_uuid = dict()
         self._map_uuid_to_type = dict()
         self._load_map()
         return
@@ -86,27 +89,32 @@ class MessageTypeMap:
             item_name = map_item[MessageTypeMap._message_item][MessageTypeMap._map_item_name]
             item_uuid = map_item[MessageTypeMap._message_item][MessageTypeMap._map_item_uuid]
             item_protobuf = map_item[MessageTypeMap._message_item][MessageTypeMap._map_item_protobuf]
-            protobuf_type = self.get_protobuf_type(item_protobuf)
+            protobuf_type = self._get_type_by_name(item_protobuf)
+            item_native = map_item[MessageTypeMap._message_item][MessageTypeMap._map_item_native]
+            native_type = self._get_type_by_name(item_native)
             if protobuf_type is None:
                 raise ImportError("protobuf object type {} cannot be found in any loaded module".format(item_protobuf))
-            self._map_uuid_to_type[item_uuid] = [item_name, protobuf_type]
-            self._map_type_to_uuid[str(protobuf_type)] = [item_name, item_uuid]
+            self._map_uuid_to_type[item_uuid] = [item_name, protobuf_type, native_type]
+            self._map_protobuf_type_to_uuid[str(protobuf_type)] = [item_name, item_uuid]
+            self._map_native_type_to_uuid[str(native_type)] = [item_name, item_uuid]
         return
 
     def get_uuid_by_type(self,
-                         protobuf_type: Type) -> str:
+                         object_type: Type) -> str:
         """
         Get the UUID that maps to the given protobuf type
-        :param protobuf_type: The Protobif type to get the mapped UUID for
-        :return: UUID mapped to the protobuf type or None if no mapping
+        :param object_type: The Native or Protobuf type to get the mapped UUID for
+        :return: UUID mapped to the native or protobuf type or None if no mapping
         """
         type_uuid = None
-        if str(protobuf_type) in self._map_type_to_uuid:
-            type_uuid = self._map_type_to_uuid[str(protobuf_type)][MessageTypeMap._item_uuid]
+        if str(object_type) in self._map_protobuf_type_to_uuid:
+            type_uuid = self._map_protobuf_type_to_uuid[str(object_type)][MessageTypeMap._item_uuid]
+        if type_uuid is None and str(object_type) in self._map_native_type_to_uuid:
+            type_uuid = self._map_native_type_to_uuid[str(object_type)][MessageTypeMap._item_uuid]
         return type_uuid
 
-    def get_type_by_uuid(self,
-                         uuid: str) -> Type:
+    def get_protobuf_type_by_uuid(self,
+                                  uuid: str) -> Type:
         """
         Get the protobuf object name that maps to the given UUID
         :param uuid: The UUID of the protobuf object
@@ -117,7 +125,39 @@ class MessageTypeMap:
             protobuf = self._map_uuid_to_type[uuid][MessageTypeMap._item_protobuf]
         return protobuf
 
-    def get_protobuf_type(self,
+    def get_native_type_by_uuid(self,
+                                uuid: str) -> Type:
+        """
+        Get the native object name that maps to the given UUID
+        :param uuid: The UUID of the native object
+        :return: The native Object or None if mapping not found
+        """
+        protobuf = None
+        if uuid in self._map_uuid_to_type:
+            protobuf = self._map_uuid_to_type[uuid][MessageTypeMap._item_native]
+        return protobuf
+
+    def get_partner_object_type(self,
+                                object_type: Type) -> Type:
+        """
+        Get the partner object type - if protobuf type get native partner else if native object get
+        protobuf partner
+        :param object_type: The type of object to get the partner for
+        :return: The type of the partner object or None if does nto exist
+        """
+        partner_type = None
+        obj_uuid = self.get_uuid_by_type(object_type=object_type)
+        partner_type = self.get_native_type_by_uuid(obj_uuid)
+        if partner_type is not None and partner_type == object_type:
+            partner_type = self.get_protobuf_type_by_uuid(obj_uuid)
+        else:
+            partner_type = self.get_protobuf_type_by_uuid(obj_uuid)
+            if partner_type is not None and partner_type == object_type:
+                partner_type = self.get_native_type_by_uuid(obj_uuid)
+
+        return partner_type
+
+    def _get_type_by_name(self,
                           type_name) -> Type:
         """
         Return the Type object for the given type name
@@ -131,3 +171,15 @@ class MessageTypeMap:
                     typ = getattr(sys.modules[module], type_name)
                     break
         return typ
+
+    def native_to_protobuf(self) -> List[Tuple[Type, Type]]:
+        """
+        Return a list of type tuples that desribe all native to protobuf type mappings
+        :return: List of Tuples of Native to Protobuf type or None
+        """
+        res = list()
+        for v in self._map_uuid_to_type.values():
+            res.append((v[2], v[1]))
+        if len(res) == 0:
+            res = None
+        return res

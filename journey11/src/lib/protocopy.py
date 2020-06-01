@@ -11,30 +11,30 @@ class ProtoCopy:
         return
 
     def register(self,
-                 object_type: Type,
+                 native_object_type: Type,
                  proto_buf_type: Type) -> None:
         """
         Register a target proto_buff_object for serialisation & se-serialisation
-        :param object_type: The Type of object to register the proto-buff-object against
+        :param native_object_type: The Type of object to register the proto-buff-object against
         :param proto_buf_type: The Protobuf Type that will be used for serialise / de serialise
         Note: The member names in both objects must be **identical**. In addition if you shadow the member with
               a property and name the protobuf field the same as the property the process will fails as it
               used setarttr() which does not work on a property.
         """
         try:
-            _ = object_type()
+            _ = native_object_type()
         except Exception as e:
             raise ValueError("{} must have initializer that can accept no arguments __init__() failed with [{}]".format(
-                object_type.__name__, str(e)))
+                native_object_type.__name__, str(e)))
         try:
             _ = proto_buf_type()
         except Exception as e:
             raise ValueError("{} must have initializer that can accept no arguments __init__() failed with [{}]".format(
-                object_type.__name__, str(e)))
-        if object_type.__name__ in self._transform_map:
-            raise ValueError("Type {} is already registered".format(object_type.__name__))
+                native_object_type.__name__, str(e)))
+        if native_object_type.__name__ in self._transform_map:
+            raise ValueError("Type {} is already registered".format(native_object_type.__name__))
 
-        self._transform_map[object_type.__name__] = (object_type, proto_buf_type)
+        self._transform_map[native_object_type.__name__] = (native_object_type, proto_buf_type)
         return
 
     def serialize(self,
