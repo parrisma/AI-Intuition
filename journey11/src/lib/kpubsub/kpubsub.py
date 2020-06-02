@@ -5,10 +5,12 @@ from typing import Type
 import logging
 import requests
 import io
-from journey11.src.lib.loggingsetup import LoggingSetup
-from kafka import KafkaProducer
+import re
 from journey11.src.lib.protocopy import ProtoCopy
 from journey11.src.lib.kpubsub.messagetypemap import MessageTypeMap
+from journey11.src.lib.kpubsub.kconsumer import Kconsumer
+from journey11.src.lib.kpubsub.kproducer import Kproducer
+from journey11.src.lib.uniqueref import UniqueRef
 
 
 class KPubSub:
@@ -58,39 +60,106 @@ class KPubSub:
         :param server: The server on which the Kafka service is running
         :param port: The port on which the Kafka service is listening
         """
-        LoggingSetup()
-        self._proto_copy = ProtoCopy()
         self._server = server
         self._port = port
+        logging.info("Kafka-PubSub established for {}:{}".format(self._server, self._port))
+
         self._message_map = MessageTypeMap(yaml_stream)
-        pc = ProtoCopy()
+        self._proto_copy = ProtoCopy()
         for native_type, protobuf_type in self._message_map.native_to_protobuf():
-            pc.register(native_object_type=native_type, proto_buf_type=protobuf_type)
+            self._proto_copy.register(native_object_type=native_type, proto_buf_type=protobuf_type)
+            logging.info(
+                "Kafka PubSub - created message type map entry native:{} <-> protobuf:{}".format(str(native_type),
+                                                                                                 str(protobuf_type)))
+        self._consumers = dict()
+        self._producer = self._init_producer()
         return
 
+    def _init_producer(self) -> Kproducer:
+        """
+        Create the Kafka Producer
+        :return: The Kafka Producer
+        """
+        return Kproducer(server=self._server,
+                         port=self._port,
+                         protoc=self._proto_copy,
+                         message_type_map=self._message_map)
+
+    def _subscribe(self,
+                   listener,
+                   topic: str,
+                   group: str = None) -> Kconsumer:
+        """
+        Create default consumer registered on default group
+        :return: Kafka Consumer resgistered to default group.
+        """
+        if listener is None or not hasattr(listener, "__call__"):
+            raise ValueError("Listeners must be callable, [{}} is not callable".format(type(listener)))
+
+        if group is None:
+            group = ""
+        group = re.sub(pattern=r"^\s+|\s+$", repl="", string=group)
+        if len(group) == 0:
+            group = UniqueRef().ref
+
+        if group not in self._consumers:
+            kcons = Kconsumer(listener=listener,
+                              topic=topic,
+                              server=self._server,
+                              port=self._port,
+                              protoc=self._proto_copy,
+                              group=group,
+                              message_type_map=self._message_map)
+            self._consumers[kcons.group] = kcons
+        else:
+            kcons = self._consumers[group]
+            kcons.subscribe(topic=topic)
+
+        return kcons
+
     def register_message_map(self,
-                             object_type: Type,
-                             proto_buf_type: Type) -> None:
+                             native_type: Type,
+                             protobuf_type: Type) -> None:
         """
         Register a mapping between a general 'user' object and the protobuf version.
-        :param object_type: The type of the user object
-        :param proto_buf_type: The Type of the protobuf equivalent object
+        :param native_type: The type of the user object
+        :param protobuf_type: The Type of the protobuf equivalent object
         """
-        self._proto_copy.register(native_object_type=object_type, proto_buf_type=proto_buf_type)
+        self._proto_copy.register(native_object_type=native_type, proto_buf_type=protobuf_type)
+        logging.info(
+            "Kafka PubSub - created message type map entry native:{} <-> protobuf:{}".format(str(native_type),
+                                                                                             str(protobuf_type)))
         return
 
     def subscribe(self,
                   topic: str,
-                  listener) -> None:
+                  listener,
+                  group: str = None) -> None:
         """
         Subscribe to the given topic
         :param topic: The topic to subscribe to
+        :param group: Optional Kafka group, if not supplied a default unique group is used.
         :param listener: The object that will be called when messages arrive at the topic
         """
-        if not hasattr(listener, "__call__"):
-            raise ValueError("Listeners must be callable, [{}} is not callable".format(type(listener)))
+        _ = self._subscribe(topic=topic, group=group, listener=listener)
+        return
 
-        if topic not in self._topics:
-            self._topics[topic] = list()
-        self._topics[topic].append(listener)
+    def publish(self,
+                topic: str,
+                msg) -> None:
+        """
+        Publish the given message to the given topic
+        :param topic: The topic to publish to
+        :param msg: The message object to publish
+                    Note: message type must be registered in the message-map.yaml
+        """
+        self._producer.pub(topic=topic, msg=msg)
+        return
+
+    def __del__(self):
+        """
+        Clean up all running consumers
+        """
+        for kcons in self._consumers:
+            del kcons
         return

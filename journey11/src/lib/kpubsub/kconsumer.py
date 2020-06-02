@@ -1,4 +1,5 @@
 import threading
+from typing import List
 from kafka import KafkaConsumer
 from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.lib.protocopy import ProtoCopy
@@ -30,11 +31,30 @@ class Kconsumer:
         self.consumer.subscribe([topic])
         self._stop = True
         self._listener = listener
+        self._group_id = group
         self._protoc = protoc
         self._message_type_map = message_type_map
-        self._runner = threading.Timer(.25, self).start()
+        self._runner = self._new_daemon_timer().start()
         self._stop = False
         return
+
+    @property
+    def group(self) -> str:
+        return self._group_id
+
+    @property
+    def topics(self):
+        return self.consumer.topics()
+
+    def subscribe(self,
+                  topics: List[str]) -> None:
+        self.consumer.subscribe(topics=topics)
+        return
+
+    def _new_daemon_timer(self):
+        tmr = threading.Timer(.25, self)
+        tmr.daemon = True
+        return tmr
 
     def __call__(self, *args, **kwargs):
         messages_by_partition = self.consumer.poll(timeout_ms=5, max_records=10)
@@ -47,7 +67,7 @@ class Kconsumer:
                                                                 wrapper_message.type_uuid))
                 self._listener(msg=listener_message)
         if not self._stop:
-            self._runner = threading.Timer(.25, self).start()
+            self._runner = self._new_daemon_timer().start()
         return
 
     def stop(self) -> None:

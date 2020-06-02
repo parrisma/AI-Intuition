@@ -4,46 +4,16 @@ import unittest
 import logging
 import threading
 import time
-import requests
-import io
 from typing import List
 from datetime import datetime
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.kpubsub.messagetypemap import MessageTypeMap
-from journey11.src.lib.kpubsub.kproducer import Kproducer
-from journey11.src.lib.kpubsub.kconsumer import Kconsumer
 from journey11.src.lib.kpubsub.kpubsub import KPubSub
 from journey11.src.lib.uniqueref import UniqueRef
-from journey11.src.lib.protocopy import ProtoCopy
 from journey11.src.test.kpubsub.pb_message1_pb2 import PBMessage1
 from journey11.src.test.kpubsub.pb_message2_pb2 import PBMessage2
 from journey11.src.test.kpubsub.message2 import Message2
 from journey11.src.test.kpubsub.message1 import Message1
-
-
-class YamlStream:
-    def __init__(self,
-                 filename: str):
-        self._yaml_filename = filename
-        return
-
-    def __call__(self, *args, **kwargs):
-        return open(self._yaml_filename, 'r')
-
-
-class YamlWebStream:
-    def __init__(self,
-                 url: str):
-        self._url = url
-        return
-
-    def __call__(self, *args, **kwargs):
-        url_stream = requests.get(self._url, stream=True)
-        if url_stream.encoding is None:
-            url_stream.encoding = 'utf-8'
-        res_stream = io.BytesIO(url_stream.content)
-        url_stream.close()
-        return res_stream
 
 
 class ConsumerListener:
@@ -67,15 +37,17 @@ class ConsumerListener:
 
 class ProducerTestClient:
     def __init__(self,
-                 producer: Kproducer,
+                 kps: KPubSub,
                  topic: str,
                  num_msg: int,
                  messages: List):
-        self._producer = producer
+        self._kps = kps
         self._topic = topic
         self._num_msg = num_msg
         self._messages = messages
-        threading.Timer(.1, self).start()
+        self._runner = threading.Timer(.1, self)
+        self._runner.daemon = True
+        self._runner.start()
         return
 
     def __call__(self, *args, **kwargs):
@@ -85,10 +57,16 @@ class ProducerTestClient:
             msg = Message2(field3=UniqueRef().ref, field4=np.random.random() * 1000)
         self._messages.append(msg)
         logging.info("Published message {}".format(str(msg)))
-        self._producer.pub(topic=self._topic, msg=msg)
+        self._kps.publish(topic=self._topic, msg=msg)
         if len(self._messages) < self._num_msg:
-            threading.Timer(np.random.random() * .5, self).start()
+            self._runner = threading.Timer(np.random.random() * .5, self)
+            self._runner.daemon = True
+            self._runner.start()
         return
+
+    def __del__(self):
+        if self._runner is not None:
+            del self._runner
 
 
 class TestKPubSub(unittest.TestCase):
@@ -104,17 +82,6 @@ class TestKPubSub(unittest.TestCase):
         return
 
     def test_kpubsub(self):
-        # We expect a Kafka server running the same machine as this test. This can be run up with the Swarm service
-        # or stand along container script that is also part of this project.
-        hostname = socket.gethostbyname(socket.gethostname())
-        port_id = '9092'
-        kps = KPubSub(server=hostname,
-                      port=port_id,
-                      yaml_stream=KPubSub.WebStream(
-                          'https://raw.githubusercontent.com/parrisma/AI-Intuition/master/journey11/src/test/kpubsub/message-map.yml'))
-        return
-
-    def test_pub_sub(self):
         """
         Create a TestPublisher that pushes various messages types on a timer with a random delay between
         0.0 and 0.5 seconds. Record all messages sent in a list.
@@ -128,28 +95,22 @@ class TestKPubSub(unittest.TestCase):
         # or stand along container script that is also part of this project.
         hostname = socket.gethostbyname(socket.gethostname())
         port_id = '9092'
-
-        messages_sent = list()
         topic = UniqueRef().ref
-        # message_map = MessageTypeMap(YamlStream('message-map.yml'))
-        message_map = MessageTypeMap(YamlWebStream(
-            'https://raw.githubusercontent.com/parrisma/AI-Intuition/master/journey11/src/test/kpubsub/message-map.yml'))
-        pc = ProtoCopy()
-        pc.register(native_object_type=Message1, proto_buf_type=PBMessage1)
-        pc.register(native_object_type=Message2, proto_buf_type=PBMessage2)
-        kcons = Kconsumer(listener=ConsumerListener(messages=messages_sent), topic=topic, server=hostname, port=port_id,
-                          protoc=pc, message_type_map=message_map)
-        kprod = Kproducer(server=hostname, port=port_id, protoc=pc, message_type_map=message_map)
-        _ = ProducerTestClient(producer=kprod, topic=topic, num_msg=10, messages=messages_sent)
-
+        kps = KPubSub(server=hostname,
+                      port=port_id,
+                      yaml_stream=KPubSub.WebStream(
+                          'https://raw.githubusercontent.com/parrisma/AI-Intuition/master/journey11/src/test/kpubsub/message-map.yml'))
+        messages_sent = list()
+        kps.subscribe(topic=topic, listener=ConsumerListener(messages=messages_sent))
+        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent)
         time.sleep(10)
         print(messages_sent)
-        del kcons
-        del kprod
+        del ptc
+        del kps
         return
 
     def test_message_map(self):
-        message_map = MessageTypeMap(YamlStream('message-map.yml'))
+        message_map = MessageTypeMap(KPubSub.FileStream('message-map.yml'))
         # Verify Header
         self.assertEqual("1.0.0", message_map.version)
         self.assertEqual(datetime.strptime("31 May 2020", "%d %b %Y"), message_map.date)
