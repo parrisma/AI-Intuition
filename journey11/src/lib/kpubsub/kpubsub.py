@@ -93,16 +93,14 @@ class KPubSub:
         Create default consumer registered on default group
         :return: Kafka Consumer resgistered to default group.
         """
-        if listener is None or not hasattr(listener, "__call__"):
-            raise ValueError("Listeners must be callable, [{}} is not callable".format(type(listener)))
+        self._exception_if_not_callable_or_hashable(listener)
 
-        if group is None:
-            group = ""
-        group = re.sub(pattern=r"^\s+|\s+$", repl="", string=group)
-        if len(group) == 0:
-            group = UniqueRef().ref
+        group = self._clean_and_default_group(group=group)
 
-        if group not in self._consumers:
+        key = self._group_listener_key(group=group, listener=listener)
+
+        if key not in self._consumers:
+            # A new listener and/or group - so create new consumer
             kcons = Kconsumer(listener=listener,
                               topic=topic,
                               server=self._server,
@@ -110,10 +108,11 @@ class KPubSub:
                               protoc=self._proto_copy,
                               group=group,
                               message_type_map=self._message_map)
-            self._consumers[kcons.group] = kcons
+            self._consumers[key] = kcons
         else:
-            kcons = self._consumers[group]
-            kcons.subscribe(topic=topic)
+            # An existing listener & group - so just subscribe to new topic
+            kcons = self._consumers[key]
+            kcons.subscribe(topics=[topic])
 
         return kcons
 
@@ -163,3 +162,45 @@ class KPubSub:
         for kcons in self._consumers:
             del kcons
         return
+
+    @staticmethod
+    def _exception_if_not_callable_or_hashable(listener) -> None:
+        """
+        Listen objects must be callable and hashable. This method will raise an exception if the given
+        object is either not callable or hashable
+        :param listener: The object to be checked.
+        """
+        if listener is None or not hasattr(listener, "__call__"):
+            raise ValueError("Listeners must be callable, [{}} is not callable".format(type(listener)))
+
+        if not hasattr(listener, "__hash__") or not hasattr(listener, "__eq__"):
+            raise ValueError(
+                "Listeners must be hashable, [{}} is missing __eq__ and/or __hash__".format(type(listener)))
+        return
+
+    @staticmethod
+    def _clean_and_default_group(group: str) -> str:
+        """
+        If group is None assign it a unique default value or remove trailing whitespace
+        :param group: The group name to be cleaned or defaulted
+        :return: The cleaned or defaulted group name
+        """
+        if group is None:
+            group = ""
+        group = re.sub(pattern=r"^\s+|\s+$", repl="", string=group)
+        if len(group) == 0:
+            group = UniqueRef().ref
+        return group
+
+    @staticmethod
+    def _group_listener_key(group: str,
+                            listener) -> str:
+        """
+        Create an immutable key from the given group + listener. We only now that the listener is
+        hashable and the the hash is immutable for the life of the object so we combine the group
+        and the string equiv of the listener hash.
+        :param group: The group name to build the key from
+        :param listener: The listener object to build the key from
+        :return: The key as a string
+        """
+        return "{}-{}".format(group, str(listener.__hash__()))

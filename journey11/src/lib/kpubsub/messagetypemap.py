@@ -174,7 +174,7 @@ class MessageTypeMap:
 
     def native_to_protobuf(self) -> List[Tuple[Type, Type]]:
         """
-        Return a list of type tuples that desribe all native to protobuf type mappings
+        Return a list of type tuples that describe all native to protobuf type mappings
         :return: List of Tuples of Native to Protobuf type or None
         """
         res = list()

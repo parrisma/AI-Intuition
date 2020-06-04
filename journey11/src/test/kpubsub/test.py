@@ -18,7 +18,9 @@ from journey11.src.test.kpubsub.message1 import Message1
 
 class ConsumerListener:
     def __init__(self,
+                 name: str,
                  messages: List):
+        self._name = name
         self._messages = messages
         self._msg_idx = 0
         return
@@ -26,12 +28,10 @@ class ConsumerListener:
     def __call__(self, *args, **kwargs):
         msg = kwargs.get('msg', None)
         if msg is None:
-            assert ("Expected Message to be passed by name 'msg' to listener, rx'ed {}".format(str(**kwargs)))
-        logging.info("Listener rx'ed message {}".format(str(msg)))
-        if msg != self._messages[self._msg_idx]:
-            assert ("Messages not same as message sent {} != {} @ idx {}".format(str(msg),
-                                                                                 str(self._messages[self._msg_idx]),
-                                                                                 str(self._msg_idx)))
+            assert ("{} - Expected Message to be passed by name 'msg' to listener, rx'ed {}".format(self._name,
+                                                                                                    str(**kwargs)))
+        logging.info("{} - Listener rx'ed message {}".format(self._name, str(msg)))
+        self._messages.append(msg)
         return
 
 
@@ -81,30 +81,95 @@ class TestKPubSub(unittest.TestCase):
         TestKPubSub._id += 1
         return
 
-    def test_kpubsub(self):
+    def _bootstrap_kpubsub(self) -> KPubSub:
         """
-        Create a TestPublisher that pushes various messages types on a timer with a random delay between
-        0.0 and 0.5 seconds. Record all messages sent in a list.
-
-        Create a TesConsumer that connects to the same topic make a record of all messages rx'ed.
-
-        Check messages sent are same as messages rx'ed and in the same order. Order should be preserved as the
-        consumer is in unique kafka-group with no other consumers in that group.
+        Create a KPubSub instance
+        :return: a KPubSub instance.
         """
         # We expect a Kafka server running the same machine as this test. This can be run up with the Swarm service
         # or stand along container script that is also part of this project.
         hostname = socket.gethostbyname(socket.gethostname())
         port_id = '9092'
-        topic = UniqueRef().ref
         kps = KPubSub(server=hostname,
                       port=port_id,
                       yaml_stream=KPubSub.WebStream(
                           'https://raw.githubusercontent.com/parrisma/AI-Intuition/master/journey11/src/test/kpubsub/message-map.yml'))
-        messages_sent = list()
-        kps.subscribe(topic=topic, listener=ConsumerListener(messages=messages_sent))
+        return kps
+
+    def test_kpubsub_single_topic_single_group(self):
+        """
+        Create a TestPublisher that pushes various messages types on a timer with a random delay between
+        0.0 and 0.5 seconds, where all messages are pushed to the same topic
+
+        """
+        kps = self._bootstrap_kpubsub()
+        topic = UniqueRef().ref  # Topic not seen by kafka before to keep test clean
+        messages_sent = list()  # Keep a chronological list of messages sent
+        messages_rx = list()  # Keep a chronological list of messages received
+
+        # Single consumer - should see all messages once in the order sent.
+        kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-1", messages=messages_rx))
+        time.sleep(.5)
         ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent)
-        time.sleep(10)
-        print(messages_sent)
+        time.sleep(5)  # Wait for messages to flow.
+        # Expect rx = sent, same number, same order
+        self.assertEqual(messages_rx, messages_sent)
+        del ptc
+        del kps
+        return
+
+    def test_kpubsub_single_topic_multi_group(self):
+        """
+        Create a TestPublisher that pushes various messages types on a timer with a random delay between
+        0.0 and 0.5 seconds, where all messages are pushed to the same topic
+
+        """
+        kps = self._bootstrap_kpubsub()
+        topic = UniqueRef().ref  # Topic not seen by kafka before to keep test clean
+        group_1 = UniqueRef().ref
+        group_2 = UniqueRef().ref
+        messages_sent = list()  # Keep a chronological list of messages sent
+        messages_rx1 = list()  # Keep a chronological list of messages received - consumer 1
+        messages_rx2 = list()  # Keep a chronological list of messages received - consumer 2
+
+        # Single consumer - should see all messages once in the order sent.
+        kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-1", messages=messages_rx1), group=group_1)
+        kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-2", messages=messages_rx2), group=group_2)
+        time.sleep(.5)
+        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent)
+        time.sleep(5)  # Wait for messages to flow.
+        # Expect rx = sent, same number, same order - where each consumer gets its own copy
+        self.assertEqual(messages_rx1, messages_sent)
+        self.assertEqual(messages_rx2, messages_sent)
+        del ptc
+        del kps
+        return
+
+    def test_kpubsub_single_topic_multi_group_multi_consumer(self):
+        """
+        Create a TestPublisher that pushes various messages types on a timer with a random delay between
+        0.0 and 0.5 seconds, where all messages are pushed to the same topic
+
+        """
+        kps = self._bootstrap_kpubsub()
+        topic = UniqueRef().ref  # Topic not seen by kafka before to keep test clean
+        group = UniqueRef().ref
+        messages_sent = list()  # Keep a chronological list of messages sent
+        messages_rx1 = list()  # Keep a chronological list of messages received - consumer 1
+        messages_rx2 = list()  # Keep a chronological list of messages received - consumer 2
+
+        # Single consumer - should see all messages once in the order sent.
+        kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-1", messages=messages_rx1), group=group)
+        kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-2", messages=messages_rx2), group=group)
+        time.sleep(.5)
+        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent)
+        time.sleep(5)  # Wait for messages to flow.
+        # Expect rx = sent, same number, same order
+        # but only one consumer should have got messages
+        if len(messages_rx1) == 0:
+            self.assertEqual(messages_rx2, messages_sent)
+        else:
+            self.assertEqual(messages_rx1, messages_sent)
         del ptc
         del kps
         return

@@ -47,8 +47,21 @@ class Kconsumer:
         return self.consumer.topics()
 
     def subscribe(self,
-                  topics: List[str]) -> None:
-        self.consumer.subscribe(topics=topics)
+                  topics: List[str],
+                  replace: bool = False) -> None:
+        """
+        Add or replace the given topics to the subscribed topic list for the consumer
+        :param topics: The topics to add/replace
+        :param replace: If true replace current topics with given topics else add given topics to existing
+        :return:
+        """
+        _topics = list()
+        if not replace:
+            _topics = list(self.consumer.subscription())
+        for t in topics:
+            if t not in _topics:
+                _topics.append(t)
+        self.consumer.subscribe(topics=_topics)
         return
 
     def _new_daemon_timer(self):
