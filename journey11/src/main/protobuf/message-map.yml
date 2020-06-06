@@ -1,0 +1,19 @@
+#
+# Version: of the mapping
+# Date: Date of the version
+#
+# Message_map : Link between logical messages, and the protobuf object that manages that message
+#             : UUID - the UUID of the logical message type
+#             : name - The name of the logical message
+#             : protobuf - The ProtoBuf Object name.
+#
+header:
+  version: "1.0.0"
+  date: "6 Jun 2020"
+  description: "Map logical message types to message codes for project AI Intuition"
+message_map:
+  - message:
+      uuid: "65cca5b0-a7f7-11ea-bb37-0242ac130002"
+      name: "Unique Work Reference"
+      protobuf: "PBUniqueWorkRef"
+      native: "UniqueWorkRef"
