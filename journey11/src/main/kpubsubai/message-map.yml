@@ -17,3 +17,8 @@ message_map:
       name: "Unique Work Reference"
       protobuf: "PBUniqueWorkRef"
       native: "UniqueWorkRef"
+  - message:
+      uuid: "c158659a-a80b-11ea-bb37-0242ac130002"
+      name: "Task State"
+      protobuf: "PBState"
+      native: "State"

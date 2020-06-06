@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package journey11.protobuf;
+
+message PBUniqueWorkRef {
+  string _ref = 1;
+}
