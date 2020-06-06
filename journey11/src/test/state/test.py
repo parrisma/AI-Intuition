@@ -1,7 +1,10 @@
 import unittest
+import numpy as np
+import kpubsubai
 from typing import List
 from journey11.src.lib.state import State
 from journey11.src.lib.loggingsetup import LoggingSetup
+from journey11.src.test.kpubsub.test import TestKPubSub
 
 
 class TestState(unittest.TestCase):
@@ -58,6 +61,29 @@ class TestState(unittest.TestCase):
         self.assertRaises(ValueError, State.__add__, State.S0, str(1))
         self.assertRaises(ValueError, State.__add__, str(1), State.S0)
 
+        return
+
+    @staticmethod
+    def _factory() -> State:
+        """
+        Generate a random State
+        :return: A new State
+        """
+        return State(np.random.randint(0, 9))
+
+    def test_pubsub_transport(self):
+        """
+        Generate random state and ensure that all serialize/deserialize correctly.
+        The requires the containerized test Kafka Service to be running locally.
+        """
+        expected = list()
+        actual = list()
+        expected, actual = TestKPubSub.kpubsub_test(msg_factory=self._factory,
+                                                    num_msg=50,
+                                                    msg_map_url=kpubsubai.MSG_MAP_URL)
+        self.assertTrue(len(expected) == len(actual))
+        for e, a in zip(expected, actual):
+            self.assertEqual(e, a)
         return
 
 

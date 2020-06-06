@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package journey11.kpubsubai;
 
-enum State {
+enum PBState {
   S0 = 0;
   S1 = 1;
   S2 = 2;

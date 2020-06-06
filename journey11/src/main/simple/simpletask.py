@@ -1,14 +1,24 @@
 import logging
 import threading
+import uuid
 from copy import deepcopy
 from journey11.src.interface.task import Task
 from journey11.src.lib.state import State
 
 
 class SimpleTask(Task):
+    # Annotation
+    _state: State
+    _id: int
+    _initial_effort: int
+    _remaining_effort: int
+    _failed: bool
+    _lead_time: float
+    _finalised: bool
+
+    # Class level members
     _process_start_state = State.S0
     _process_terminal_state = State.S9
-    _global_id = 1
 
     _global_sync = 0
     _global_lock = None
@@ -22,8 +32,7 @@ class SimpleTask(Task):
         :param effort: The amount of effort needed to complete the task
         """
         self._state = SimpleTask._process_start_state
-        self._id = SimpleTask._global_id
-        SimpleTask._global_id += 1
+        self._id = uuid.uuid1().int
         if start_state is None:
             self._state_orig = self._process_start_state
         else:

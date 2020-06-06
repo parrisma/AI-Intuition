@@ -4,7 +4,7 @@ import unittest
 import logging
 import threading
 import time
-from typing import List
+from typing import List, Tuple, Callable, Any
 from datetime import datetime
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.kpubsub.messagetypemap import MessageTypeMap
@@ -40,21 +40,28 @@ class ProducerTestClient:
                  kps: KPubSub,
                  topic: str,
                  num_msg: int,
-                 messages: List):
+                 messages: List,
+                 msg_factory: Callable[[], object]):
+        """
+        On a random timer publish instances of message created with the factory callable.
+        :param kps: KPubSub instance to publish via
+        :param topic: The Topic string to publish on
+        :param num_msg: The number of message to publish before stopping
+        :param messages: List to which every sent message is added.
+        :param msg_factory: Callable that creates new message objects
+        """
         self._kps = kps
         self._topic = topic
         self._num_msg = num_msg
         self._messages = messages
+        self._msg_factory = msg_factory
         self._runner = threading.Timer(.1, self)
         self._runner.daemon = True
         self._runner.start()
         return
 
     def __call__(self, *args, **kwargs):
-        if np.random.random() > 0.5:
-            msg = Message1(field1=UniqueRef().ref, field2=np.random.randint(0, 5000))
-        else:
-            msg = Message2(field3=UniqueRef().ref, field4=np.random.random() * 1000)
+        msg = self._msg_factory()
         self._messages.append(msg)
         logging.info("Published message {}".format(str(msg)))
         self._kps.publish(topic=self._topic, msg=msg)
@@ -72,6 +79,15 @@ class ProducerTestClient:
 class TestKPubSub(unittest.TestCase):
     _id = 0
 
+    @staticmethod
+    def msg_factory() -> object:
+        msg = None
+        if np.random.random() > 0.5:
+            msg = Message1(field1=UniqueRef().ref, field2=np.random.randint(0, 5000))
+        else:
+            msg = Message2(field3=UniqueRef().ref, field4=np.random.random() * 1000)
+        return msg
+
     @classmethod
     def setUpClass(cls):
         LoggingSetup()
@@ -81,26 +97,26 @@ class TestKPubSub(unittest.TestCase):
         TestKPubSub._id += 1
         return
 
-    def _bootstrap_kpubsub(self) -> KPubSub:
+    @staticmethod
+    def _bootstrap_kpubsub(msg_map_utl: str = None) -> KPubSub:
         """
         Create a KPubSub instance
         :return: a KPubSub instance.
         """
         # We expect a Kafka server running the same machine as this test. This can be run up with the Swarm service
         # or stand along container script that is also part of this project.
+        if msg_map_utl is None:
+            msg_map_utl = 'https://raw.githubusercontent.com/parrisma/AI-Intuition/master/journey11/src/test/kpubsub/message-map.yml'
         hostname = socket.gethostbyname(socket.gethostname())
         port_id = '9092'
         kps = KPubSub(server=hostname,
                       port=port_id,
-                      yaml_stream=KPubSub.WebStream(
-                          'https://raw.githubusercontent.com/parrisma/AI-Intuition/master/journey11/src/test/kpubsub/message-map.yml'))
+                      yaml_stream=KPubSub.WebStream(msg_map_utl))
         return kps
 
     def test_kpubsub_single_topic_single_group(self):
         """
-        Create a TestPublisher that pushes various messages types on a timer with a random delay between
-        0.0 and 0.5 seconds, where all messages are pushed to the same topic
-
+        Test random messages being sent over single topic being consumed by a single consumer in a single group
         """
         kps = self._bootstrap_kpubsub()
         topic = UniqueRef().ref  # Topic not seen by kafka before to keep test clean
@@ -109,9 +125,10 @@ class TestKPubSub(unittest.TestCase):
 
         # Single consumer - should see all messages once in the order sent.
         kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-1", messages=messages_rx))
-        time.sleep(.5)
-        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent)
-        time.sleep(5)  # Wait for messages to flow.
+        time.sleep(2)
+        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent,
+                                 msg_factory=TestKPubSub.msg_factory)
+        time.sleep(8)  # Wait for messages to flow.
         # Expect rx = sent, same number, same order
         self.assertEqual(messages_rx, messages_sent)
         del ptc
@@ -135,8 +152,9 @@ class TestKPubSub(unittest.TestCase):
         # Single consumer - should see all messages once in the order sent.
         kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-1", messages=messages_rx1), group=group_1)
         kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-2", messages=messages_rx2), group=group_2)
-        time.sleep(.5)
-        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent)
+        time.sleep(2)
+        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent,
+                                 msg_factory=TestKPubSub.msg_factory)
         time.sleep(5)  # Wait for messages to flow.
         # Expect rx = sent, same number, same order - where each consumer gets its own copy
         self.assertEqual(messages_rx1, messages_sent)
@@ -161,9 +179,10 @@ class TestKPubSub(unittest.TestCase):
         # Single consumer - should see all messages once in the order sent.
         kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-1", messages=messages_rx1), group=group)
         kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-2", messages=messages_rx2), group=group)
-        time.sleep(.5)
-        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent)
-        time.sleep(5)  # Wait for messages to flow.
+        time.sleep(2)
+        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent,
+                                 msg_factory=TestKPubSub.msg_factory)
+        time.sleep(10)  # Wait for messages to flow.
         # Expect rx = sent, same number, same order
         # but only one consumer should have got messages
         if len(messages_rx1) == 0:
@@ -202,6 +221,33 @@ class TestKPubSub(unittest.TestCase):
         self.assertEqual(None, message_map.get_partner_object_type(str))
 
         return
+
+    @staticmethod
+    def kpubsub_test(msg_factory: Callable[[], Any],
+                     num_msg: int,
+                     msg_map_url: str) -> Tuple[List, List]:
+        """
+        Use message factory to create num_msg messages and send them over Kafka. This verifies the message type
+        is correctly set-up to be serialized.
+
+        Utility method that can be called by other object test classes to verify serialisation.
+
+        :param msg_factory: Callable that creates instances of the messages type under test
+        :param test_func: Test function that compares sent message with rx'ed message and return true if all is well.
+        :param num_msg: The number of messages to send.
+        :param msg_map_url: The URL of the Message Map YAML.
+        """
+        kps = TestKPubSub._bootstrap_kpubsub(msg_map_utl=msg_map_url)
+        topic = UniqueRef().ref
+        sent = list()
+        rxed = list()
+        kps.subscribe(topic=topic, listener=ConsumerListener('Consumer', messages=rxed))
+        time.sleep(2)
+        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=num_msg, messages=sent, msg_factory=msg_factory)
+        time.sleep(num_msg * 0.35)
+        del ptc
+        del kps
+        return sent, rxed
 
 
 if __name__ == "__main__":

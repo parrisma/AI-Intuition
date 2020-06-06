@@ -17,9 +17,9 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='pb_uniqueworkref.proto',
-  package='journey11.protobuf',
+  package='journey11.kpubsubai',
   syntax='proto3',
-  serialized_pb=_b('\n\x16pb_uniqueworkref.proto\x12\x12journey11.protobuf\"\x1f\n\x0fPBUniqueWorkRef\x12\x0c\n\x04_ref\x18\x01 \x01(\tb\x06proto3')
+  serialized_pb=_b('\n\x16pb_uniqueworkref.proto\x12\x13journey11.kpubsubai\"\x1f\n\x0fPBUniqueWorkRef\x12\x0c\n\x04_ref\x18\x01 \x01(\tb\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -28,13 +28,13 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 _PBUNIQUEWORKREF = _descriptor.Descriptor(
   name='PBUniqueWorkRef',
-  full_name='journey11.protobuf.PBUniqueWorkRef',
+  full_name='journey11.kpubsubai.PBUniqueWorkRef',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='_ref', full_name='journey11.protobuf.PBUniqueWorkRef._ref', index=0,
+      name='_ref', full_name='journey11.kpubsubai.PBUniqueWorkRef._ref', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -52,8 +52,8 @@ _PBUNIQUEWORKREF = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=46,
-  serialized_end=77,
+  serialized_start=47,
+  serialized_end=78,
 )
 
 DESCRIPTOR.message_types_by_name['PBUniqueWorkRef'] = _PBUNIQUEWORKREF
@@ -61,7 +61,7 @@ DESCRIPTOR.message_types_by_name['PBUniqueWorkRef'] = _PBUNIQUEWORKREF
 PBUniqueWorkRef = _reflection.GeneratedProtocolMessageType('PBUniqueWorkRef', (_message.Message,), dict(
   DESCRIPTOR = _PBUNIQUEWORKREF,
   __module__ = 'pb_uniqueworkref_pb2'
-  # @@protoc_insertion_point(class_scope:journey11.protobuf.PBUniqueWorkRef)
+  # @@protoc_insertion_point(class_scope:journey11.kpubsubai.PBUniqueWorkRef)
   ))
 _sym_db.RegisterMessage(PBUniqueWorkRef)
 

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package journey11.protobuf;
+package journey11.kpubsubai;
 
 message PBUniqueWorkRef {
   string _ref = 1;

@@ -5,6 +5,11 @@ from journey11.src.lib.uniqueworkref import UniqueWorkRef
 
 
 class SimpleWorkNotificationDo(WorkNotificationDo):
+    # Annotation
+    _work_ref: UniqueWorkRef
+    _task: Task
+    _originator: SrcSink
+    _source: SrcSink
 
     def __init__(self,
                  unique_work_ref: UniqueWorkRef,

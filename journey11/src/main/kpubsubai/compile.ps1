@@ -3,9 +3,10 @@
 #
 . ..\..\..\..\ps1\ProtoComplie.ps1
 
-$local = "d:/Dev/devroot/AI-Intuition/journey11/src/main/protobuf"
+$local = "d:/Dev/devroot/AI-Intuition/journey11/src/main/kpubsubai"
 $rmt = "/var/data"
 
 ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_uniqueworkref.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_state.proto
 
 

@@ -235,7 +235,7 @@ class SimpleTaskPool(TaskPool):
     def __str__(self) -> str:
         """
         String dump of the current pool state
-        :return: A string representation of teh task pool.
+        :return: A string representation of the task pool.
         """
 
         # Use locks so we see a consistent view of the task_pool

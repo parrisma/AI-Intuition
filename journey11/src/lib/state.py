@@ -1,10 +1,19 @@
 import logging
 from typing import List
-from enum import Enum, unique
+from enum import EnumMeta, Enum, unique
+
+
+class DefaultStateEnumMeta(EnumMeta):
+    default = object()
+
+    def __call__(cls, value=default, *args, **kwargs):
+        if value is DefaultStateEnumMeta.default:
+            return next(iter(cls))
+        return super().__call__(value, *args, **kwargs)
 
 
 @unique
-class State(Enum):
+class State(Enum, metaclass=DefaultStateEnumMeta):
     S0 = 0
     S1 = 1
     S2 = 2
