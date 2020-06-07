@@ -1,7 +1,7 @@
 import logging
 import threading
 from typing import List
-from pubsub import pub
+from journey11.src.lib.kpubsub.kpubsub import KPubSub
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
@@ -14,7 +14,7 @@ from journey11.src.main.simple.simplecapability import SimpleCapability
 
 class SimpleEther(Ether):
     ETHER_TOPIC_PREFIX = "ether"
-    PING_THRESHOLD = 0.25  # 250ms time after which
+    PING_THRESHOLD = 0.25  # 250ms time after which ?
 
     def __init__(self,
                  ether_name: str):
@@ -30,7 +30,7 @@ class SimpleEther(Ether):
 
     def __del__(self):
         """
-        Un subscribe to clean up week refs.
+        Unsubscribe to clean up week refs.
         """
         pub.unsubscribe(self, self._unique_topic)
         pub.unsubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)

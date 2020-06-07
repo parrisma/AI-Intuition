@@ -64,7 +64,7 @@ class SrcSink(ABC):
     @abstractmethod
     def get_addressbook(self) -> List['SrcSink']:
         """
-        The list of srcsinks known to the Ether
+        The list of srcsinks known to the SrcSink
         :return: srcsinks
         """
         pass

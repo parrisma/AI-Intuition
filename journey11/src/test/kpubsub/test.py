@@ -10,6 +10,9 @@ from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.kpubsub.messagetypemap import MessageTypeMap
 from journey11.src.lib.kpubsub.kpubsub import KPubSub
 from journey11.src.lib.uniqueref import UniqueRef
+from journey11.src.lib.webstream import WebStream
+from journey11.src.lib.filestream import FileStream
+from journey11.src.lib.settings import Settings
 from journey11.src.test.kpubsub.pb_message1_pb2 import PBMessage1
 from journey11.src.test.kpubsub.pb_message2_pb2 import PBMessage2
 from journey11.src.test.kpubsub.message2 import Message2
@@ -105,13 +108,11 @@ class TestKPubSub(unittest.TestCase):
         """
         # We expect a Kafka server running the same machine as this test. This can be run up with the Swarm service
         # or stand along container script that is also part of this project.
-        if msg_map_utl is None:
-            msg_map_utl = 'https://raw.githubusercontent.com/parrisma/AI-Intuition/master/journey11/src/test/kpubsub/message-map.yml'
-        hostname = socket.gethostbyname(socket.gethostname())
-        port_id = '9092'
+        settings = Settings(FileStream("settings.yaml"))
+        hostname, port_id, msg_map_url = settings.kafka
         kps = KPubSub(server=hostname,
                       port=port_id,
-                      yaml_stream=KPubSub.WebStream(msg_map_utl))
+                      yaml_stream=WebStream(msg_map_url))
         return kps
 
     def test_kpubsub_single_topic_single_group(self):
@@ -194,7 +195,7 @@ class TestKPubSub(unittest.TestCase):
         return
 
     def test_message_map(self):
-        message_map = MessageTypeMap(KPubSub.FileStream('message-map.yml'))
+        message_map = MessageTypeMap(FileStream('message-map.yml'))
         # Verify Header
         self.assertEqual("1.0.0", message_map.version)
         self.assertEqual(datetime.strptime("31 May 2020", "%d %b %Y"), message_map.date)

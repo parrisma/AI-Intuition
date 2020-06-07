@@ -3,8 +3,6 @@
 #
 from typing import Type
 import logging
-import requests
-import io
 import re
 from journey11.src.lib.protocopy import ProtoCopy
 from journey11.src.lib.kpubsub.messagetypemap import MessageTypeMap
@@ -14,43 +12,6 @@ from journey11.src.lib.uniqueref import UniqueRef
 
 
 class KPubSub:
-    """
-    Render file as stream
-    """
-
-    class FileStream:
-        def __init__(self,
-                     filename: str):
-            self._filename = filename
-            return
-
-        def __call__(self, *args, **kwargs):
-            try:
-                file_stream = open(self._filename, 'r')
-            except Exception as e:
-                raise ValueError("File Stream - unable to open {} with error {}".format(self._filename, str(e)))
-            return file_stream
-
-    """
-    Render URL as stream
-    """
-
-    class WebStream:
-        def __init__(self,
-                     url: str):
-            self._url = url
-            return
-
-        def __call__(self, *args, **kwargs):
-            try:
-                url_stream = requests.get(self._url, stream=True)
-                if url_stream.encoding is None:
-                    url_stream.encoding = 'utf-8'
-                res_stream = io.BytesIO(url_stream.content)
-                url_stream.close()
-            except Exception as e:
-                raise ValueError("File Stream - unable read URL {} with error {}".format(self._url, str(e)))
-            return res_stream
 
     def __init__(self,
                  server: str,

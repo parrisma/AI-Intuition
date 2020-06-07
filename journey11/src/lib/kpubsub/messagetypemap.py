@@ -58,7 +58,6 @@ class MessageTypeMap:
     def _load_map(self) -> None:
         """
         Load the message map from YAML config.
-        todo: support load from WEB URL
         """
         src = self._yaml_stream()
         yml_map = yaml.safe_load(src)
