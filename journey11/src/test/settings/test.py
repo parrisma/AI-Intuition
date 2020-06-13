@@ -64,25 +64,28 @@ class TestSettings(unittest.TestCase):
         """
         Simple test to verify that all fields are pulled back like for like
         """
-        sections = {'kafka': ['host', 'port', 'msg_map_url'],
-                    'zookeeper': ['host', 'zport']}
-        settings = Settings(settings_yaml_stream=FileStream("settings_test.yml"),
-                            sections=sections)
-        self.assertEqual(settings.description, "Test Settings")
-        self.assertEqual(settings.version, "1.2.3")
-        self.assertEqual(settings.date, datetime.strptime("06 Jun 2020", "%d %b %Y"))
-        host, port, url = settings.kafka()  # Func is dynamically added
-        self.assertEqual(host, "kafka-host-name")
-        self.assertEqual(port, "3142")
-        self.assertEqual(url, "https://url/file.yml")
-        self.assertEqual(settings.kafka_host, "kafka-host-name")
-        self.assertEqual(settings.kafka_port, "3142")
-        self.assertEqual(settings.kafka_msg_map_url, "https://url/file.yml")
-        host, zport, = settings.zookeeper()  # Func is dynamically added
-        self.assertEqual(host, "zookeeper-host-name")
-        self.assertEqual(zport, "6284")
-        self.assertEqual(settings.zookeeper_host, "zookeeper-host-name")
-        self.assertEqual(settings.zookeeper_zport, "6284")
+        cases = [None,
+                 dict(),
+                 {'kafka': ['host', 'port', 'msg_map_url'],
+                  'zookeeper': ['host', 'zport']}]
+        for sections in cases:
+            settings = Settings(settings_yaml_stream=FileStream("settings_test.yml"),
+                                sections=sections)
+            self.assertEqual(settings.description, "Test Settings")
+            self.assertEqual(settings.version, "1.2.3")
+            self.assertEqual(settings.date, datetime.strptime("06 Jun 2020", "%d %b %Y"))
+            host, port, url = settings.kafka()  # Func is dynamically added
+            self.assertEqual(host, "kafka-host-name")
+            self.assertEqual(port, "3142")
+            self.assertEqual(url, "https://url/file.yml")
+            self.assertEqual(settings.kafka_host, "kafka-host-name")
+            self.assertEqual(settings.kafka_port, "3142")
+            self.assertEqual(settings.kafka_msg_map_url, "https://url/file.yml")
+            host, zport, = settings.zookeeper()  # Func is dynamically added
+            self.assertEqual(host, "zookeeper-host-name")
+            self.assertEqual(zport, "6284")
+            self.assertEqual(settings.zookeeper_host, "zookeeper-host-name")
+            self.assertEqual(settings.zookeeper_zport, "6284")
         return
 
     def test_settings_current_host(self):

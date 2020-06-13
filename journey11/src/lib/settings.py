@@ -38,8 +38,11 @@ class Settings:
         :param bespoke_transforms: An optional list of transformers to be applied to settings
         """
         self._stream = None
-        if sections is None:
-            sections = dict()
+        if sections is not None:
+            if not isinstance(sections, Dict):
+                raise ValueError("Settings sections must be type dictionary not {}".format(type(sections)))
+            if len(sections) == 0:
+                sections = None
         self._sections = sections
 
         self._transformer = Transformer()
@@ -137,7 +140,20 @@ class Settings:
     def _parse_sections(self,
                         yml_map: Dict) -> None:
         """
-        Extract the each section detail and add members and accessor method.
+        parse the yaml free or structured
+        :param yml_map: The parsed Yaml as a dictionary
+        """
+        if self._sections is None:
+            self._parse_sections_free_form(yml_map=yml_map)
+        else:
+            self._parse_sections_by_section(yml_map=yml_map)
+        return
+
+    def _parse_sections_by_section(self,
+                                   yml_map: Dict) -> None:
+        """
+        Extract the each section detail and add members and accessor method. If YAML does not agree with the
+        section spec throw and error.
         :param yml_map: The parsed Yaml as a dictionary
 
          Note: Below We need lambda in lambda here to force the argument to the final lambda function to be in its
@@ -168,4 +184,34 @@ class Settings:
             setattr(self,
                     section_name,
                     [(lambda x: (lambda: x))(self._get_section(s)) for s in [section_name]][0])
+        return
+
+    def _parse_sections_free_form(self,
+                                  yml_map: Dict) -> None:
+        """
+        Extract the YAML as it is defined and do not impose any structure/presence rules.
+        :param yml_map: The parsed Yaml as a dictionary
+
+         Note: Below We need lambda in lambda here to force the argument to the final lambda function to be in its
+         own scope - else every function will just return the items of the last sections defined.
+         see: https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
+        """
+        self._sections = dict()
+        for section_name, section in yml_map.items():
+            if section_name != Settings._header:
+                self._sections[section_name] = list()
+                section = list(section.keys())
+                yaml_section = yml_map.get(section_name)
+                for item in section:
+                    yaml_section[item] = self._transformer.transform(string_to_transform=yaml_section[item])
+                    # Dynamically add a member with name section_item
+                    setattr(self,
+                            "{}_{}".format(section_name, item),
+                            yaml_section[item])
+                    self._sections[section_name].append(item)
+                # Dynamically add a function called the same as the section name that will return the
+                # section items as a list.
+                setattr(self,
+                        section_name,
+                        [(lambda x: (lambda: x))(self._get_section(s)) for s in [section_name]][0])
         return
