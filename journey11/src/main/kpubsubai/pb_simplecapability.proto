@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package journey11.kpubsubai.simple;
+
+message PBSimpleCapability {
+  string _uuid = 1;
+  string _capability = 2;
+}

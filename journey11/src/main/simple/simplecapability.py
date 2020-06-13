@@ -2,14 +2,31 @@ from journey11.src.interface.capability import Capability
 
 
 class SimpleCapability(Capability):
+    # Annotation
+    _uuid: str
+    _capability_name: str
 
     def __init__(self,
+                 uuid: str,
                  capability_name: str):
+        """
+        Represent the capability of an agent to contribute to the completion of a task
+        :param uuid: The system wide unique UUID of the capability
+        :param capability_name: The capability
+        """
         super().__init__()
         self._capability_name = capability_name
+        self._uuid = uuid
         return
 
-    def value(self):
+    def id(self) -> str:
+        """
+        Return the system wide unique uuid
+        :return: UUID of the capability.
+        """
+        return self._uuid
+
+    def value(self) -> str:
         """
         Return the 'value' of the capability
         :return: Capability value
@@ -21,7 +38,7 @@ class SimpleCapability(Capability):
         Render the capability as a string
         :return:
         """
-        return self._capability_name
+        return "Capability: {} := {}".format(self._uuid, self._capability_name)
 
     def _equivalent(self,
                     other) -> bool:

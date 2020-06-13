@@ -5,6 +5,7 @@ from datetime import datetime
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.settings import Settings
 from journey11.src.lib.filestream import FileStream
+from journey11.src.lib.transformer import Transformer
 
 
 class TestSettings(unittest.TestCase):
@@ -82,6 +83,24 @@ class TestSettings(unittest.TestCase):
         host, _, _ = settings.kafka
         current_host = socket.gethostbyname(socket.gethostname())
         self.assertEqual(host, current_host)
+        return
+
+    @staticmethod
+    def _replace_git_branch(s: str) -> str:
+        return s.replace('<git-branch>', 'master', 1)
+
+    def test_setting_with_bespoke_transforms(self):
+        """
+        Test the host host swap + an additional transformer that finds and replaces <git-branch> marker
+        with 'master'
+        """
+        transformer = Transformer.Transform(regular_expression=".*<git-branch>.*",
+                                            transform=TestSettings._replace_git_branch)
+        settings = Settings(FileStream("settings_transform.yml"), [transformer])
+        host, _, url = settings.kafka
+        current_host = socket.gethostbyname(socket.gethostname())
+        self.assertEqual(host, current_host)
+        self.assertEqual("https://url/master/file.yml", url)
         return
 
 

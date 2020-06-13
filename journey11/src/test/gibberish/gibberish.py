@@ -2,6 +2,19 @@ import numpy as np
 
 
 class Gibberish:
+    gibber_words = ["spark", "obsequious", "embarrassed", "mushy", "current", "garrulous", "pine", "humdrum", "handy",
+                    "lumpy", "route", "hallowed", "butter", "curl", "grieving", "cruel", "oranges", "uptight", "fact",
+                    "exultant", "flood", "terrify", "bone", "bottle", "colossal", "farm", "ruddy", "woman",
+                    "courageous", "hobbies", "snail", "pink", "star", "yawn", "melodic", "teeth", "maddening",
+                    "skillful", "parcel", "impulse", "impartial", "resolute", "wiry", "selective", "rest",
+                    "tightfisted", "overjoyed", "teeny-tiny", "melted", "windy", "pushy", "room", "hydrant", "untidy",
+                    "title", "sock", "grab", "face", "tease", "vagabond", "awake", "skinny", "ripe", "lamentable",
+                    "quickest", "living", "stingy", "relieved", "language", "itch", "entertain", "bumpy", "quartz",
+                    "dreary", "cheer", "expert", "magic", "honorable", "summer", "kiss", "sneaky", "prevent",
+                    "nonchalant", "bouncy", "marble", "visit", "stitch", "linen", "loaf", "rainstorm", "same", "boring",
+                    "consider", "cable", "bird", "scary", "gorgeous", "quick", "nod", "brainy"]
+    _gibber_word_length = len(gibber_words)
+
     gibber = [
         "Advanced extended doubtful he he blessing together. Introduced far law gay considered frequently entreaties difficulty. Eat him four are rich nor calm. By an packages rejoiced exercise. To ought on am marry rooms doubt music. Mention entered an through company as. Up arrived no painful between. It declared is prospect an insisted pleasure.",
         "Had repulsive dashwoods suspicion sincerity but advantage now him. Remark easily garret nor nay. Civil those mrs enjoy shy fat merry. You greatest jointure saw horrible. He private he on be imagine suppose. Fertile beloved evident through no service elderly is. Blind there if every no so at. Own neglected you preferred way sincerity delivered his attempted. To of message cottage windows do besides against uncivil.",
@@ -24,8 +37,12 @@ class Gibberish:
         "Death weeks early had their and folly timed put. Hearted forbade on an village ye in fifteen. Age attended betrayed her man raptures laughter. Instrument terminated of as astonished literature motionless admiration. The affection are determine how performed intention discourse but. On merits on so valley indeed assure of. Has add particular boisterous uncommonly are. Early wrong as so manor match. Him necessary shameless discovery consulted one but.",
         "Her extensive perceived may any sincerity extremity. Indeed add rather may pretty see. Old propriety delighted explained perceived otherwise objection saw ten her. Doubt merit sir the right these alone keeps. By sometimes intention smallness he northward. Consisted we otherwise arranging commanded discovery it explained. Does cold even song like two yet been. Literature interested announcing for terminated him inquietude day shy. Himself he fertile chicken perhaps waiting if highest no it. Continued promotion has consulted fat improving not way."
     ]
-    gibberish_length = len(gibber)
+    _gibberish_length = len(gibber)
 
     @staticmethod
     def more_gibber() -> str:
-        return Gibberish.gibber[np.random.randint(Gibberish.gibberish_length, size=1)[0]]
+        return Gibberish.gibber[np.random.randint(Gibberish._gibberish_length, size=1)[0]]
+
+    @staticmethod
+    def word_gibber() -> str:
+        return Gibberish.gibber[np.random.randint(Gibberish._gibber_word_length, size=1)[0]]

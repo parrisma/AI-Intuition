@@ -8,6 +8,9 @@ from journey11.src.interface.capability import Capability
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.lib.settings import Settings
+from journey11.src.lib.kpubsub.kpubsub import KPubSub
+from journey11.src.lib.webstream import WebStream
+from journey11.src.lib.filestream import FileStream
 from journey11.src.main.simple.simpleether import SimpleEther
 from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
 from journey11.src.main.simple.simplecapability import SimpleCapability
@@ -38,6 +41,21 @@ class TestEther(unittest.TestCase):
                          Capability.equivalence_factor([SimpleCapability(CapabilityRegister.ETHER.name)],
                                                        ether.capabilities))
         return
+
+    @staticmethod
+    def _bootstrap_kpubsub(msg_map_utl: str = None) -> KPubSub:
+        """
+        Create a KPubSub instance
+        :return: a KPubSub instance.
+        """
+        # We expect a Kafka server running the same machine as this test. This can be run up with the Swarm service
+        # or stand along container script that is also part of this project.
+        settings = Settings(FileStream("settings.yaml"))
+        hostname, port_id, msg_map_url = settings.kafka
+        kps = KPubSub(server=hostname,
+                      port=port_id,
+                      yaml_stream=WebStream(msg_map_url))
+        return kps
 
     def test_ping_single_srcsink(self):
         """

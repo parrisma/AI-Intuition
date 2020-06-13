@@ -7,6 +7,10 @@ from journey11.src.lib.uniqueref import UniqueRef
 
 
 class SimpleSrcSinkPing(SrcSinkPing):
+    # Annotation
+    _work_ref: UniqueWorkRef
+    _sender_srcsink: SrcSink
+    _required_capabilities: List[Capability]
 
     def __init__(self,
                  sender_srcsink: SrcSink,

@@ -9,4 +9,4 @@ header:
 kafka:
   host: "<current-host>"
   port: "9092"
-  msg_map_url: "https://raw.githubusercontent.com/parrisma/AI-Intuition/kafka/journey11/src/main/message/message-map.yml"
+  msg_map_url: "https://url/<git-branch>/file.yml" # in real case would be valid message map yaml

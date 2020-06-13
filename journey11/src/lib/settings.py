@@ -1,7 +1,8 @@
 import yaml
 import socket
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 from datetime import datetime
+from journey11.src.lib.transformer import Transformer
 
 
 class Settings:
@@ -27,13 +28,26 @@ class Settings:
             super().__init__(msg)
             return
 
+    @staticmethod
+    def _curr_host(_: str = None) -> str:
+        return socket.gethostbyname(socket.gethostname())
+
     def __init__(self,
-                 settings_yaml_stream):
+                 settings_yaml_stream,
+                 bespoke_transforms: List[Transformer.Transform] = None):
         """
         Boot strap the settings form the supplied YAML stream
         :param settings_yaml_stream: A callable that returns an open stream to the YAML source
+        :param bespoke_transforms: An optional list of transformers to be applied to settings
         """
         self._stream = None
+
+        self._transformer = Transformer()
+        self._transformer.add_transform(Transformer.Transform(regular_expression=Settings._curr_host_marker,
+                                                              transform=Settings._curr_host))
+        if bespoke_transforms is not None:
+            for transform in bespoke_transforms:
+                self._transformer.add_transform(transform=transform)
 
         if settings_yaml_stream is None:
             raise ValueError(
@@ -129,7 +143,8 @@ class Settings:
             if item[0] not in kafka:
                 raise Settings.BadYamlError(
                     msg="Mal-structured setting yaml [{}] is missing from kafka".format(item[0]))
-            setattr(self, item[1], kafka[item[0]])
+            value_to_set = self._transformer.transform(string_to_transform=kafka[item[0]])
+            setattr(self, item[1], value_to_set)
         if self._host == Settings._curr_host_marker:
             self._host = socket.gethostbyname(socket.gethostname())
         return

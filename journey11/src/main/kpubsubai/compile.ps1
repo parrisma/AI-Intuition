@@ -8,5 +8,6 @@ $rmt = "/var/data"
 
 ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_uniqueworkref.proto
 ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_state.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_simplecapability.proto
 
 

@@ -7,12 +7,21 @@ from journey11.src.lib.purevirtual import purevirtual
 class Capability(ABC):
 
     def __init__(self):
-        self._hash = hash(str(uuid.uuid4()).replace('-', ''))
+        self._hash = None
         return
 
     @abstractmethod
     @purevirtual
-    def value(self):
+    def id(self) -> str:
+        """
+        Return the system wide unique uuid
+        :return: UUID of the capability.
+        """
+        pass
+
+    @abstractmethod
+    @purevirtual
+    def value(self) -> str:
         """
         Return the 'value' of the capability
         :return: Capability value
@@ -67,7 +76,7 @@ class Capability(ABC):
         :param other: Capability to compare to
         :return: True if capabilities are 'equivalent'
         """
-        pass
+    pass
 
     def __repr__(self):
         return "{}".format(self._as_str())
@@ -76,6 +85,8 @@ class Capability(ABC):
         return self._as_str()
 
     def __hash__(self):
+        if self._hash is None:
+            self._hash = hash(self.id())
         return self._hash
 
     def __eq__(self, other):
