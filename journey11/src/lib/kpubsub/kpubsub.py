@@ -120,8 +120,9 @@ class KPubSub:
         """
         Clean up all running consumers
         """
-        for kcons in self._consumers:
-            del kcons
+        if hasattr(self, "_consumers"):
+            for kcons in self._consumers:
+                del kcons
         return
 
     @staticmethod

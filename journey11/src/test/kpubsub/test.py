@@ -80,6 +80,51 @@ class ProducerTestClient:
             del self._runner
 
 
+class KPuBsubUtil:
+    @staticmethod
+    def kpubsub_test(msg_factory: Callable[[], Any],
+                     num_msg: int,
+                     msg_map_url: str) -> Tuple[List, List]:
+        """
+        Use message factory to create num_msg messages and send them over Kafka. This verifies the message type
+        is correctly set-up to be serialized.
+
+        Utility method that can be called by other object test classes to verify serialisation.
+
+        :param msg_factory: Callable that creates instances of the messages type under test
+        :param test_func: Test function that compares sent message with rx'ed message and return true if all is well.
+        :param num_msg: The number of messages to send.
+        :param msg_map_url: The URL of the Message Map YAML.
+        """
+        kps = KPuBsubUtil._bootstrap_kpubsub()
+        topic = UniqueRef().ref
+        sent = list()
+        rxed = list()
+        kps.subscribe(topic=topic, listener=ConsumerListener('Consumer', messages=rxed))
+        time.sleep(2)
+        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=num_msg, messages=sent, msg_factory=msg_factory)
+        time.sleep(num_msg * 0.35)
+        del ptc
+        del kps
+        return sent, rxed
+
+    @staticmethod
+    def _bootstrap_kpubsub() -> KPubSub:
+        """
+        Create a KPubSub instance
+        :return: a KPubSub instance.
+        """
+        # We expect a Kafka server running the same machine as this test. This can be run up with the Swarm service
+        # or stand along container script that is also part of this project.
+        settings = Settings(settings_yaml_stream=WebStream(BuildSpec.get_spec().pubsub_settings_yaml()),
+                            bespoke_transforms=BuildSpec.get_spec().setting_transformers())
+        hostname, port_id, msg_map_url = settings.kafka
+        kps = KPubSub(server=hostname,
+                      port=port_id,
+                      yaml_stream=WebStream(msg_map_url))
+        return kps
+
+
 class TestKPubSub(unittest.TestCase):
     _id = 0
 
@@ -101,27 +146,11 @@ class TestKPubSub(unittest.TestCase):
         TestKPubSub._id += 1
         return
 
-    @staticmethod
-    def _bootstrap_kpubsub(msg_map_utl: str = None) -> KPubSub:
-        """
-        Create a KPubSub instance
-        :return: a KPubSub instance.
-        """
-        # We expect a Kafka server running the same machine as this test. This can be run up with the Swarm service
-        # or stand along container script that is also part of this project.
-        settings = Settings(settings_yaml_stream=WebStream(BuildSpec.get_spec().pubsub_settings_yaml()),
-                            bespoke_transforms=BuildSpec.get_spec().setting_transformers())
-        hostname, port_id, msg_map_url = settings.kafka
-        kps = KPubSub(server=hostname,
-                      port=port_id,
-                      yaml_stream=WebStream(msg_map_url))
-        return kps
-
     def test_kpubsub_single_topic_single_group(self):
         """
         Test random messages being sent over single topic being consumed by a single consumer in a single group
         """
-        kps = self._bootstrap_kpubsub()
+        kps = KPuBsubUtil._bootstrap_kpubsub()
         topic = UniqueRef().ref  # Topic not seen by kafka before to keep test clean
         messages_sent = list()  # Keep a chronological list of messages sent
         messages_rx = list()  # Keep a chronological list of messages received
@@ -144,7 +173,7 @@ class TestKPubSub(unittest.TestCase):
         0.0 and 0.5 seconds, where all messages are pushed to the same topic
 
         """
-        kps = self._bootstrap_kpubsub()
+        kps = KPuBsubUtil._bootstrap_kpubsub()
         topic = UniqueRef().ref  # Topic not seen by kafka before to keep test clean
         group_1 = UniqueRef().ref
         group_2 = UniqueRef().ref
@@ -172,7 +201,7 @@ class TestKPubSub(unittest.TestCase):
         0.0 and 0.5 seconds, where all messages are pushed to the same topic
 
         """
-        kps = self._bootstrap_kpubsub()
+        kps = KPuBsubUtil._bootstrap_kpubsub()
         topic = UniqueRef().ref  # Topic not seen by kafka before to keep test clean
         group = UniqueRef().ref
         messages_sent = list()  # Keep a chronological list of messages sent
@@ -224,33 +253,6 @@ class TestKPubSub(unittest.TestCase):
         self.assertEqual(None, message_map.get_partner_object_type(str))
 
         return
-
-    @staticmethod
-    def kpubsub_test(msg_factory: Callable[[], Any],
-                     num_msg: int,
-                     msg_map_url: str) -> Tuple[List, List]:
-        """
-        Use message factory to create num_msg messages and send them over Kafka. This verifies the message type
-        is correctly set-up to be serialized.
-
-        Utility method that can be called by other object test classes to verify serialisation.
-
-        :param msg_factory: Callable that creates instances of the messages type under test
-        :param test_func: Test function that compares sent message with rx'ed message and return true if all is well.
-        :param num_msg: The number of messages to send.
-        :param msg_map_url: The URL of the Message Map YAML.
-        """
-        kps = TestKPubSub._bootstrap_kpubsub(msg_map_utl=msg_map_url)
-        topic = UniqueRef().ref
-        sent = list()
-        rxed = list()
-        kps.subscribe(topic=topic, listener=ConsumerListener('Consumer', messages=rxed))
-        time.sleep(2)
-        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=num_msg, messages=sent, msg_factory=msg_factory)
-        time.sleep(num_msg * 0.35)
-        del ptc
-        del kps
-        return sent, rxed
 
 
 if __name__ == "__main__":

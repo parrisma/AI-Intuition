@@ -17,12 +17,14 @@ class TestCapability(unittest.TestCase):
         LoggingSetup()
 
     def test_simple(self):
+        logging.info("Capability Test: Case 1")
         capability_name = "DummyCapability1"
         test_capability = SimpleCapability(uuid=UniqueRef().ref, capability_name=capability_name)
         self.assertEqual(capability_name, test_capability.value())
         return
 
     def test_equality_same_type(self):
+        logging.info("Capability Test: Case 2")
         capability_name_one = "DummyCapability1"
         capability_name_two = "DummyCapability2"
         test_capability_1 = SimpleCapability(uuid=UniqueRef().ref, capability_name=capability_name_one)
@@ -33,6 +35,7 @@ class TestCapability(unittest.TestCase):
         return
 
     def test_equality_diff_type(self):
+        logging.info("Capability Test: Case 3")
         capability_name_one = "DummyCapability1"
         test_capability_1 = SimpleCapability(uuid=UniqueRef().ref, capability_name=capability_name_one)
         self.assertEqual(True, test_capability_1 != capability_name_one)
@@ -43,6 +46,7 @@ class TestCapability(unittest.TestCase):
         """
         Test the equivalency factor calc.
         """
+        logging.info("Capability Test: Case 4")
         cap1 = SimpleCapability(uuid=UniqueRef().ref, capability_name="Cap_one")
         cap2 = SimpleCapability(uuid=UniqueRef().ref, capability_name="Cap_two")
         cap3 = SimpleCapability(uuid=UniqueRef().ref, capability_name="Cap_three")
@@ -110,6 +114,7 @@ class TestCapability(unittest.TestCase):
         Generate 1000 random capabilities and ensure that all serialize/deserialize correctly.
         The requires the containerized test Kafka Service to be running locally.
         """
+        logging.info("Capability Test: Case 5")
         expected = list()
         actual = list()
         expected, actual = TestKPubSub.kpubsub_test(msg_factory=self._factory,

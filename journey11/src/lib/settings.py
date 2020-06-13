@@ -1,6 +1,8 @@
 import yaml
 import socket
-from typing import Dict, Tuple, List
+import types
+import copy
+from typing import Dict, List, Callable
 from datetime import datetime
 from journey11.src.lib.transformer import Transformer
 
@@ -14,13 +16,6 @@ class Settings:
                      [_date_tag, '_date'],
                      [_description_tag, '_description']]
 
-    _kafka = "kafka"
-    _host_tag = 'host'
-    _port_tag = 'port'
-    _msg_map_url_tag = 'msg_map_url'
-    _kafka_items = [[_host_tag, '_host'],
-                    [_port_tag, '_port'],
-                    [_msg_map_url_tag, '_msg_map_url']]
     _curr_host_marker = "<current-host>"
 
     class BadYamlError(Exception):
@@ -34,13 +29,18 @@ class Settings:
 
     def __init__(self,
                  settings_yaml_stream,
+                 sections: Dict[str, List[str]] = None,
                  bespoke_transforms: List[Transformer.Transform] = None):
         """
         Boot strap the settings form the supplied YAML stream
         :param settings_yaml_stream: A callable that returns an open stream to the YAML source
+        :param sections: List of List(s) of form ['section name as str','section item name', ...]
         :param bespoke_transforms: An optional list of transformers to be applied to settings
         """
         self._stream = None
+        if sections is None:
+            sections = dict()
+        self._sections = sections
 
         self._transformer = Transformer()
         self._transformer.add_transform(Transformer.Transform(regular_expression=Settings._curr_host_marker,
@@ -62,18 +62,14 @@ class Settings:
         self._date = None
         self._description = None
 
-        # Kafka
-        self._host = None
-        self._port = None
-        self._msg_map_url = None
-
         self._yaml_stream = settings_yaml_stream
         self._load_settings()
         return
 
     def __del__(self):
-        if self._stream is not None:
-            self._stream.close()
+        if hasattr(self, "_stream"):
+            if self._stream is not None:
+                self._stream.close()
         return
 
     @property
@@ -87,10 +83,6 @@ class Settings:
     @property
     def date(self) -> datetime:
         return datetime.strptime(self._date, "%d %b %Y")
-
-    @property
-    def kafka(self) -> Tuple[str, str, str]:
-        return self._host, self._port, self._msg_map_url
 
     def _load_settings(self) -> None:
         """
@@ -106,7 +98,7 @@ class Settings:
             raise Settings.BadYamlError(msg="supplied Yml stream contains no parsable yaml")
 
         self._parse_header(yml_map)
-        self._parse_kafka(yml_map)
+        self._parse_sections(yml_map)
         self._stream.close()
         return
 
@@ -128,21 +120,52 @@ class Settings:
             setattr(self, item[1], header[item[0]])
         return
 
-    def _parse_kafka(self,
-                     yml_map: Dict) -> None:
+    def _get_section(self,
+                     section_name: str) -> List[str]:
         """
-        Extract the header details from the header section of the yaml
-        :param kafka: The kafka section of the as loaded from the YAML source
+        Return all the items for the given section - always in the order they were specified in the section
+        desriptior passed to the __inti__ function
+        :param section_name: The name of the section to get the items for
+        :return:
         """
-        if Settings._kafka not in yml_map:
-            raise Settings.BadYamlError(
-                msg="Mal-structured setting yaml [{}:] section is missing from header".format(Settings._kafka))
+        section = self._sections[section_name]
+        items = list()
+        for item in section:
+            items.append(getattr(self, "{}_{}".format(section_name, item)))
+        return items
 
-        kafka = yml_map.get(Settings._kafka)
-        for item in Settings._kafka_items:
-            if item[0] not in kafka:
+    def _parse_sections(self,
+                        yml_map: Dict) -> None:
+        """
+        Extract the each section detail and add members and accessor method.
+        :param yml_map: The parsed Yaml as a dictionary
+
+         Note: Below We need lambda in lambda here to force the argument to the final lambda function to be in its
+         own scope - else every function will just return the items of the last sections defined.
+         see: https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
+        """
+
+        for section_name, section in self._sections.items():
+            if not isinstance(section, List) or len(section) < 2:
+                raise ValueError("section descriptor must be a Tuple of min length 2 items")
+
+            if section_name not in yml_map:
                 raise Settings.BadYamlError(
-                    msg="Mal-structured setting yaml [{}] is missing from kafka".format(item[0]))
-            value_to_set = self._transformer.transform(string_to_transform=kafka[item[0]])
-            setattr(self, item[1], value_to_set)
+                    msg="Mal-structured yaml [{}:] section is missing from header".format(Settings._header))
+
+            yaml_section = yml_map.get(section_name)
+            for item in section:
+                if item not in yaml_section:
+                    raise Settings.BadYamlError(
+                        msg="Mal-structured yaml [{}] section value is missing from header".format(item[0]))
+                yaml_section[item] = self._transformer.transform(string_to_transform=yaml_section[item])
+                # Dynamically add a member with name section_item
+                setattr(self,
+                        "{}_{}".format(section_name, item),
+                        yaml_section[item])
+            # Dynamically add a function called the same as the section name that will return the
+            # section items as a list.
+            setattr(self,
+                    section_name,
+                    [(lambda x: (lambda: x))(self._get_section(s)) for s in [section_name]][0])
         return

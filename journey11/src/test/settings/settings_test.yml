@@ -10,3 +10,6 @@ kafka:
   host: "kafka-host-name"
   port: "3142"
   msg_map_url: "https://url/file.yml" # in real case would be valid message map yaml
+zookeeper:
+  host: "zookeeper-host-name"
+  zport: "6284"

@@ -64,14 +64,25 @@ class TestSettings(unittest.TestCase):
         """
         Simple test to verify that all fields are pulled back like for like
         """
-        settings = Settings(FileStream("settings_test.yml"))
+        sections = {'kafka': ['host', 'port', 'msg_map_url'],
+                    'zookeeper': ['host', 'zport']}
+        settings = Settings(settings_yaml_stream=FileStream("settings_test.yml"),
+                            sections=sections)
         self.assertEqual(settings.description, "Test Settings")
         self.assertEqual(settings.version, "1.2.3")
         self.assertEqual(settings.date, datetime.strptime("06 Jun 2020", "%d %b %Y"))
-        host, port, url = settings.kafka
+        host, port, url = settings.kafka()  # Func is dynamically added
         self.assertEqual(host, "kafka-host-name")
         self.assertEqual(port, "3142")
         self.assertEqual(url, "https://url/file.yml")
+        self.assertEqual(settings.kafka_host, "kafka-host-name")
+        self.assertEqual(settings.kafka_port, "3142")
+        self.assertEqual(settings.kafka_msg_map_url, "https://url/file.yml")
+        host, zport, = settings.zookeeper()  # Func is dynamically added
+        self.assertEqual(host, "zookeeper-host-name")
+        self.assertEqual(zport, "6284")
+        self.assertEqual(settings.zookeeper_host, "zookeeper-host-name")
+        self.assertEqual(settings.zookeeper_zport, "6284")
         return
 
     def test_settings_current_host(self):
@@ -79,8 +90,10 @@ class TestSettings(unittest.TestCase):
         Test the <current-host> capability where the special marker <current-host> is replaced with the IP
         of the host on which the process is running
         """
-        settings = Settings(FileStream("settings_current_host.yaml"))
-        host, _, _ = settings.kafka
+        sections = {'kafka': ['host', 'port', 'msg_map_url']}
+        settings = Settings(settings_yaml_stream=FileStream("settings_current_host.yml"),
+                            sections=sections)
+        host, _, _ = settings.kafka()
         current_host = socket.gethostbyname(socket.gethostname())
         self.assertEqual(host, current_host)
         return
@@ -96,8 +109,11 @@ class TestSettings(unittest.TestCase):
         """
         transformer = Transformer.Transform(regular_expression=".*<git-branch>.*",
                                             transform=TestSettings._replace_git_branch)
-        settings = Settings(FileStream("settings_transform.yml"), [transformer])
-        host, _, url = settings.kafka
+        sections = {'kafka': ['host', 'port', 'msg_map_url']}
+        settings = Settings(settings_yaml_stream=FileStream("settings_transform.yml"),
+                            sections=sections,
+                            bespoke_transforms=[transformer])
+        host, _, url = settings.kafka()
         current_host = socket.gethostbyname(socket.gethostname())
         self.assertEqual(host, current_host)
         self.assertEqual("https://url/master/file.yml", url)
