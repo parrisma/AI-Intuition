@@ -145,6 +145,4 @@ class Settings:
                     msg="Mal-structured setting yaml [{}] is missing from kafka".format(item[0]))
             value_to_set = self._transformer.transform(string_to_transform=kafka[item[0]])
             setattr(self, item[1], value_to_set)
-        if self._host == Settings._curr_host_marker:
-            self._host = socket.gethostbyname(socket.gethostname())
         return

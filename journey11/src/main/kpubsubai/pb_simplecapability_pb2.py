@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='pb_simplecapability.proto',
   package='journey11.kpubsubai.simple',
   syntax='proto3',
-  serialized_pb=_b('\n\x19pb_simplecapability.proto\x12\x1ajourney11.kpubsubai.simple\"8\n\x12PBSimpleCapability\x12\r\n\x05_uuid\x18\x01 \x01(\t\x12\x13\n\x0b_capability\x18\x02 \x01(\tb\x06proto3')
+  serialized_pb=_b('\n\x19pb_simplecapability.proto\x12\x1ajourney11.kpubsubai.simple\"=\n\x12PBSimpleCapability\x12\r\n\x05_uuid\x18\x01 \x01(\t\x12\x18\n\x10_capability_name\x18\x02 \x01(\tb\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -41,7 +41,7 @@ _PBSIMPLECAPABILITY = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='_capability', full_name='journey11.kpubsubai.simple.PBSimpleCapability._capability', index=1,
+      name='_capability_name', full_name='journey11.kpubsubai.simple.PBSimpleCapability._capability_name', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -60,7 +60,7 @@ _PBSIMPLECAPABILITY = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=57,
-  serialized_end=113,
+  serialized_end=118,
 )
 
 DESCRIPTOR.message_types_by_name['PBSimpleCapability'] = _PBSIMPLECAPABILITY

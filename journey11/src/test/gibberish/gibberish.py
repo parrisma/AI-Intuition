@@ -45,4 +45,4 @@ class Gibberish:
 
     @staticmethod
     def word_gibber() -> str:
-        return Gibberish.gibber[np.random.randint(Gibberish._gibber_word_length, size=1)[0]]
+        return Gibberish.gibber_words[np.random.randint(Gibberish._gibber_word_length, size=1)[0]]

@@ -39,10 +39,6 @@ class BuildSpec:
         cls._specs[spec_name] = spec
         return
 
-    def _replace_git_branch(self,
-                            s: str) -> str:
-        return s.replace('<git-branch>', self._branch, 1)
-
     def setting_transformers(self) -> List[Transformer.Transform]:
         return [Transformer.Transform(regular_expression='.*<git-branch>.*',
-                                      transform=self._replace_git_branch)]
+                                      transform=lambda s: s.replace('<git-branch>', self._branch, 1))]

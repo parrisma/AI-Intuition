@@ -7,10 +7,13 @@ class SimpleCapability(Capability):
     _capability_name: str
 
     def __init__(self,
-                 uuid: str,
-                 capability_name: str):
+                 uuid: str = str(),
+                 capability_name: str = str()):
         """
         Represent the capability of an agent to contribute to the completion of a task
+
+        Both parameters allow default to empty string so the object can be constructed via protobuf load.
+
         :param uuid: The system wide unique UUID of the capability
         :param capability_name: The capability
         """
