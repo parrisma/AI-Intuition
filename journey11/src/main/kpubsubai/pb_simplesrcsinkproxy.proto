@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package journey11.kpubsubai.simple;
+
+message PBSimpleSrcSinkProxy {
+  string _name = 1;
+  string _topic = 2;
+}

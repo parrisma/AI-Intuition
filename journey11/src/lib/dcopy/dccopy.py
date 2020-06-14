@@ -485,8 +485,9 @@ class DCCopy:
         elif issubclass(type(tgt), Enum):
             result = _DcopyEnum.copy_value_to_enum(src=src, tgt=tgt, **kwargs)
         elif isinstance(src, (int, float, type(None), str, bool)):
-            if not isinstance(src, type(tgt)):
-                raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
+            if not isinstance(tgt, type(None)):
+                if not isinstance(src, type(tgt)):
+                    raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
             result = src
         else:
             result = tgt
