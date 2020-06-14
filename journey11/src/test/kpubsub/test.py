@@ -118,7 +118,7 @@ class KPuBsubUtil:
         # or stand along container script that is also part of this project.
         settings = Settings(settings_yaml_stream=WebStream(BuildSpec.pubsub_settings_yaml()),
                             bespoke_transforms=BuildSpec.setting_transformers())
-        hostname, port_id, msg_map_url = settings.kafka()
+        hostname, port_id, msg_map_url = settings.default()
         kps = KPubSub(server=hostname,
                       port=port_id,
                       yaml_stream=WebStream(msg_map_url))

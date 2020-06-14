@@ -2,7 +2,7 @@ import os
 #
 # Which Git branch are we testing against.
 #
-from .buildspec import BuildSpec
+from journey11.src.test.build_spec.buildspec import BuildSpec
 
 build_spec_path = os.getenv(BuildSpec.BUILD_SPEC_PATH_ENV_VAR, None)
 if build_spec_path is None:

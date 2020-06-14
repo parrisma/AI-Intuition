@@ -4,7 +4,7 @@ import re
 import kpubsubai
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
-from journey11.src.test.kpubsub.test import TestKPubSub
+from journey11.src.test.kpubsub.test import KPuBsubUtil
 
 
 class TestUniqueRef(unittest.TestCase):
@@ -106,7 +106,7 @@ class TestUniqueRef(unittest.TestCase):
         """
         expected = list()
         actual = list()
-        expected, actual = TestKPubSub.kpubsub_test(msg_factory=self._factory,
+        expected, actual = KPuBsubUtil.kpubsub_test(msg_factory=self._factory,
                                                     num_msg=50,
                                                     msg_map_url=kpubsubai.MSG_MAP_URL)
         self.assertTrue(len(expected) == len(actual))
