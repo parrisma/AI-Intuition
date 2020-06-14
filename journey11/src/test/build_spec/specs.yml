@@ -1,0 +1,21 @@
+#
+# Version: of the Settings
+# Date: Date of the version
+#
+
+header:
+  version: "1.0.0"
+  date: "12 Jun 2020"
+  description: "Test Environment settings"
+
+# Spec to use when running on Master branch
+default:
+  git_root: "https://raw.githubusercontent.com/parrisma/AI-Intuition/"
+  branch: "master"
+  kafka_yml: "journey11/src/test/kpubsubai/settings.yaml"
+
+# Spec create for addition on Kafka capability on kafka git branch
+kafka:
+  git_root: "https://raw.githubusercontent.com/parrisma/AI-Intuition"
+  branch: "kafka"
+  kafka_yml: "journey11/src/test/kpubsubai/settings.yaml"
