@@ -98,6 +98,8 @@ class _DcopyCore(ABC):
         if annotation != "None":
             if re.search("^typing.List.*]$", annotation):  # Yuk
                 annotation = annotation[12: -1]
+            elif re.search("^<class .*$", annotation):  # Yuk^2
+                annotation = annotation[8:-2]
             try:
                 t = locate(annotation)()
             except Exception:
@@ -105,6 +107,19 @@ class _DcopyCore(ABC):
         if t is None:
             raise TypeError("Failed to instantiate type from annotation {}".format(str(annotation)))
         return t
+
+    @staticmethod
+    def protobuf_composite(obj) -> bool:
+        """
+        Is the given object a protobuf composite ? we detect this by inspecting the DESCRIPTIOR
+        We need to know this as we don't assign copy results to protobuf composites as the recursive
+        copy of it members will have already done the assignment
+
+        :param obj: The object to inspect
+        :return: True if this is a protobuf composite object.
+        """
+        return re.search("^.*<google.protobuf.descriptor.Descriptor.*$",
+                         str(getattr(obj, "DESCRIPTOR", ""))) is not None
 
 
 class _DcopyCollection(_DcopyCore):
@@ -114,6 +129,7 @@ class _DcopyCollection(_DcopyCore):
 
     LIST_TYPE = type(list())
     DICT_TYPE = type(dict())
+    NONE_TYPE = type(None)
 
     @staticmethod
     def copy_list(src: List,
@@ -126,6 +142,8 @@ class _DcopyCollection(_DcopyCore):
         :param tgt: Target list to merge / update
         :return: Updated Target
         """
+        if tgt is None:
+            tgt = list()
         n = min(len(src), len(tgt))
         for i in range(n):
             tgt[i] = DCCopy.deep_corresponding_copy(src[i], tgt[i])
@@ -144,6 +162,8 @@ class _DcopyCollection(_DcopyCore):
         :param tgt: Target Dictionary
         :return:
         """
+        if tgt is None:
+            tgt = dict()
         for k, v in src.items():
             if k in tgt:
                 tgt[k] = DCCopy.deep_corresponding_copy(src[k], tgt[k])
@@ -159,7 +179,9 @@ class _DcopyCollection(_DcopyCore):
         :return:
         """
         copy_map[_DcopyCore.key(_DcopyCollection.LIST_TYPE, _DcopyCollection.LIST_TYPE)] = _DcopyCollection.copy_list
+        copy_map[_DcopyCore.key(_DcopyCollection.LIST_TYPE, _DcopyCollection.NONE_TYPE)] = _DcopyCollection.copy_list
         copy_map[_DcopyCore.key(_DcopyCollection.DICT_TYPE, _DcopyCollection.DICT_TYPE)] = _DcopyCollection.copy_dict
+        copy_map[_DcopyCore.key(_DcopyCollection.DICT_TYPE, _DcopyCollection.NONE_TYPE)] = _DcopyCollection.copy_dict
         return copy_map
 
     @staticmethod
@@ -267,6 +289,8 @@ class _DcopyProto(_DcopyCore):
         :param tgt: Protobuf Composeite Repeat to merge to.
         :return: Updated Target
         """
+        if tgt is None:
+            tgt = list()
         n = min(len(src), len(tgt))
         for i in range(n):
             tgt[i] = DCCopy.deep_corresponding_copy(src[i], tgt[i])
@@ -287,6 +311,8 @@ class _DcopyProto(_DcopyCore):
         :param tgt: Protobuf Scalar Repeat to merge to.
         :return: Updated Target
         """
+        if tgt is None:
+            tgt = list()
         n = min(len(src), len(tgt))
         for i in range(n):
             tgt[i] = DCCopy.deep_corresponding_copy(src[i], tgt[i])
@@ -308,6 +334,8 @@ class _DcopyProto(_DcopyCore):
         :param tgt: Target list to merge / update
         :return: Updated Target
         """
+        if tgt is None:
+            tgt = list()
         n = min(len(src), len(tgt))
         for i in range(n):
             tgt[i] = DCCopy.deep_corresponding_copy(src[i], tgt[i])
@@ -326,18 +354,29 @@ class _DcopyProto(_DcopyCore):
         """
         copy_map[_DcopyCore.key("RepeatedCompositeContainer",
                                 _DcopyCollection.LIST_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
+        copy_map[_DcopyCore.key("RepeatedCompositeContainer",
+                                _DcopyCollection.NONE_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
         copy_map[_DcopyCore.key(_DcopyCollection.LIST_TYPE,
                                 "RepeatedCompositeContainer")] = _DcopyProto.copy_list_2_protobuf_composite_repeat
+
         copy_map[_DcopyCore.key("RepeatedCompositeFieldContainer",
                                 _DcopyCollection.LIST_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
+        copy_map[_DcopyCore.key("RepeatedCompositeFieldContainer",
+                                _DcopyCollection.NONE_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
         copy_map[_DcopyCore.key(_DcopyCollection.LIST_TYPE,
                                 "RepeatedCompositeFieldContainer")] = _DcopyProto.copy_list_2_protobuf_composite_repeat
+
         copy_map[_DcopyCore.key("RepeatedScalarFieldContainer",
                                 _DcopyCollection.LIST_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
+        copy_map[_DcopyCore.key("RepeatedScalarFieldContainer",
+                                _DcopyCollection.NONE_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
         copy_map[_DcopyCore.key(_DcopyCollection.LIST_TYPE,
                                 "RepeatedScalarFieldContainer")] = _DcopyProto.copy_list_2_protobuf_scalar_repeat
+
         copy_map[_DcopyCore.key("RepeatedScalarContainer",
                                 _DcopyCollection.LIST_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
+        copy_map[_DcopyCore.key("RepeatedScalarContainer",
+                                _DcopyCollection.NONE_TYPE)] = _DcopyProto.copy_protobuf_repeat_2_list
         copy_map[_DcopyCore.key(_DcopyCollection.LIST_TYPE,
                                 "RepeatedScalarContainer")] = _DcopyProto.copy_list_2_protobuf_scalar_repeat
 
@@ -405,7 +444,7 @@ class DCCopy:
     def pruned_dir(obj,
                    **kwargs) -> List:
         """
-        Extract object member names with dir and remove any member names given in the prune pramater
+        Extract object member names with dir and remove any member names given in the prune parameter
         :param obj: the object to extract member names for
         :param kwargs: Look for 'prune' parameter optionally passed
         :return: member names with any prune names removed.
@@ -490,6 +529,8 @@ class DCCopy:
                     raise TypeError("Source and Target are not of same type {} <> {}".format(type(src), type(tgt)))
             result = src
         else:
+            if tgt is None:
+                tgt = _DcopyCore.new_from_annotation(_DcopyCore.TGT_ANNOTATION_ARG, **kwargs)
             result = tgt
             v_tgt = dict([(x, getattr(tgt, x)) for x in DCCopy.pruned_dir(tgt, **kwargs) if
                           re.search("^__.*__$", x) is None and not callable(getattr(tgt, x))])
@@ -504,6 +545,6 @@ class DCCopy:
                 if vsk in v_tgt:
                     kwargs = {**kwargs, **DCCopy.member_annotations(vsk, src_annotations, tgt_annotations)}
                     res = DCCopy.deep_corresponding_copy(vsv, v_tgt[vsk], **kwargs)
-                    if type(res).__name__ not in DCCopy._ref_type:
+                    if type(res).__name__ not in DCCopy._ref_type and not _DcopyCore.protobuf_composite(res):
                         setattr(tgt, vsk, res)
         return result

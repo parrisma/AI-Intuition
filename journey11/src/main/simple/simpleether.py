@@ -57,13 +57,13 @@ class SimpleEther(Ether):
         :param: The srcsink notification
         """
         logging.info(
-            "Ether {}-{} RX ping request for {}".format(self.name, self.topic, ping_request.sender_srcsink.name))
+            "Ether {}-{} RX ping request for {}".format(self.name, self.topic, ping_request.sender_srcsinkproxy.name))
         # Don't count pings from our self.
-        if ping_request.sender_srcsink.topic != self.topic:
+        if ping_request.sender_srcsinkproxy.topic != self.topic:
             # Note the sender is alive
-            self._update_addressbook(ping_request.sender_srcsink)
+            self._update_addressbook(ping_request.sender_srcsinkproxy)
             addrs = self._get_addresses_with_capabilities(ping_request.required_capabilities)
-            pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
+            pub.sendMessage(topicName=ping_request.sender_srcsinkproxy.topic,
                             notification=SimpleSrcSinkNotification(responder_srcsink=self,
                                                                    address_book=addrs,
                                                                    sender_workref=ping_request.work_ref))

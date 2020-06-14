@@ -190,14 +190,14 @@ class SimpleTaskPool(TaskPool):
         Handle a ping response from a srcsink
         :param: The srcsink notification
         """
-        logging.info("{} RX ping request for {}".format(self.name, ping_request.sender_srcsink.name))
+        logging.info("{} RX ping request for {}".format(self.name, ping_request.sender_srcsinkproxy.name))
         # Don't count pings from our self.
-        if ping_request.sender_srcsink.topic != self.topic:
+        if ping_request.sender_srcsinkproxy.topic != self.topic:
             # Note the sender is alive
-            self._update_addressbook(ping_request.sender_srcsink)
+            self._update_addressbook(ping_request.sender_srcsinkproxy)
             if Capability.equivalence_factor(ping_request.required_capabilities,
                                              self.capabilities) >= self._ping_factor_threshold:
-                pub.sendMessage(topicName=ping_request.sender_srcsink.topic,
+                pub.sendMessage(topicName=ping_request.sender_srcsinkproxy.topic,
                                 notification=SimpleSrcSinkNotification(responder_srcsink=self,
                                                                        address_book=[self],
                                                                        sender_workref=ping_request.work_ref))

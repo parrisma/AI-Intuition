@@ -54,3 +54,27 @@ class SimpleCapability(Capability):
         if isinstance(other.value(), str):
             return other.value() == self._capability_name
         return False
+
+    def __repr__(self) -> str:
+        """
+        String representation of Capability
+        :return: Capability as string
+        """
+        return self._as_str()
+
+    def __str__(self):
+        """
+        String representation of Capability
+        :return: Capability as string
+        """
+        return self._as_str()
+
+    def __hash__(self):
+        if self._hash is None:
+            self._hash = hash("{}-{}".format(self._uuid, self._capability_name))
+        return self._hash
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and \
+               self._uuid == other._uuid and \
+               self._capability_name == other._capability_name

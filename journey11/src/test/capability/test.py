@@ -104,7 +104,7 @@ class TestCapability(unittest.TestCase):
     @staticmethod
     def _factory() -> Capability:
         """
-        Generate a random instance of a UniqueWorkRef
+        Generate a random instance of a Capability
         :return: A new UniqueWorkRef
         """
         return SimpleCapability(uuid=UniqueRef().ref, capability_name=Gibberish.word_gibber())

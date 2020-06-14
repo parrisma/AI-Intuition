@@ -6,6 +6,8 @@ from journey11.src.main.kpubsubai.pb_simplecapability_pb2 import PBSimpleCapabil
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.main.kpubsubai.pb_simplesrcsinkproxy_pb2 import PBSimpleSrcSinkProxy
 from journey11.src.main.simple.simplesrcsinkproxy import SimpleSrcSinkProxy
+from journey11.src.main.kpubsubai.pb_simplesrcsinkping_pb2 import PBSimpleSrcSinkPing
+from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
 
 # todo - need to get this from the RUN Spec.
 MSG_MAP_URL = "https://raw.githubusercontent.com/parrisma/AI-Intuition/kafka/journey11/src/main/kpubsubai/message-map.yml"
