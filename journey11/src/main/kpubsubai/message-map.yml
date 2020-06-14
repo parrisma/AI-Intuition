@@ -3,7 +3,7 @@
 # Date: Date of the version
 #
 # Message_map : Link between logical messages, and the protobuf object that manages that message
-#             : UUID - the UUID of the logical message type
+#             : UUID - the UUID (type 4) of the logical message type
 #             : name - The name of the logical message
 #             : protobuf - The ProtoBuf Object name.
 #
@@ -13,12 +13,17 @@ header:
   description: "Map logical message types to message codes for project AI Intuition"
 message_map:
   - message:
-      uuid: "65cca5b0-a7f7-11ea-bb37-0242ac130002"
+      uuid: "470f080e-31e7-4d54-912b-6561f83b64fc"
       name: "Unique Work Reference"
       protobuf: "PBUniqueWorkRef"
       native: "UniqueWorkRef"
   - message:
-      uuid: "6e1e0f1c-aba6-11ea-bb37-0242ac130002"
+      uuid: "7c6a8112-4143-4bca-8205-5286ae595430"
       name: "Source Sink Capability"
       protobuf: "PBSimpleCapability"
       native: "SimpleCapability"
+  - message:
+      uuid: "5797134-4aa6-4235-808e-353f734d546a"
+      name: "Source Sink Proxy"
+      protobuf: "PBSimpleSrcSinkProxy"
+      native: "SimpleSrcSinkProxy"
