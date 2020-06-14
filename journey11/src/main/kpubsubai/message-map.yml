@@ -27,3 +27,8 @@ message_map:
       name: "Source Sink Proxy"
       protobuf: "PBSimpleSrcSinkProxy"
       native: "SimpleSrcSinkProxy"
+  - message:
+      uuid: "1bd8fdb3-8ff8-4852-ab8b-ae60e2cdf877"
+      name: "Source Sink Ping"
+      protobuf: "PBSimpleSrcSinkPing"
+      native: "SimpleSrcSinkPing"
