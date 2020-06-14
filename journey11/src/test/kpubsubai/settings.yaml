@@ -11,7 +11,7 @@ header:
   version: "1.0.0"
   date: "12 Jun 2020"
   description: "Settings for Service AI"
-kafka:
+default:
   host: "<current-host>"
   port: "9092"
   msg_map_url: "https://raw.githubusercontent.com/parrisma/AI-Intuition/<git-branch>/journey11/src/main/kpubsubai/message-map.yml"
