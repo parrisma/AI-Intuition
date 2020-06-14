@@ -116,9 +116,9 @@ class KPuBsubUtil:
         """
         # We expect a Kafka server running the same machine as this test. This can be run up with the Swarm service
         # or stand along container script that is also part of this project.
-        settings = Settings(settings_yaml_stream=WebStream(BuildSpec.get_spec().pubsub_settings_yaml()),
-                            bespoke_transforms=BuildSpec.get_spec().setting_transformers())
-        hostname, port_id, msg_map_url = settings.kafka
+        settings = Settings(settings_yaml_stream=WebStream(BuildSpec.pubsub_settings_yaml()),
+                            bespoke_transforms=BuildSpec.setting_transformers())
+        hostname, port_id, msg_map_url = settings.kafka()
         kps = KPubSub(server=hostname,
                       port=port_id,
                       yaml_stream=WebStream(msg_map_url))

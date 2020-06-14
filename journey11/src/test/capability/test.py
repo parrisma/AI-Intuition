@@ -6,7 +6,7 @@ from journey11.src.interface.capability import Capability
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.main.simple.simplecapability import SimpleCapability
-from journey11.src.test.kpubsub.test import TestKPubSub
+from journey11.src.test.kpubsub.test import KPuBsubUtil
 from journey11.src.test.gibberish.gibberish import Gibberish
 
 
@@ -117,7 +117,7 @@ class TestCapability(unittest.TestCase):
         logging.info("Capability Test: Case 5")
         expected = list()
         actual = list()
-        expected, actual = TestKPubSub.kpubsub_test(msg_factory=self._factory,
+        expected, actual = KPuBsubUtil.kpubsub_test(msg_factory=self._factory,
                                                     num_msg=50,
                                                     msg_map_url=kpubsubai.MSG_MAP_URL)
         self.assertTrue(len(expected) == len(actual))

@@ -11,7 +11,7 @@ header:
 # Spec to use when running on Master branch
 default:
   git_root: "https://raw.githubusercontent.com/parrisma/AI-Intuition/"
-  branch: "master"
+  branch: "<current-git-branch>"
   kafka_yml: "journey11/src/test/kpubsubai/settings.yaml"
 
 # Spec create for addition on Kafka capability on kafka git branch
