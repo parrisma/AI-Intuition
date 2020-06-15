@@ -37,3 +37,4 @@ message_map:
       name: "Source Sink Ping Notification"
       protobuf: "PBSimpleSrcSinkPingNotification"
       native: "SimpleSrcSinkPingNotification"
+      
