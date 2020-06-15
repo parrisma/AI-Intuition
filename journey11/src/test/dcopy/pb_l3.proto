@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package journey11.experiment.proto_kafka;
+
+import "pb_l4.proto";
+
+message PBL3 {
+  PBL4 _single_l4 = 1;
+  string _s3 = 2;
+}

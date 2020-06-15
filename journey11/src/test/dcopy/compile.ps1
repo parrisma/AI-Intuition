@@ -9,4 +9,10 @@ $rmt = "/var/data"
 ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_state.proto
 ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_task.proto
 ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_message1.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_message2.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_message3.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_l1.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_l2.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_l3.proto
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_l4.proto
 

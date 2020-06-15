@@ -1,5 +1,6 @@
 import unittest
 import logging
+import numpy as np
 from enum import Enum, unique
 from journey11.src.lib.dcopy.dccopy import DCCopy
 from journey11.src.lib.loggingsetup import LoggingSetup
@@ -7,6 +8,20 @@ from journey11.src.test.dcopy.state import State
 from journey11.src.test.dcopy.task import Task
 from journey11.src.test.dcopy.message1 import Message1
 from journey11.src.test.dcopy.pb_message1_pb2 import PBMessage1
+from journey11.src.test.dcopy.message2 import Message2
+from journey11.src.test.dcopy.pb_message2_pb2 import PBMessage2
+from journey11.src.test.dcopy.message3 import Message3
+from journey11.src.test.dcopy.pb_message3_pb2 import PBMessage3
+from journey11.src.test.dcopy.l1 import L1
+from journey11.src.test.dcopy.pb_l1_pb2 import PBL1
+from journey11.src.test.dcopy.l2 import L2
+from journey11.src.test.dcopy.pb_l2_pb2 import PBL2
+from journey11.src.test.dcopy.l3 import L3
+from journey11.src.test.dcopy.pb_l3_pb2 import PBL3
+from journey11.src.test.dcopy.l4 import L4
+from journey11.src.test.dcopy.pb_l4_pb2 import PBL4
+
+from journey11.src.test.gibberish.gibberish import Gibberish
 
 
 @unique
@@ -201,20 +216,20 @@ class TestDcopy(unittest.TestCase):
         # Pass case
         src = Z(AnEnumInt.S1, AnEnumStr.S2)
         tgt = Z(AnEnumInt.S0, AnEnumStr.S0)
-        tgt = DCCopy.deep_corresponding_copy(src, tgt)
+        tgt = DCCopy.deep_corresponding_copy(src=src, tgt=tgt)
         self.assertEqual(tgt, src)
 
         # Pass case reverse as it's valid to copy a str Enum over an Int Enum
         src = Z(AnEnumInt.S1, AnEnumStr.S2)
         tgt = Z(AnEnumStr.S0, AnEnumInt.S0)  # Reverse int/str type Enum
-        tgt = DCCopy.deep_corresponding_copy(src, tgt)
+        tgt = DCCopy.deep_corresponding_copy(src=src, tgt=tgt)
         self.assertEqual(tgt, src)
         return
 
     def test_enum_with_members(self):
         src = Z(AnEnumWithMembers.S0, AnEnumInt.S0)
         tgt = Z(AnEnumWithMembers.S1, AnEnumInt.S2)
-        tgt = DCCopy.deep_corresponding_copy(src, tgt)
+        tgt = DCCopy.deep_corresponding_copy(src=src, tgt=tgt)
         self.assertEqual(tgt, src)
         self.assertEqual((1 * 2), src._a.func)
         return
@@ -263,7 +278,7 @@ class TestDcopy(unittest.TestCase):
         src = A(1, 2.0, "3", AnEnumInt.S0)
         tgt = B(4, 5.0, "6", AnEnumInt.S2)
         tgt_unmod = B(4, 5.0, "6", AnEnumInt.S2)
-        actual = DCCopy.deep_corresponding_copy(src, tgt)
+        actual = DCCopy.deep_corresponding_copy(src=src, tgt=tgt)
         self.assertEqual(src._a, actual._a)  # Corresponding & updated
         self.assertEqual(getattr(tgt_unmod, "_{}__b".format(type(tgt_unmod).__name__)),
                          getattr(actual, "_{}__b".format(type(actual).__name__)))  # .__b hidden & not updated
@@ -278,7 +293,7 @@ class TestDcopy(unittest.TestCase):
         src = B(4, 5.0, "6", AnEnumInt.S2)
         tgt = A(1, 2.0, "3", AnEnumInt.S0)
         tgt_unmod = A(1, 2.0, "3", AnEnumInt.S0)
-        actual = DCCopy.deep_corresponding_copy(src, tgt)
+        actual = DCCopy.deep_corresponding_copy(src=src, tgt=tgt)
         self.assertEqual(src._a, actual._a)  # Corresponding & updated
         self.assertEqual(getattr(tgt_unmod, "_{}__b".format(type(tgt_unmod).__name__)),
                          getattr(actual, "_{}__b".format(type(actual).__name__)))  # .__b hidden & not updated
@@ -289,7 +304,7 @@ class TestDcopy(unittest.TestCase):
 
     def test_complex_nested(self):
         logging.info("Test complex nested object, with base types, collections, Enum etc")
-        actual = DCCopy.deep_corresponding_copy(X(), Y())
+        actual = DCCopy.deep_corresponding_copy(src=X(), tgt=Y())
         expected = X()
         target_unmodified = Y()
 
@@ -355,13 +370,13 @@ class TestDcopy(unittest.TestCase):
                             _bytes=b'A Byte String')
 
         pb_message1 = PBMessage1()
-        actual = DCCopy.deep_corresponding_copy(message1, pb_message1)
+        actual = DCCopy.deep_corresponding_copy(src=message1, tgt=pb_message1)
         try:
             actual.SerializeToString()
         except Exception:
             self.fail("Profbuf object invalid after copy as cannot serialize")
         message2 = Message1()
-        final = DCCopy.deep_corresponding_copy(actual, message2)
+        final = DCCopy.deep_corresponding_copy(src=actual, tgt=message2)
         self.assertEqual(final, message1)
 
         return
@@ -399,6 +414,109 @@ class TestDcopy(unittest.TestCase):
             z2 = Z(z2a, z2b)
             with self.assertRaises(TypeError):
                 _ = DCCopy.deep_corresponding_copy(src=z1, tgt=z2, prune=p)
+        return
+
+    @staticmethod
+    def _random_message2() -> Message2:
+        """
+        Generate a random Message type 2
+        :return: A New Random Message Type 2
+        """
+        str_list = list()
+        for i in range(2 + np.random.randint(23)):
+            str_list.append(Gibberish.more_gibber())
+        return Message2(field=Gibberish.more_gibber(),
+                        strings=str_list,
+                        _double=np.around(np.random.uniform(0, 1), 6),
+                        _float=np.around(np.random.uniform(0, 1), 6),
+                        _int32=np.random.randint(99999),
+                        _int64=np.random.randint(99999),
+                        _bool=(np.random.randint(10) > 5),
+                        _bytes=b'A Byte String')
+
+    def test_none_constructor(self):
+        """
+        This is a test case where an object constructs with None as default member types so the DCopy
+        has to use supplied annotation to construct the target members before copying to them.
+        """
+        logging.info("Test copy to an object that defaults its members to None")
+        message2 = TestDcopy._random_message2()
+        pb_message2 = PBMessage2()
+        actual = DCCopy.deep_corresponding_copy(src=message2, tgt=pb_message2)
+        try:
+            actual.SerializeToString()
+        except Exception:
+            self.fail("Profbuf object invalid after copy as cannot serialize")
+        # All members will be None after init below, so DCopy will have to use annotation on the
+        # Message2 object to bootstrap the target objects to copy into.
+        message2_1 = Message2()
+        final = DCCopy.deep_corresponding_copy(src=actual, tgt=message2_1)
+        self.assertEqual(final, message2)  # Should be back where we started
+        return
+
+    @staticmethod
+    def _random_message3() -> Message3:
+        """
+        Generate a random Message type 3
+        :return: A New Random Message Type 3
+        """
+        m2_list = list()
+        for i in range(2 + np.random.randint(23)):
+            m2_list.append(TestDcopy._random_message2())
+        return Message3(field=Gibberish.more_gibber(),
+                        single_m2=TestDcopy._random_message2(),
+                        list_m2=m2_list)
+
+    def test_none_constructor_nested(self):
+        """
+        This is a test case where an object constructs to None types, where those contained types
+        also construct to None and thus DCopy has to instantiate classes from annotation and all
+        of the class contained members from annotation - i.e. nested
+        """
+        logging.info("Test copy to an object that defaults its members to None with nested objects also None")
+        message3 = TestDcopy._random_message3()
+        pb_message3 = PBMessage3()
+        actual = DCCopy.deep_corresponding_copy(src=message3, tgt=pb_message3)
+        try:
+            actual.SerializeToString()
+        except Exception:
+            self.fail("Profbuf object invalid after copy as cannot serialize")
+        # All members will be None after init below, so DCopy will have to use annotation on the
+        # Message2 object to bootstrap the target objects to copy into.
+        message3_1 = Message3()
+        final = DCCopy.deep_corresponding_copy(src=actual, tgt=message3_1)
+        self.assertEqual(final, message3)  # Should be back where we started
+        return
+
+    @staticmethod
+    def _random_l1() -> L1:
+        l4 = L4(single_m2=TestDcopy._random_message2(), s4=Gibberish.more_gibber())
+        l3 = L3(single_l4=l4, s3=Gibberish.more_gibber())
+        l2 = L2(single_l3=l3, s2=Gibberish.more_gibber())
+        return L1(single_l2=l2, s1=Gibberish.more_gibber())
+
+    def test_deep_nested(self):
+        """
+        Test the case where we have class within class 4 layers deep
+        """
+        logging.info("Test copy to an 4 layes deep class within class")
+        l = 0
+        for i in range(100):
+            if i % 10 == 0:
+                logging.info("Done test cycles {} to {}".format(l, i))
+                l = i
+            l1 = TestDcopy._random_l1()
+            pb_l1 = PBL1()
+            actual = DCCopy.deep_corresponding_copy(src=l1, tgt=pb_l1)
+            try:
+                actual.SerializeToString()
+            except Exception:
+                self.fail("Profbuf object invalid after copy as cannot serialize")
+            # All members will be None after init below, so DCopy will have to use annotation on the
+            # Message2 object to bootstrap the target objects to copy into.
+            l1_1 = L1()
+            final = DCCopy.deep_corresponding_copy(src=actual, tgt=l1_1)
+            self.assertEqual(final, l1)  # Should be back where we started
         return
 
 

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package journey11.experiment.proto_kafka;
+
+import "pb_message2.proto";
+
+message PBMessage3 {
+  string _field = 1;
+  PBMessage2 _single_m2 = 2;
+  repeated PBMessage2 _list_m2 = 3;
+}

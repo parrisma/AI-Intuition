@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package journey11.experiment.proto_kafka;
+
+
+message PBMessage2 {
+  string _field = 1;
+  repeated string _strings = 2;
+  double _double = 3;
+  float _float = 4;
+  int32 _int32 = 5;
+  int64 _int64 = 6;
+  bool _bool = 7;
+  bytes _bytes = 8;
+}
