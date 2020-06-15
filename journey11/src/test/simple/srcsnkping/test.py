@@ -33,17 +33,17 @@ class TestSimpleSrcSinkPing(unittest.TestCase):
     def _factory() -> SimpleSrcSinkPing:
         """
         Generate a random instance of a SimpleSrcSinkPing
-        :return: A new SimpleSrcSinkProxy
+        :return: A new SimpleSrcSinkPing
         """
         return SimpleSrcSinkPing(sender_srcsink=TestSrcSink(),
                                  required_capabilities=TestSimpleSrcSinkPing._capabilities())
 
     def test_pubsub_transport(self):
         """
-        Generate 1000 random SrcSinkPings and ensure that all serialize/deserialize correctly.
+        Generate random SrcSinkPings and ensure that all serialize/deserialize correctly.
         The requires the containerized test Kafka Service to be running locally.
         """
-        logging.info("SimpleSrcSinkProxy Test: Case 1")
+        logging.info("SimpleSrcSinkPing Test: Case 1")
         expected = list()
         actual = list()
         expected, actual = KPuBsubUtil.kpubsub_test(msg_factory=self._factory,

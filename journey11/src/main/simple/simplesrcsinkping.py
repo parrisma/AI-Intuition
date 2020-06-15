@@ -63,15 +63,15 @@ class SimpleSrcSinkPing(SrcSinkPing):
 
     def __repr__(self) -> str:
         """
-        String representation of Capability
-        :return: Capability as string
+        String representation of SrcSinkPing
+        :return: SrcSinkPing as string
         """
         return self._as_str()
 
     def __str__(self):
         """
-        String representation of Capability
-        :return: Capability as string
+        String representation of SrcSinkPing
+        :return: SrcSinkPing as string
         """
         return self._as_str()
 

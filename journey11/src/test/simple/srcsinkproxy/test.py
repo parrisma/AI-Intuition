@@ -23,7 +23,7 @@ class TestSimpleSrcSinkProxy(unittest.TestCase):
 
     def test_pubsub_transport(self):
         """
-        Generate 1000 random SimpleSrcSinkProxies and ensure that all serialize/deserialize correctly.
+        Generate random SimpleSrcSinkProxies and ensure that all serialize/deserialize correctly.
         The requires the containerized test Kafka Service to be running locally.
         """
         logging.info("SimpleSrcSinkProxy Test: Case 1")

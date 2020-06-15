@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package journey11.kpubsubai.simple;
+
+import "pb_uniqueworkref.proto";
+import "pb_simplesrcsinkproxy.proto";
+
+message PBSimpleSrcSinkPingNotification {
+  PBUniqueWorkRef _work_ref = 1;
+  PBSimpleSrcSinkProxy _responder_srcsink_proxy = 2;
+  repeated PBSimpleSrcSinkProxy _address_book = 3;
+}

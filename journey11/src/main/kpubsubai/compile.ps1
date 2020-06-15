@@ -11,4 +11,4 @@ ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_state.proto
 ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_simplecapability.proto
 ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_simplesrcsinkproxy.proto
 ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_simplesrcsinkping.proto
-
+ProtoCompile -LocalDir $local -ConatinerDir $rmt -Filename pb_simplesrcsinkpingnotification.proto

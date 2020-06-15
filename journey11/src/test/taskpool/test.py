@@ -95,7 +95,7 @@ class TestTheTaskPool(unittest.TestCase):
             time.sleep(1)
             self.assertEqual(expected_notification, len(ping_srcsink.ping_notifications))
             if expected_notification > 0:
-                self.assertEqual(ping_workref.id, ping_srcsink.ping_notifications[0].sender_work_ref.id)
+                self.assertEqual(ping_workref.id, ping_srcsink.ping_notifications[0].work_ref.id)
             pub.unsubAll()
             del task_pool
             del ping_srcsink
