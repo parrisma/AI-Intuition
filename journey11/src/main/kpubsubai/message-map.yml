@@ -32,3 +32,8 @@ message_map:
       name: "Source Sink Ping"
       protobuf: "PBSimpleSrcSinkPing"
       native: "SimpleSrcSinkPing"
+  - message:
+      uuid: "0003f246-243d-4c64-8e88-e4287763ad1e"
+      name: "Source Sink Ping Notification"
+      protobuf: "PBSimpleSrcSinkPingNotification"
+      native: "SimpleSrcSinkPingNotification"
