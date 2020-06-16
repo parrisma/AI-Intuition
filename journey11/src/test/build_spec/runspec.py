@@ -11,9 +11,9 @@ from journey11.src.lib.filestream import FileStream
 # todo: bootstrap from a YML file.
 
 
-class BuildSpec:
+class RunSpec:
     DEFAULT = "default"
-    BUILD_SPEC_PATH_ENV_VAR = "BUILD_SPEC_PATH"
+    RUN_SPEC_PATH_ENV_VAR = "BUILD_SPEC_PATH"
     SPECS_FILE = "specs.yml"
     SPEC_TO_USE_ENV_VAR = "BUILD_SPEC_TO_USE"
     M_BRANCH = "_branch"
@@ -55,16 +55,16 @@ class BuildSpec:
             if callable(getattr(cls._settings, cls._spec)):
                 cls._spec = spec
             else:
-                raise ValueError("No such test spec {} has been loaded from the yaml config".format(spec))
+                raise ValueError("No such run spec {} has been loaded from the yaml config".format(spec))
         else:
-            raise ValueError("No such test spec {} has been loaded from the yaml config".format(spec))
+            raise ValueError("No such run spec {} has been loaded from the yaml config".format(spec))
         return
 
     @classmethod
     def _git_current_branch(cls):
         res = subprocess.check_output("git rev-parse --abbrev-ref HEAD").decode('utf-8')
         if res is None or len(res) == 0:
-            res = "ERROR cannot establish current git branch"
+            res = "Warning cannot establish current git branch"
         else:
             res = cls._chomp(res)
         setattr(cls, cls.M_CURR_BRANCH, res)

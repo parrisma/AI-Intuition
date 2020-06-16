@@ -59,7 +59,7 @@ class _DcopyCore(ABC):
     @staticmethod
     def tname(t) -> str:
         """
-        Return the name of the type t or return t is t is as string on assumption it is a type name already
+        Return the name of the type t or return t is t is as string on the assumption it is a type name already
         :param t: Type or name of type as string
         :return: Type name as string
         """

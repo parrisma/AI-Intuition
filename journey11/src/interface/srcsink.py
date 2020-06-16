@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 from journey11.src.interface.notification import Notification
 from journey11.src.interface.capability import Capability
+from journey11.src.interface.srcsinkproxy import SrcSinkProxy
 from journey11.src.lib.purevirtual import purevirtual
 
 
@@ -62,7 +63,7 @@ class SrcSink(ABC):
 
     @purevirtual
     @abstractmethod
-    def get_addressbook(self) -> List['SrcSink']:
+    def get_addressbook(self) -> List[SrcSinkProxy]:
         """
         The list of srcsinks known to the SrcSink
         :return: srcsinks
@@ -72,7 +73,7 @@ class SrcSink(ABC):
     @purevirtual
     @abstractmethod
     def _update_addressbook(self,
-                            srcsink: 'SrcSink') -> None:
+                            srcsink: SrcSinkProxy) -> None:
         """
         Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
         add it with a current time stamp.

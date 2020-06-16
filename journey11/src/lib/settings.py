@@ -1,8 +1,6 @@
 import yaml
 import socket
-import types
-import copy
-from typing import Dict, List, Callable
+from typing import Dict, List
 from datetime import datetime
 from journey11.src.lib.transformer import Transformer
 

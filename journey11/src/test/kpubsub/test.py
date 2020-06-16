@@ -13,7 +13,7 @@ from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.lib.webstream import WebStream
 from journey11.src.lib.filestream import FileStream
 from journey11.src.lib.settings import Settings
-from journey11.src.test.build_spec.buildspec import BuildSpec
+from journey11.src.test.build_spec.runspec import RunSpec
 from journey11.src.test.kpubsub.pb_message1_pb2 import PBMessage1
 from journey11.src.test.kpubsub.pb_message2_pb2 import PBMessage2
 from journey11.src.test.kpubsub.message2 import Message2
@@ -116,8 +116,8 @@ class KPuBsubUtil:
         """
         # We expect a Kafka server running the same machine as this test. This can be run up with the Swarm service
         # or stand along container script that is also part of this project.
-        settings = Settings(settings_yaml_stream=WebStream(BuildSpec.pubsub_settings_yaml()),
-                            bespoke_transforms=BuildSpec.setting_transformers())
+        settings = Settings(settings_yaml_stream=WebStream(RunSpec.pubsub_settings_yaml()),
+                            bespoke_transforms=RunSpec.setting_transformers())
         hostname, port_id, msg_map_url = settings.default()
         kps = KPubSub(server=hostname,
                       port=port_id,

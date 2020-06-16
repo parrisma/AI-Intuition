@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from journey11.src.lib.loggingsetup import LoggingSetup
 from journey11.src.lib.mostactivesrcsinkselectionpolicy import MostActiveSrcSinkSelectionPolicy
-from journey11.src.lib.srcsinkwithtimestamp import SrcSinkWithTimeStamp
+from journey11.src.lib.srcsinkproxywithtimestamp import SrcSinkProxyWithTimeStamp
 from journey11.src.main.simple.simplesrcsinkmetadata import SimpleSrcSinkMetaData
 from journey11.src.test.srcsinkselectionpolicy.dummysrcsink import DummySrcSink
 
@@ -26,8 +26,8 @@ class TestSrcSinkSelectionPolicy(unittest.TestCase):
         random_offsets = np.random.choice(test_set_size * 10, size=test_set_size, replace=False)
         for i in range(test_set_size):
             ts = TestSrcSinkSelectionPolicy._pi_day + datetime.timedelta(seconds=int(random_offsets[i]))
-            srcsinks_ts.append(SrcSinkWithTimeStamp(time_stamp=ts,
-                                                    srcsink=DummySrcSink("DummySrcSink-{}".format(i))))
+            srcsinks_ts.append(SrcSinkProxyWithTimeStamp(time_stamp=ts,
+                                                         src_sink_proxy=DummySrcSink("DummySrcSink-{}".format(i))))
 
         # Sort & Grab last num_to_test as 'most recent' for the expected return
         srcsinks_ts = sorted(srcsinks_ts, key=operator.attrgetter('time_stamp'))

@@ -1,15 +1,16 @@
 import logging
 import threading
+import journey11.src.main.kpubsubai
 from typing import List
-from journey11.src.lib.kpubsub.kpubsub import KPubSub
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.interface.ether import Ether
 from journey11.src.lib.uniquetopic import UniqueTopic
-from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkNotification
 from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.main.simple.simplecapability import SimpleCapability
+from journey11.src.main.simple.simplekps import SimpleKps
+from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkPingNotification
 
 
 class SimpleEther(Ether):
@@ -21,33 +22,26 @@ class SimpleEther(Ether):
         """
         """
         self._name = ether_name
-        self._unique_topic = self._create_topic_and_subscription()
         super().__init__(ether_name)
         self._lock = threading.Lock()
         self._capabilities = [SimpleCapability(str(CapabilityRegister.ETHER))]
         self._ping_factor_threshold = 1.0
-        return
-
-    def __del__(self):
-        """
-        Unsubscribe to clean up week refs.
-        """
-        pub.unsubscribe(self, self._unique_topic)
-        pub.unsubscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)
+        self._kps = SimpleKps()
+        self._unique_topic = self._create_topic_and_subscription()  # must follow _kps set up
         return
 
     def _do_srcsink_ping_notification(self,
                                       ping_notification: SrcSinkPingNotification) -> None:
         """
         Handle a ping response from a srcsink
-        :param: The srcsink notification
+        :param: The srcsink ping notification
         """
         logging.info(
             "Ether {}-{} RX ping response for {}".format(self.name, self.topic, ping_notification.src_sink.name))
+        # Only count ping response of not from our self.
         if ping_notification.src_sink.topic != self.topic:
-            # Don't count ping response from our self.
-            for srcsink in ping_notification.responder_address_book:
-                self._update_addressbook(srcsink=srcsink)
+            for srcs_ink_proxy in ping_notification.responder_address_book:
+                self._update_addressbook(src_sink_proxy=srcs_ink_proxy)
         return
 
     def _do_srcsink_ping(self,
@@ -63,10 +57,10 @@ class SimpleEther(Ether):
             # Note the sender is alive
             self._update_addressbook(ping_request.sender_srcsinkproxy)
             addrs = self._get_addresses_with_capabilities(ping_request.required_capabilities)
-            pub.sendMessage(topicName=ping_request.sender_srcsinkproxy.topic,
-                            notification=SimpleSrcSinkNotification(responder_srcsink=self,
-                                                                   address_book=addrs,
-                                                                   sender_workref=ping_request.work_ref))
+            self._kps.connection.publish(topic=ping_request.sender_srcsinkproxy.topic,
+                                         msg=SimpleSrcSinkPingNotification(work_ref=ping_request.work_ref,
+                                                                           responder_srcsink=self,
+                                                                           address_book=addrs))
         return
 
     @property
@@ -83,8 +77,8 @@ class SimpleEther(Ether):
         requested from the task-pool
         """
         topic = UniqueTopic().topic(SimpleEther.ETHER_TOPIC_PREFIX)
-        pub.subscribe(self, topic)  # Instance specific
-        pub.subscribe(self, Ether.ETHER_BACK_PLANE_TOPIC)  # Back plane discovery topic
+        self._kps.connection.subscribe(topic=topic, listener=self)
+        self._kps.connection.subscribe(topic=Ether.ETHER_BACK_PLANE_TOPIC, listener=self)
         return topic
 
     @property

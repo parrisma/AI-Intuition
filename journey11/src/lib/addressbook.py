@@ -2,9 +2,9 @@ import operator
 import threading
 import datetime
 from typing import List
-from journey11.src.interface.srcsink import SrcSink
+from journey11.src.interface.srcsinkproxy import SrcSinkProxy
 from journey11.src.interface.capability import Capability
-from journey11.src.lib.srcsinkwithtimestamp import SrcSinkWithTimeStamp
+from journey11.src.lib.srcsinkproxywithtimestamp import SrcSinkProxyWithTimeStamp
 
 
 class AddressBook:
@@ -12,31 +12,32 @@ class AddressBook:
 
     def __init__(self):
         self._lock = threading.RLock()
-        self._src_sinks_with_timestamp = dict()
+        self._src_sink_proxies_with_timestamp = dict()
 
-    def get(self) -> List[SrcSink]:
+    def get(self) -> List[SrcSinkProxy]:
         """
         The list of srcsinks in the address book
         :return: List of srcsinks
         """
         with self._lock:
-            srcsinks = list(x.srcsink for x in self._src_sinks_with_timestamp.values())
+            srcsinks = list(x.srcsink for x in self._src_sink_proxies_with_timestamp.values())
         return srcsinks
 
     def update(self,
-               srcsink: SrcSink) -> None:
+               src_sink_proxy: SrcSinkProxy) -> None:
         """
         Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
         add it with a current time stamp.
-        :param srcsink: The src_sink to update / add.
+        :param src_sink_proxy: The src_sink to update / add.
         """
-        srcsink_name = srcsink.name
+        srcsink_name = src_sink_proxy.name
         with self._lock:
-            if srcsink_name not in self._src_sinks_with_timestamp:
-                self._src_sinks_with_timestamp[srcsink_name] = SrcSinkWithTimeStamp(srcsink=srcsink,
-                                                                                    time_stamp=datetime.datetime.now())
+            if srcsink_name not in self._src_sink_proxies_with_timestamp:
+                self._src_sink_proxies_with_timestamp[srcsink_name] = SrcSinkProxyWithTimeStamp(
+                    src_sink_proxy=src_sink_proxy,
+                    time_stamp=datetime.datetime.now())
             else:
-                self._src_sinks_with_timestamp[srcsink_name].time_stamp = datetime.datetime.now()
+                self._src_sink_proxies_with_timestamp[srcsink_name].time_stamp = datetime.datetime.now()
         return
 
     def _recent(self,
@@ -48,9 +49,9 @@ class AddressBook:
                               required_capabilities: List[Capability],
                               match_threshold: float = CAPABILITY_MATCH_EXACT,
                               max_age_in_seconds: float = None,
-                              n: int = 1) -> List[SrcSink]:
+                              n: int = 1) -> List[SrcSinkProxy]:
         """
-        Get a SrcSin with matching capabilities, and if there are more than one get the one with the newest timestamp.
+        Get a SrcSink with matching capabilities, and if there are more than one get the one with the newest timestamp.
         :param required_capabilities: The required capabilities
         :param match_threshold: The minimum match level to the required capabilities 0.0 to 1.0 = exact
         :param max_age_in_seconds: (optional) the max age of the SrcSink since the last ping - the get will remove
@@ -66,7 +67,7 @@ class AddressBook:
 
         res = None
         to_consider = list()
-        for sswt in self._src_sinks_with_timestamp.values():
+        for sswt in self._src_sink_proxies_with_timestamp.values():
             ef = Capability.equivalence_factor(given_capabilities=sswt.srcsink.capabilities,
                                                required_capabilities=required_capabilities)
             if ef >= match_threshold:

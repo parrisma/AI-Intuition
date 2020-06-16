@@ -1,18 +1,18 @@
 import datetime
-from journey11.src.interface.srcsink import SrcSink
+from journey11.src.interface.srcsinkproxy import SrcSinkProxy
 
 
-class SrcSinkWithTimeStamp:
+class SrcSinkProxyWithTimeStamp:
     def __init__(self,
                  time_stamp: datetime,
-                 srcsink: 'SrcSink'):
+                 src_sink_proxy: 'SrcSinkProxy'):
         self._time_stamp = time_stamp
-        self._src_sink = srcsink
+        self._src_sink_proxy = src_sink_proxy
         return
 
     @property
-    def srcsink(self) -> 'SrcSink':
-        return self._src_sink
+    def srcsink(self) -> 'SrcSinkProxy':
+        return self._src_sink_proxy
 
     @property
     def time_stamp(self) -> datetime:
@@ -25,7 +25,7 @@ class SrcSinkWithTimeStamp:
         return
 
     def __str__(self):
-        return "{} @ {:%d %m %Y : %I %M %S %f }".format(self._src_sink.name, self.time_stamp)
+        return "{} @ {:%d %m %Y : %I %M %S %f }".format(self._src_sink_proxy.name, self.time_stamp)
 
     def __repr__(self):
         return self.__str__()

@@ -2,6 +2,7 @@ from typing import List
 from abc import abstractmethod
 import threading
 from journey11.src.interface.srcsink import SrcSink
+from journey11.src.interface.srcsinkproxy import SrcSinkProxy
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.interface.srcsinkping import SrcSinkPing
@@ -36,14 +37,15 @@ class Ether(SrcSink):
         self._handler.activity_state(paused=True)
         return
 
-    def __call__(self, notification: Notification):
+    def __call__(self, *args, **kwargs):
         """ Handle notification requests
-        :param notification: The notification to be passed to the handler
+        :msg: The message to be passed to the handler
         """
-        if isinstance(notification, Notification):
-            self._handler.call_handler(notification)
+        msg = kwargs.get('msg', None)
+        if msg is not None and isinstance(msg, Notification):
+            self._handler.call_handler(msg)
         else:
-            raise ValueError("{} un supported notification type for Task Pool".format(type(notification).__name__))
+            raise ValueError("{} un supported notification type for Task Pool".format(type(msg).__name__))
         return
 
     def stop(self) -> None:
@@ -90,7 +92,7 @@ class Ether(SrcSink):
         """
         pass
 
-    def get_addressbook(self) -> List[SrcSink]:
+    def get_addressbook(self) -> List[SrcSinkProxy]:
         """
         The list of srcsinks known to the Ether
         :return: srcsinks
@@ -98,17 +100,17 @@ class Ether(SrcSink):
         return self._address_book.get()
 
     def _update_addressbook(self,
-                            srcsink: SrcSink) -> None:
+                            src_sink_proxy: SrcSinkProxy) -> None:
         """
         Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
         add it with a current time stamp.
-        :param srcsink: The src_sink to update / add.
+        :param srcsinkproxy: The srcsink proxy to record an update / add for
         """
-        self._address_book.update(srcsink)
+        self._address_book.update(src_sink_proxy)
         return
 
     def _get_addresses_with_capabilities(self,
-                                         required_capabilities: List[Capability]) -> List[SrcSink]:
+                                         required_capabilities: List[Capability]) -> List[SrcSinkProxy]:
         """
         Get the top five addresses in the address book that match the required capabilities. Always include
         this Ether (self) in the list.

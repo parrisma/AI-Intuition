@@ -1,7 +1,7 @@
 import unittest
 import logging
 from journey11.src.lib.loggingsetup import LoggingSetup
-from journey11.src.test.build_spec import BuildSpec
+from journey11.src.test.build_spec import RunSpec
 
 
 class TestBuildSpec(unittest.TestCase):
@@ -18,10 +18,10 @@ class TestBuildSpec(unittest.TestCase):
 
     def test_basics(self):
         # BuildSpec is bootstrapped in the module __init__.py
-        current_spec = BuildSpec.get_spec()
-        branch = BuildSpec.branch()
-        pubsub_settings_yaml = BuildSpec.pubsub_settings_yaml()
-        self.assertEqual(BuildSpec.DEFAULT, current_spec)
+        current_spec = RunSpec.get_spec()
+        branch = RunSpec.branch()
+        pubsub_settings_yaml = RunSpec.pubsub_settings_yaml()
+        self.assertEqual(RunSpec.DEFAULT, current_spec)
         self.assertTrue(len(branch) > 0)
         self.assertTrue(len(pubsub_settings_yaml) > 0)
         return
