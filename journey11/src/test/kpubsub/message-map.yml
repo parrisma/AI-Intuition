@@ -11,6 +11,19 @@ header:
   version: "1.0.0"
   date: "31 May 2020"
   description: "Map logical message types to message codes"
+  import:
+    - lib:
+        from: "journey11.src.test.kpubsub.pb_message1_pb2"
+        package: "PBMessage1"
+    - lib:
+        from: "journey11.src.test.kpubsub.pb_message2_pb2"
+        package: "PBMessage2"
+    - lib:
+        from: "journey11.src.test.kpubsub.message2"
+        package: "Message2"
+    - lib:
+        from: "journey11.src.test.kpubsub.message1"
+        package: "Message1"
 message_map:
   - message:
       uuid: "2b352062-a31a-11ea-bb37-0242ac130002"
