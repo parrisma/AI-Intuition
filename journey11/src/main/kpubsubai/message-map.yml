@@ -11,6 +11,43 @@ header:
   version: "1.0.0"
   date: "6 Jun 2020"
   description: "Map logical message types to message codes for project AI Intuition"
+import:
+  - lib:
+      from: "journey11.src.main.kpubsubai.pb_uniqueworkref_pb2"
+      package: "PBUniqueWorkRef"
+  - lib:
+      from: "journey11.src.lib.uniqueworkref"
+      package: "UniqueWorkRef"
+  - lib:
+      from: "journey11.src.main.kpubsubai.pb_state_pb2"
+      package: "PBState"
+  - lib:
+      from: "journey11.src.lib.state"
+      package: "State"
+  - lib:
+      from: "journey11.src.main.kpubsubai.pb_simplecapability_pb2"
+      package: "PBSimpleCapability"
+  - lib:
+      from: "journey11.src.main.simple.simplecapability"
+      package: "SimpleCapability"
+  - lib:
+      from: "journey11.src.main.kpubsubai.pb_simplesrcsinkproxy_pb2"
+      package: "PBSimpleSrcSinkProxy"
+  - lib:
+      from: "journey11.src.main.simple.simplesrcsinkproxy"
+      package: "import SimpleSrcSinkProxy"
+  - lib:
+      from: "journey11.src.main.kpubsubai.pb_simplesrcsinkping_pb2"
+      package: "PBSimpleSrcSinkPing"
+  - lib:
+      from: "journey11.src.main.simple.simplesrcsinkping"
+      package: "SimpleSrcSinkPing"
+  - lib:
+      from: "journey11.src.main.kpubsubai.pb_simplesrcsinkpingnotification_pb2"
+      package: "PBSimpleSrcSinkPingNotification"
+  - lib:
+      from: "journey11.src.main.simple.simplesrcsinkpingnotification"
+      package: "SimpleSrcSinkPingNotification"
 message_map:
   - message:
       uuid: "470f080e-31e7-4d54-912b-6561f83b64fc"
