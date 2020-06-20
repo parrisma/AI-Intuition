@@ -168,15 +168,15 @@ class TaskPool(SrcSink):
         """
         return self._capabilities
 
-    def get_addressbook(self) -> List[SrcSink]:
+    def get_address_book(self) -> List[SrcSink]:
         """
         The list of srcsinks known to the Ether
         :return: srcsinks
         """
         return self._address_book.get()
 
-    def _update_addressbook(self,
-                            srcsink: SrcSink) -> None:
+    def _update_address_book(self,
+                             srcsink: SrcSink) -> None:
         """
         Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
         add it with a current time stamp.

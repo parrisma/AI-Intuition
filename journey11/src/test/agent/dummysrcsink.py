@@ -141,11 +141,11 @@ class DummySrcSink(SrcSink):
         return self._topic
 
     @property
-    def get_addressbook(self) -> List['SrcSink']:
+    def get_address_book(self) -> List['SrcSink']:
         logging.info("{} :: {} get_addressbook".format(self.__class__.__name__, self.name, "get_addressbook"))
         return self._address_book.get()
 
-    def _update_addressbook(self, srcsink: 'SrcSink') -> None:
+    def _update_address_book(self, srcsink: 'SrcSink') -> None:
         logging.info("{} :: {} update_addressbook".format(self.__class__.__name__, self.name, "update_addressbook"))
         self._address_book.update(srcsink)
         return

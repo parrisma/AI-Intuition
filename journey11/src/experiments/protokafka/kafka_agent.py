@@ -11,7 +11,7 @@ from journey11.src.experiments.protokafka.pb_message1_pb2 import PBMessage1
 from journey11.src.experiments.protokafka.message1 import Message1
 from journey11.src.experiments.protokafka.state import State
 from src.test.gibberish.gibberish import Gibberish
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 
 
 class KafkaTestProducer:
@@ -149,7 +149,7 @@ class Do:
 
 
 if __name__ == "__main__":
-    LoggingSetup()
+    Trace()
     logging.info("Kafka agent starting")
     Do().run()
     logging.info("Kafka agent exit")

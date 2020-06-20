@@ -17,7 +17,7 @@ from journey11.src.experiments.protokafka.state import State
 from src.test.gibberish.gibberish import Gibberish
 from journey11.src.experiments.protokafka.pb_notification_pb2 import PBNotification
 from journey11.src.lib.uniqueref import UniqueRef
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from google.protobuf.timestamp_pb2 import Timestamp
 
 
@@ -54,7 +54,7 @@ class TestProtoKafka(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def test_simple_class(self):
         pc = ProtoCopy()

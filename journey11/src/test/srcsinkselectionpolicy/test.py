@@ -3,7 +3,7 @@ import unittest
 import datetime
 import logging
 import numpy as np
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.lib.mostactivesrcsinkselectionpolicy import MostActiveSrcSinkSelectionPolicy
 from journey11.src.lib.srcsinkproxywithtimestamp import SrcSinkProxyWithTimeStamp
 from journey11.src.main.simple.simplesrcsinkmetadata import SimpleSrcSinkMetaData
@@ -15,7 +15,7 @@ class TestSrcSinkSelectionPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
         logging.info(TestSrcSinkSelectionPolicy._pi_day.strftime("%m.%d%y%H%M%S"))
         return
 

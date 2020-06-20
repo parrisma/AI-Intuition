@@ -6,7 +6,7 @@ from pubsub import pub
 from journey11.src.interface.taskconsumptionpolicy import TaskConsumptionPolicy
 from journey11.src.interface.capability import Capability
 from journey11.src.lib.state import State
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.capabilityregister import CapabilityRegister
@@ -40,7 +40,7 @@ class TestTheTaskPool(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def tearDown(self) -> None:
         pub.unsubAll()
@@ -115,8 +115,8 @@ class TestTheTaskPool(unittest.TestCase):
         time.sleep(0.75)
 
         # (4) Check task_pool registered it's self with the Ether & visa versa. (Address exchange)
-        self.assertTrue(task_pool in ether.get_addressbook())
-        self.assertTrue(ether in task_pool.get_addressbook())
+        self.assertTrue(task_pool in ether.get_address_book())
+        self.assertTrue(ether in task_pool.get_address_book())
 
         # (5) Start simple Agent, which will automatically ping ether
         agent = SimpleAgent(agent_name="Test-Agent-1",
@@ -129,9 +129,9 @@ class TestTheTaskPool(unittest.TestCase):
         time.sleep(1.00)
 
         # Agent should now have Ether address and Pool address
-        self.assertTrue(agent in ether.get_addressbook())
-        self.assertTrue(ether in agent.get_addressbook())
-        self.assertTrue(task_pool in agent.get_addressbook())
+        self.assertTrue(agent in ether.get_address_book())
+        self.assertTrue(ether in agent.get_address_book())
+        self.assertTrue(task_pool in agent.get_address_book())
 
         return
 

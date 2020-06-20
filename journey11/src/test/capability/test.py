@@ -3,7 +3,7 @@ import numpy as np
 import logging
 import kpubsubai
 from journey11.src.interface.capability import Capability
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.test.kpubsub.test import KPuBsubUtil
@@ -14,7 +14,7 @@ class TestCapability(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def test_simple(self):
         logging.info("Capability Test: Case 1")

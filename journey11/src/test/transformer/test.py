@@ -1,6 +1,6 @@
 import unittest
 import logging
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.lib.transformer import Transformer
 
 
@@ -35,7 +35,7 @@ class TestCapability(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def setUp(self) -> None:
         TestCapability._run += 1

@@ -1,11 +1,11 @@
 import logging
 import threading
-import journey11.src.main.kpubsubai
 from typing import List
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkping import SrcSinkPing
 from journey11.src.interface.srcsinkpingnotification import SrcSinkPingNotification
 from journey11.src.interface.ether import Ether
+from journey11.src.lib.aitrace.trace import Trace
 from journey11.src.lib.uniquetopic import UniqueTopic
 from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.main.simple.simplecapability import SimpleCapability
@@ -36,12 +36,12 @@ class SimpleEther(Ether):
         Handle a ping response from a srcsink
         :param: The srcsink ping notification
         """
-        logging.info(
+        Trace.log().info(
             "Ether {}-{} RX ping response for {}".format(self.name, self.topic, ping_notification.src_sink.name))
         # Only count ping response of not from our self.
         if ping_notification.src_sink.topic != self.topic:
             for srcs_ink_proxy in ping_notification.responder_address_book:
-                self._update_addressbook(src_sink_proxy=srcs_ink_proxy)
+                self._update_address_book()
         return
 
     def _do_srcsink_ping(self,
@@ -50,12 +50,12 @@ class SimpleEther(Ether):
         Handle a ping request from a SrcSink
         :param: The srcsink notification
         """
-        logging.info(
+        Trace.log().info(
             "Ether {}-{} RX ping request for {}".format(self.name, self.topic, ping_request.sender_srcsinkproxy.name))
         # Don't count pings from our self.
         if ping_request.sender_srcsinkproxy.topic != self.topic:
             # Note the sender is alive
-            self._update_addressbook(ping_request.sender_srcsinkproxy)
+            self._update_address_book(ping_request.sender_srcsinkproxy)
             addrs = self._get_addresses_with_capabilities(ping_request.required_capabilities)
             self._kps.connection.publish(topic=ping_request.sender_srcsinkproxy.topic,
                                          msg=SimpleSrcSinkPingNotification(work_ref=ping_request.work_ref,

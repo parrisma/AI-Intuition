@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from enum import Enum, unique
 from journey11.src.lib.dcopy.dccopy import DCCopy
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.test.dcopy.state import State
 from journey11.src.test.dcopy.task import Task
 from journey11.src.test.dcopy.message1 import Message1
@@ -15,11 +15,8 @@ from journey11.src.test.dcopy.pb_message3_pb2 import PBMessage3
 from journey11.src.test.dcopy.l1 import L1
 from journey11.src.test.dcopy.pb_l1_pb2 import PBL1
 from journey11.src.test.dcopy.l2 import L2
-from journey11.src.test.dcopy.pb_l2_pb2 import PBL2
 from journey11.src.test.dcopy.l3 import L3
-from journey11.src.test.dcopy.pb_l3_pb2 import PBL3
 from journey11.src.test.dcopy.l4 import L4
-from journey11.src.test.dcopy.pb_l4_pb2 import PBL4
 
 from journey11.src.test.gibberish.gibberish import Gibberish
 
@@ -184,7 +181,7 @@ class TestDcopy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def test_fails(self):
         logging.info("Test failure cases for type mismatch")

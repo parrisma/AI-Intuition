@@ -2,7 +2,7 @@ import unittest
 import random
 import re
 import kpubsubai
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.test.kpubsub.test import KPuBsubUtil
 
@@ -25,7 +25,7 @@ class TestUniqueRef(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def test_no_prefix_or_suffix(self):
         pattern_no_prefix_no_suffix = re.compile("^-[A-Za-z0-9]+-$")

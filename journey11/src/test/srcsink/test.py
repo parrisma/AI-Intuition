@@ -1,5 +1,5 @@
 import unittest
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.test.srcsink.testsrcsink import TestSrcSink
 
 
@@ -7,7 +7,7 @@ class TestSrcSink(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def test_sig_checker_no_errors(self):
         try:

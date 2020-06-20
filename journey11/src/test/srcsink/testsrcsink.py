@@ -52,8 +52,8 @@ class TestSrcSink(SrcSink):
     def _do_srcsink_ping(self, ping_request: Notification) -> None:
         raise NotImplementedError("Method not implemented on this TEST class")
 
-    def get_addressbook(self) -> List['SrcSink']:
+    def get_address_book(self) -> List['SrcSink']:
         raise NotImplementedError("Method not implemented on this TEST class")
 
-    def _update_addressbook(self, srcsink: 'SrcSink') -> None:
+    def _update_address_book(self, srcsink: 'SrcSink') -> None:
         raise NotImplementedError("Method not implemented on this TEST class")

@@ -2,7 +2,7 @@ import logging
 import threading
 import random
 import time
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 
 num_tests = 500
 
@@ -35,7 +35,7 @@ class ThreadTestClass:
 
 
 if __name__ == "__main__":
-    LoggingSetup()
+    Trace()
     ttc = ThreadTestClass()
     time.sleep(5)
     assert (ttc.counter == num_tests)

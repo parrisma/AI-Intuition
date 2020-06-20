@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Callable
 from abc import abstractmethod
 import threading
 from journey11.src.interface.srcsink import SrcSink
@@ -13,6 +13,12 @@ from journey11.src.lib.addressbook import AddressBook
 
 
 class Ether(SrcSink):
+    # Annotation
+    _notification_callbacks: List[Callable[[Notification], None]]
+    _stopped: bool
+    _address_book: AddressBook
+    _handler: NotificationHandler
+
     ETHER_BACK_PLANE_TOPIC = "ether-back-plane"
     PUB_TIMER = float(.25)
 
@@ -24,6 +30,7 @@ class Ether(SrcSink):
             otherwise the activity timer will reference non existent properties in the sub class as the timer
             will fire (here) before they have been defined in the sub-class init()
         """
+        self._notification_callbacks = list()
         self._stopped = False
         self._address_book = AddressBook()
         super().__init__()
@@ -31,10 +38,20 @@ class Ether(SrcSink):
         self._handler = NotificationHandler(object_to_be_handler_for=self, throw_unhandled=False)
         self._handler.register_handler(self._do_srcsink_ping, SrcSinkPing)
         self._handler.register_handler(self._do_srcsink_ping_notification, SrcSinkPingNotification)
+        self.register_notification_callback(self._handler.call_handler)
         return
 
     def __del__(self):
         self._handler.activity_state(paused=True)
+        return
+
+    def register_notification_callback(self,
+                                       callback: Callable[[Notification], None]) -> None:
+        """
+        Register a callable that will be notified every time a message is delivered to the SrcSink
+        :param callback: A callable that takes a notification as a its only paramater
+        """
+        self._notification_callbacks.append(callback)
         return
 
     def __call__(self, *args, **kwargs):
@@ -43,9 +60,10 @@ class Ether(SrcSink):
         """
         msg = kwargs.get('msg', None)
         if msg is not None and isinstance(msg, Notification):
-            self._handler.call_handler(msg)
+            for handler in self._notification_callbacks:
+                handler(msg)
         else:
-            raise ValueError("{} un supported notification type for Task Pool".format(type(msg).__name__))
+            raise ValueError("Ether {} un supported notification".format(type(msg).__name__))
         return
 
     def stop(self) -> None:
@@ -92,15 +110,15 @@ class Ether(SrcSink):
         """
         pass
 
-    def get_addressbook(self) -> List[SrcSinkProxy]:
+    def get_address_book(self) -> List[SrcSinkProxy]:
         """
         The list of srcsinks known to the Ether
         :return: srcsinks
         """
         return self._address_book.get()
 
-    def _update_addressbook(self,
-                            src_sink_proxy: SrcSinkProxy) -> None:
+    def _update_address_book(self,
+                             src_sink_proxy: SrcSinkProxy) -> None:
         """
         Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
         add it with a current time stamp.

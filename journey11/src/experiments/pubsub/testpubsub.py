@@ -2,7 +2,7 @@ import logging
 import threading
 import time
 from pubsub import pub
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 
 
 class ListenPayload:
@@ -85,7 +85,7 @@ pub.setListenerExcHandler(ListenerExceptionHandler())
 
 if __name__ == "__main__":
 
-    LoggingSetup()
+    Trace()
 
     topic1 = "Topic1"
     topic2 = "Topic2"

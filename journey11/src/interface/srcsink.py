@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Callable
 from journey11.src.interface.notification import Notification
 from journey11.src.interface.capability import Capability
 from journey11.src.interface.srcsinkproxy import SrcSinkProxy
@@ -43,6 +43,16 @@ class SrcSink(ABC):
 
     @purevirtual
     @abstractmethod
+    def register_notification_callback(self,
+                                       handler: Callable[[Notification], None]) -> None:
+        """
+        Register a callable that will be notified every time a message is delivered to the SrcSink
+        :param handler: A callable that takes a notification as a its only paramater
+        """
+        pass
+
+    @purevirtual
+    @abstractmethod
     def _do_srcsink_ping_notification(self,
                                       ping_notification: Notification) -> None:
         """
@@ -63,7 +73,7 @@ class SrcSink(ABC):
 
     @purevirtual
     @abstractmethod
-    def get_addressbook(self) -> List[SrcSinkProxy]:
+    def get_address_book(self) -> List[SrcSinkProxy]:
         """
         The list of srcsinks known to the SrcSink
         :return: srcsinks
@@ -72,8 +82,8 @@ class SrcSink(ABC):
 
     @purevirtual
     @abstractmethod
-    def _update_addressbook(self,
-                            srcsink: SrcSinkProxy) -> None:
+    def _update_address_book(self,
+                             srcsink: SrcSinkProxy) -> None:
         """
         Update the given src_sink in the collection of registered srcsinks. If src_sink is not in the collection
         add it with a current time stamp.

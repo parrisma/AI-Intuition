@@ -3,7 +3,7 @@ import random
 import logging
 import time
 from journey11.src.lib.notificationhandler import NotificationHandler
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.test.notificationhandler.testhandlegood import TestHandleGood
 from journey11.src.test.notificationhandler.testtasknotification import TestTaskNotification
 from journey11.src.test.notificationhandler.testworknotification import TestWorkNotificationDo
@@ -15,7 +15,7 @@ class TestNotificationHandler(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def setUp(self) -> None:
         logging.info("\n\n- - - - - - C A S E {} - - - - - - - - \n\n".format(TestNotificationHandler._case))

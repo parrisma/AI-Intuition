@@ -7,7 +7,7 @@ from journey11.src.interface.capability import Capability
 from journey11.src.lib.state import State
 from journey11.src.lib.greedytaskconsumptionpolicy import GreedyTaskConsumptionPolicy
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.main.simple.simpleagent import SimpleAgent
@@ -27,7 +27,7 @@ class TestTheAgent(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def setUp(self) -> None:
         print("SetUp")

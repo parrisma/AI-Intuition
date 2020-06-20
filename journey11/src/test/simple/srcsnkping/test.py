@@ -1,9 +1,8 @@
 import unittest
 import logging
 import numpy as np
-import kpubsubai
 from journey11.src.interface.capability import Capability
-from journey11.src.lib.loggingsetup import LoggingSetup
+from journey11.src.lib.aitrace.trace import Trace
 from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
@@ -16,7 +15,7 @@ class TestSimpleSrcSinkPing(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     @staticmethod
     def _capabilities() -> [Capability]:

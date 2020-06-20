@@ -3,7 +3,7 @@ import logging
 import time
 from pubsub import pub
 from journey11.src.lib.addressbook import AddressBook
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.test.agent.dummysrcsink import DummySrcSink
 from journey11.src.main.simple.simplecapability import SimpleCapability
 
@@ -13,7 +13,7 @@ class TestAddressBook(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def setUp(self) -> None:
         logging.info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestAddressBook._id))

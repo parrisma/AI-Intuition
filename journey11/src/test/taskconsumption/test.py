@@ -3,7 +3,7 @@ import unittest
 import random
 from journey11.src.lib.randomtaskconsumptionpolicy import RandomTaskConsumptionPolicy
 from journey11.src.main.simple.simpletaskmetadata import SimpleTaskMetaData
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 
 
 class TestTaskConsumptionRate(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestTaskConsumptionRate(unittest.TestCase):
 
     @classmethod
     def setUp(cls) -> None:
-        LoggingSetup()
+        Trace()
 
     def test_boundaries(self):
         """

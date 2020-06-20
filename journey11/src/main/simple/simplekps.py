@@ -1,7 +1,7 @@
 from journey11.src.lib.kpubsub.kpubsub import KPubSub
 from journey11.src.lib.webstream import WebStream
 from journey11.src.lib.settings import Settings
-from journey11.src.test.build_spec.runspec import RunSpec
+from journey11.src.test.run_spec.runspec import RunSpec
 
 
 class SimpleKps:

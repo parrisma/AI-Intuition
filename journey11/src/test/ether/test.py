@@ -1,17 +1,60 @@
 import unittest
 import logging
 import time
+import threading
 from typing import List
 from journey11.src.interface.ether import Ether
 from journey11.src.interface.capability import Capability
-from journey11.src.lib.loggingsetup import LoggingSetup
+from journey11.src.interface.notification import Notification
+from journey11.src.lib.aitrace.trace import Trace
 from journey11.src.lib.capabilityregister import CapabilityRegister
+from journey11.src.lib.namegen.namegen import NameGen
 from journey11.src.main.simple.simpleether import SimpleEther
 from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.test.agent.dummysrcsink import DummySrcSink
 from journey11.src.main.simple.simplekps import SimpleKps
-from journey11.src.main.simple.simplesrcsinkproxy import SimpleSrcSinkProxy
+
+
+class EtherListener:
+    def __init__(self,
+                 name: str,
+                 messages: List,
+                 release_after: int = None):
+        self._name = name
+        self._messages = messages
+        self._msg_idx = 0
+        self._num_rx = 0
+        self._done = False
+        self._release_after = release_after
+        self._event = None
+        if self._release_after is not None:
+            self._event = threading.Event()
+        return
+
+    def __call__(self, notification: Notification):
+        if self._done:
+            assert "Ether Listener is done: all messages rx'ed"
+            return
+
+        Trace.log().info("Ether {} - Listener rx'ed message {}".format(self._name, str(notification)))
+        self._messages.append(notification)
+        self._num_rx = len(self._messages)
+        if self._release_after is not None:
+            Trace.log().info(
+                "Ether - {} of {} messages received".format(str(len(self._messages)), str(self._release_after)))
+            if self._num_rx == self._release_after:
+                self._done = True
+                Trace.log().info("Ether - all messages received, release Event wait")
+                self._event.set()
+        return
+
+    def wait_until_all_rx(self):
+        if self._num_rx is not None and self._event is not None and not self._done:
+            Trace.log().info("blocking wait for all messages to be rx'ed by Consumer - id:{}".format(str(id(self))))
+            self._event.wait()
+            Trace.log().info("Blocking wait release, all massed rx'ed - id:{}".format(str(id(self))))
+        return
 
 
 class TestEther(unittest.TestCase):
@@ -23,10 +66,10 @@ class TestEther(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        return
 
     def setUp(self) -> None:
-        logging.info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestEther._id))
+        Trace.log().info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestEther._id))
         TestEther._id += 1
         return
 
@@ -52,6 +95,12 @@ class TestEther(unittest.TestCase):
             for i in range(3):
                 srcsink = DummySrcSink("DummySrcSink-2")
                 ether = SimpleEther("TestEther1")
+                rx_msgs = list()
+                ether_listener = EtherListener(name="Listener:{}".format(ether.name),
+                                               messages=rx_msgs,
+                                               release_after=1)
+                ether.register_notification_callback(ether_listener)
+                time.sleep(2)
 
                 ping = SimpleSrcSinkPing(sender_srcsink=srcsink, required_capabilities=reqd_cap)
                 if i == 0:
@@ -59,11 +108,13 @@ class TestEther(unittest.TestCase):
                 elif i == 1:
                     TestEther._kps.connection.publish(topic=ether.topic,
                                                       msg=ping)  # Publish direct to Ether private topic
+                    ether_listener.wait_until_all_rx()
                 else:
                     TestEther._kps.connection.publish(topic=Ether.back_plane_topic(),
                                                       msg=ping)  # Publish to back plane topic
+                    ether_listener.wait_until_all_rx()
 
-                srcsink_topics = list(x.topic for x in ether.get_addressbook())
+                srcsink_topics = list(x.topic for x in ether.get_address_book())
                 self.assertEqual(1, len(srcsink_topics))  # We expect a single topic only
                 self.assertTrue(srcsink.topic in srcsink_topics)  # The topic should be in the set recorded by the ether
         return
@@ -77,19 +128,33 @@ class TestEther(unittest.TestCase):
 
         # Topic should be registered even if the ether does not have a matching ping capabilities
         ethers = list()
+        ether_listeners = list()
         for i in range(5):
-            ethers.append(SimpleEther("TestEther{}".format(i)))
+            ether = SimpleEther("TestEther{}".format(i))
+            rx_msgs = list()
+            ether_listener = EtherListener(name="Listener:{}".format(ether.name),
+                                           messages=rx_msgs,
+                                           release_after=1)
+            ether_listeners.append(ether_listener)
+            ether.register_notification_callback(ether_listener)
+            ethers.append(ether)
+        time.sleep(2)
 
         srcsinks = list()
         for i in range(num_diff_ping_sources):
-            srcsink = DummySrcSink("DummySrcSink-{}".format(i))
+            srcsink = DummySrcSink("DummySrcSink-{}".format(NameGen.generate_random_name()))
             srcsinks.append(srcsink)
             ping = SimpleSrcSinkPing(sender_srcsink=srcsink, required_capabilities=TestEther.NO_CAPABILITIES_REQUIRED, )
             # Publish to back plane topic, single message should go to all ethers on backplane.
-            pub.sendMessage(topicName=Ether.back_plane_topic(), notification=ping)
+            TestEther._kps.connection.publish(topic=Ether.back_plane_topic(),
+                                              msg=ping)  # Publish direct to Ether private topic
+
+        time.sleep(2)
+        for listener in ether_listeners:
+            listener.wait_until_all_rx()
 
         for ether in ethers:
-            srcsink_topics = list(x.topic for x in ether.get_addressbook())
+            srcsink_topics = list(x.topic for x in ether.get_address_book())
             self.assertEqual(num_diff_ping_sources, len(srcsink_topics))  # Num topic = num diff ones sent
             for srcsink in srcsinks:
                 self.assertTrue(srcsink.topic in srcsink_topics)  # Every ether should have every topic
@@ -118,8 +183,8 @@ class TestEther(unittest.TestCase):
         # Force in some SrcSinks with capabilities via protected methods just for testing
         ds1 = DummySrcSink(name="DS1", capability=SimpleCapability(capability_name=self.capability_1))
         ds2 = DummySrcSink(name="DS2", capability=SimpleCapability(capability_name=self.capability_2))
-        ether_rx1._update_addressbook(src_sink_proxy=ds1)
-        ether_rx2._update_addressbook(src_sink_proxy=ds2)
+        ether_rx1._update_address_book()
+        ether_rx2._update_address_book()
 
         ping = SimpleSrcSinkPing(sender_srcsink=ether_tx1, required_capabilities=reqd_cap)
 
@@ -133,7 +198,7 @@ class TestEther(unittest.TestCase):
         # The sender of the ping request should have all the addresses on the ether
         ether = ether_tx1
         logging.info("Checking {}".format(ether.name))
-        srcsink_topics = list(x.topic for x in ether.get_addressbook())
+        srcsink_topics = list(x.topic for x in ether.get_address_book())
 
         if expected == 3:
             self.assertEqual(expected, len(srcsink_topics))  # We expect all topics

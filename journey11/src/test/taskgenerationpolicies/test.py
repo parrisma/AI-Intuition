@@ -1,6 +1,6 @@
 import unittest
 import logging
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.main.simple.simpletaskgenerationpolicyoneoffbatchuniform import \
     SimpleTaskGenerationPolicyOneOffBatchUniform
 
@@ -10,7 +10,7 @@ class TestAddressBook(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def setUp(self) -> None:
         logging.info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestAddressBook._id))

@@ -1,12 +1,10 @@
-import socket
 import numpy as np
 import unittest
-import logging
 import threading
 import time
 from typing import List, Tuple, Callable, Any
 from datetime import datetime
-from journey11.src.lib.loggingsetup import LoggingSetup
+from journey11.src.lib.aitrace.trace import Trace
 from journey11.src.lib.kpubsub.messagetypemap import MessageTypeMap
 from journey11.src.lib.kpubsub.kpubsub import KPubSub
 from journey11.src.lib.uniqueref import UniqueRef
@@ -44,22 +42,22 @@ class ConsumerListener:
         if msg is None:
             assert ("{} - Expected Message to be passed by name 'msg' to listener, rx'ed {}".format(self._name,
                                                                                                     str(**kwargs)))
-        logging.info("{} - Listener rx'ed message {}".format(self._name, str(msg)))
+        Trace.log().info("{} - Listener rx'ed message {}".format(self._name, str(msg)))
         self._messages.append(msg)
         self._num_rx = len(self._messages)
         if self._release_after is not None:
-            logging.info("{} of {} messages received".format(str(len(self._messages)), str(self._release_after)))
+            Trace.log().info("{} of {} messages received".format(str(len(self._messages)), str(self._release_after)))
             if self._num_rx == self._release_after:
                 self._done = True
-                logging.info("All messages received, release Event wait")
+                Trace.log().info("All messages received, release Event wait")
                 self._event.set()
         return
 
     def wait_until_all_rx(self):
         if self._num_rx is not None and self._event is not None and not self._done:
-            logging.info("Blocking wait for all messages to be rx'ed by Consumer")
+            Trace.log().info("Blocking wait for all messages to be rx'ed by Consumer")
             self._event.wait()
-            logging.info("Blocking wait release, all massed rx'ed")
+            Trace.log().info("Blocking wait release, all massed rx'ed")
         return
 
 
@@ -93,7 +91,7 @@ class ProducerTestClient:
         msg = self._msg_factory()
         self._messages.append(msg)
         self._num_sent += 1
-        logging.info("{} of {} Messages Published:= {}".format(str(self._num_sent), str(self._num_msg), str(msg)))
+        Trace.log().info("{} of {} Messages Published:= {}".format(str(self._num_sent), str(self._num_msg), str(msg)))
         self._kps.publish(topic=self._topic, msg=msg)
         if len(self._messages) < self._num_msg:
             self._runner = threading.Timer(np.random.random() * .5, self)
@@ -155,10 +153,10 @@ class TestKPubSub(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def setUp(self) -> None:
-        logging.info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestKPubSub._id))
+        Trace.log().info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestKPubSub._id))
         TestKPubSub._id += 1
         RunSpec.set_spec("kps")
         return
@@ -176,7 +174,7 @@ class TestKPubSub(unittest.TestCase):
         """
         Test random messages being sent over single topic being consumed by a single consumer in a single group
         """
-        logging.info("Test KPubSub Single Topic Single Group")
+        Trace.log().info("Test KPubSub Single Topic Single Group")
         expected = list()
         actual = list()
         expected, actual = KPuBsubUtil.kpubsub_test(msg_factory=self.msg_factory,

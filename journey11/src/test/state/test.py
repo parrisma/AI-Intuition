@@ -3,7 +3,7 @@ import numpy as np
 import kpubsubai
 from typing import List
 from journey11.src.lib.state import State
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.test.kpubsub.test import TestKPubSub
 
 
@@ -11,7 +11,7 @@ class TestState(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def test_range_asc(self):
         scenarios = [[State.S0, State.S0, [State.S0]],

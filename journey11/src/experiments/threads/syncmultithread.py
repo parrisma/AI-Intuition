@@ -2,7 +2,7 @@ import logging
 import threading
 import random
 import time
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.lib.countdownbarrier import CountDownBarrier
 
 
@@ -45,7 +45,7 @@ class SyncMultiThread:
 
 
 if __name__ == "__main__":
-    LoggingSetup()
+    Trace()
     ntests = 50
     ctb = CountDownBarrier(ntests)
     ttc = SyncMultiThread(count_down_barrier=ctb, num_tests=ntests)

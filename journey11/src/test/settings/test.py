@@ -2,7 +2,7 @@ import unittest
 import logging
 import socket
 from datetime import datetime
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.lib.settings import Settings
 from journey11.src.lib.filestream import FileStream
 from journey11.src.lib.transformer import Transformer
@@ -20,7 +20,7 @@ class TestSettings(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     def setUp(self) -> None:
         logging.info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestSettings._id))

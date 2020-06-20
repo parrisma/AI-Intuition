@@ -1,8 +1,7 @@
 import unittest
 import logging
 import numpy as np
-import kpubsubai
-from journey11.src.lib.loggingsetup import LoggingSetup
+from src.lib.aitrace.trace import Trace
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.main.simple.simplesrcsinkproxy import SimpleSrcSinkProxy
 from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkPingNotification
@@ -15,7 +14,7 @@ class TestSimpleSrcSinkPingNotification(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        LoggingSetup()
+        Trace()
 
     @staticmethod
     def _address_book() -> [SimpleSrcSinkProxy]:
