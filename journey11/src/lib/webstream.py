@@ -19,5 +19,5 @@ class WebStream:
             res_stream = io.BytesIO(url_stream.content)
             url_stream.close()
         except Exception as e:
-            raise ValueError("File Stream - unable read URL {} with error {}".format(self._url, str(e)))
+            raise ValueError("Web Stream - unable read URL {} with error {}".format(self._url, str(e)))
         return res_stream

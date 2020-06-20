@@ -1,5 +1,7 @@
+import importlib
 import sys
 import yaml
+import logging
 from typing import Dict, List, Type, Tuple
 from datetime import datetime
 
@@ -15,6 +17,10 @@ class MessageTypeMap:
     _map_item_uuid = "uuid"
     _map_item_protobuf = "protobuf"
     _map_item_native = "native"
+    _import = "import"
+    _import_lib = "lib"
+    _import_lib_from = "from"
+    _import_lib_package = "package"
     _item_name = 0
     _item_protobuf = 1
     _item_native = 2
@@ -62,6 +68,7 @@ class MessageTypeMap:
         src = self._yaml_stream()
         yml_map = yaml.safe_load(src)
         self._parse_header(yml_map.get(MessageTypeMap._header))
+        self._parse_imports(yml_map.get(MessageTypeMap._import))
         self._parse_map(yml_map.get(MessageTypeMap._message_map))
         src.close()
         return
@@ -76,6 +83,26 @@ class MessageTypeMap:
             if item[0] not in header:
                 raise ValueError("Mal-structured type map yaml [{}] is missing from header".format(item[0]))
             setattr(self, item[1], header[item[0]])
+        return
+
+    def _parse_imports(self,
+                       imports: List) -> None:
+        """
+        Load any python package listed in the import map if it is not already a loaded module.
+        :param import_map: The YAML loaded list of Libs to import.
+        """
+        if imports is not None:
+            for import_item in imports:
+                item_lib = import_item[MessageTypeMap._import_lib][MessageTypeMap._import_lib_from]
+                item_package = import_item[MessageTypeMap._import_lib][MessageTypeMap._import_lib_package]
+                try:
+                    importlib.import_module(name=item_lib, package=item_package)
+                except Exception as e:
+                    raise ValueError(
+                        "Failure during Message Map Load of additional python module {} from {} : Exception =  {}".format(
+                            item_lib, item_package, str(e)))
+        else:
+            logging.info("Message Map setting have no additional imports specified.")
         return
 
     def _parse_map(self,

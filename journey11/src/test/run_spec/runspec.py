@@ -3,12 +3,17 @@
 #
 from typing import List
 import subprocess
+import logging
 from journey11.src.lib.transformer import Transformer
 from journey11.src.lib.settings import Settings
 from journey11.src.lib.filestream import FileStream
 
-
 # todo: bootstrap from a YML file.
+
+
+"""
+    Singleton - setting for running in current context
+"""
 
 
 class RunSpec:
@@ -20,15 +25,27 @@ class RunSpec:
     M_CURR_BRANCH = "_current_git_branch"
     _settings = None
     _spec = DEFAULT
+    _running = False
 
     @classmethod
     def __init__(cls,
-                 bootstrap_yaml_filename: str):
-        cls._git_current_branch()
-        cls._settings = Settings(settings_yaml_stream=FileStream(bootstrap_yaml_filename),
-                                 bespoke_transforms=[cls.current_branch_transformer()])
-        cls._spec = cls.DEFAULT
+                 bootstrap_yaml_filename: str,
+                 throw_if_already_running: bool = True):
+        if not RunSpec._running:
+            cls._git_current_branch()
+            cls._settings = Settings(settings_yaml_stream=FileStream(bootstrap_yaml_filename),
+                                     bespoke_transforms=[cls.current_branch_transformer()])
+            cls._spec = cls.DEFAULT
+        else:
+            if throw_if_already_running:
+                raise RuntimeError("RunSpec is singleton and is already established cannot set new RunSpec")
+            else:
+                logging.info("RunSpec is already running, attempt to __init__ again ignored.")
         return
+
+    @classmethod
+    def is_running(cls) -> bool:
+        return cls._running
 
     @classmethod
     def branch(cls) -> str:

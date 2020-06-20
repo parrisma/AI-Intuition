@@ -1,4 +1,6 @@
+from typing import List
 from abc import ABC, abstractmethod
+from journey11.src.interface.capability import Capability
 from journey11.src.lib.purevirtual import purevirtual
 
 
@@ -24,5 +26,15 @@ class SrcSinkProxy(ABC):
         """
         The unique topic name that SrcSink listens on for activity specific to it.
         :return: The topic
+        """
+        pass
+
+    @property
+    @purevirtual
+    @abstractmethod
+    def capabilities(self) -> List[Capability]:
+        """
+        The capabilities of the SrcSink
+        :return: A List of the SrcSink's capabilities
         """
         pass

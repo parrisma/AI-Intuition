@@ -2,7 +2,10 @@ syntax = "proto3";
 
 package journey11.kpubsubai.simple;
 
+import "pb_simplecapability.proto";
+
 message PBSimpleSrcSinkProxy {
   string _name = 1;
   string _topic = 2;
+  repeated PBSimpleCapability _capabilities = 3;
 }

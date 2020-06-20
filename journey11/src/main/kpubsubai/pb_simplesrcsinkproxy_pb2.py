@@ -13,14 +13,16 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
+import pb_simplecapability_pb2 as pb__simplecapability__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='pb_simplesrcsinkproxy.proto',
   package='journey11.kpubsubai.simple',
   syntax='proto3',
-  serialized_pb=_b('\n\x1bpb_simplesrcsinkproxy.proto\x12\x1ajourney11.kpubsubai.simple\"5\n\x14PBSimpleSrcSinkProxy\x12\r\n\x05_name\x18\x01 \x01(\t\x12\x0e\n\x06_topic\x18\x02 \x01(\tb\x06proto3')
-)
+  serialized_pb=_b('\n\x1bpb_simplesrcsinkproxy.proto\x12\x1ajourney11.kpubsubai.simple\x1a\x19pb_simplecapability.proto\"|\n\x14PBSimpleSrcSinkProxy\x12\r\n\x05_name\x18\x01 \x01(\t\x12\x0e\n\x06_topic\x18\x02 \x01(\t\x12\x45\n\r_capabilities\x18\x03 \x03(\x0b\x32..journey11.kpubsubai.simple.PBSimpleCapabilityb\x06proto3')
+  ,
+  dependencies=[pb__simplecapability__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
@@ -47,6 +49,13 @@ _PBSIMPLESRCSINKPROXY = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='_capabilities', full_name='journey11.kpubsubai.simple.PBSimpleSrcSinkProxy._capabilities', index=2,
+      number=3, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -59,10 +68,11 @@ _PBSIMPLESRCSINKPROXY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=59,
-  serialized_end=112,
+  serialized_start=86,
+  serialized_end=210,
 )
 
+_PBSIMPLESRCSINKPROXY.fields_by_name['_capabilities'].message_type = pb__simplecapability__pb2._PBSIMPLECAPABILITY
 DESCRIPTOR.message_types_by_name['PBSimpleSrcSinkProxy'] = _PBSIMPLESRCSINKPROXY
 
 PBSimpleSrcSinkProxy = _reflection.GeneratedProtocolMessageType('PBSimpleSrcSinkProxy', (_message.Message,), dict(

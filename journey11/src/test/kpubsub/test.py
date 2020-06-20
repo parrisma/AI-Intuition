@@ -13,7 +13,7 @@ from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.lib.webstream import WebStream
 from journey11.src.lib.filestream import FileStream
 from journey11.src.lib.settings import Settings
-from journey11.src.test.build_spec.runspec import RunSpec
+from journey11.src.test.run_spec.runspec import RunSpec
 from journey11.src.test.kpubsub.pb_message1_pb2 import PBMessage1
 from journey11.src.test.kpubsub.pb_message2_pb2 import PBMessage2
 from journey11.src.test.kpubsub.message2 import Message2
@@ -23,19 +23,43 @@ from journey11.src.test.kpubsub.message1 import Message1
 class ConsumerListener:
     def __init__(self,
                  name: str,
-                 messages: List):
+                 messages: List,
+                 release_after: int = None):
         self._name = name
         self._messages = messages
         self._msg_idx = 0
+        self._num_rx = 0
+        self._done = False
+        self._release_after = release_after
+        self._event = None
+        if self._release_after is not None:
+            self._event = threading.Event()
         return
 
     def __call__(self, *args, **kwargs):
+        if self._done:
+            assert "Consumer Listener is done: all messages rx'ed"
+
         msg = kwargs.get('msg', None)
         if msg is None:
             assert ("{} - Expected Message to be passed by name 'msg' to listener, rx'ed {}".format(self._name,
                                                                                                     str(**kwargs)))
         logging.info("{} - Listener rx'ed message {}".format(self._name, str(msg)))
         self._messages.append(msg)
+        self._num_rx = len(self._messages)
+        if self._release_after is not None:
+            logging.info("{} of {} messages received".format(str(len(self._messages)), str(self._release_after)))
+            if self._num_rx == self._release_after:
+                self._done = True
+                logging.info("All messages received, release Event wait")
+                self._event.set()
+        return
+
+    def wait_until_all_rx(self):
+        if self._num_rx is not None and self._event is not None and not self._done:
+            logging.info("Blocking wait for all messages to be rx'ed by Consumer")
+            self._event.wait()
+            logging.info("Blocking wait release, all massed rx'ed")
         return
 
 
@@ -54,6 +78,7 @@ class ProducerTestClient:
         :param messages: List to which every sent message is added.
         :param msg_factory: Callable that creates new message objects
         """
+        self._num_sent = 0
         self._kps = kps
         self._topic = topic
         self._num_msg = num_msg
@@ -67,7 +92,8 @@ class ProducerTestClient:
     def __call__(self, *args, **kwargs):
         msg = self._msg_factory()
         self._messages.append(msg)
-        logging.info("Published message {}".format(str(msg)))
+        self._num_sent += 1
+        logging.info("{} of {} Messages Published:= {}".format(str(self._num_sent), str(self._num_msg), str(msg)))
         self._kps.publish(topic=self._topic, msg=msg)
         if len(self._messages) < self._num_msg:
             self._runner = threading.Timer(np.random.random() * .5, self)
@@ -83,8 +109,7 @@ class ProducerTestClient:
 class KPuBsubUtil:
     @staticmethod
     def kpubsub_test(msg_factory: Callable[[], Any],
-                     num_msg: int,
-                     msg_map_url: str) -> Tuple[List, List]:
+                     num_msg: int) -> Tuple[List, List]:
         """
         Use message factory to create num_msg messages and send them over Kafka. This verifies the message type
         is correctly set-up to be serialized.
@@ -92,7 +117,6 @@ class KPuBsubUtil:
         Utility method that can be called by other object test classes to verify serialisation.
 
         :param msg_factory: Callable that creates instances of the messages type under test
-        :param test_func: Test function that compares sent message with rx'ed message and return true if all is well.
         :param num_msg: The number of messages to send.
         :param msg_map_url: The URL of the Message Map YAML.
         """
@@ -100,10 +124,11 @@ class KPuBsubUtil:
         topic = UniqueRef().ref
         sent = list()
         rxed = list()
-        kps.subscribe(topic=topic, listener=ConsumerListener('Consumer', messages=rxed))
+        cl = ConsumerListener('Consumer', messages=rxed, release_after=num_msg)
+        kps.subscribe(topic=topic, listener=cl)
         time.sleep(2)
         ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=num_msg, messages=sent, msg_factory=msg_factory)
-        time.sleep(num_msg * 0.35)
+        cl.wait_until_all_rx()
         del ptc
         del kps
         return sent, rxed
@@ -128,6 +153,16 @@ class KPuBsubUtil:
 class TestKPubSub(unittest.TestCase):
     _id = 0
 
+    @classmethod
+    def setUpClass(cls):
+        LoggingSetup()
+
+    def setUp(self) -> None:
+        logging.info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestKPubSub._id))
+        TestKPubSub._id += 1
+        RunSpec.set_spec("kps")
+        return
+
     @staticmethod
     def msg_factory() -> object:
         msg = None
@@ -137,34 +172,18 @@ class TestKPubSub(unittest.TestCase):
             msg = Message2(field3=UniqueRef().ref, field4=np.random.random() * 1000)
         return msg
 
-    @classmethod
-    def setUpClass(cls):
-        LoggingSetup()
-
-    def setUp(self) -> None:
-        logging.info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestKPubSub._id))
-        TestKPubSub._id += 1
-        return
-
     def test_kpubsub_single_topic_single_group(self):
         """
         Test random messages being sent over single topic being consumed by a single consumer in a single group
         """
-        kps = KPuBsubUtil._bootstrap_kpubsub()
-        topic = UniqueRef().ref  # Topic not seen by kafka before to keep test clean
-        messages_sent = list()  # Keep a chronological list of messages sent
-        messages_rx = list()  # Keep a chronological list of messages received
-
-        # Single consumer - should see all messages once in the order sent.
-        kps.subscribe(topic=topic, listener=ConsumerListener("Consumer-1", messages=messages_rx))
-        time.sleep(2)
-        ptc = ProducerTestClient(kps=kps, topic=topic, num_msg=10, messages=messages_sent,
-                                 msg_factory=TestKPubSub.msg_factory)
-        time.sleep(8)  # Wait for messages to flow.
-        # Expect rx = sent, same number, same order
-        self.assertEqual(messages_rx, messages_sent)
-        del ptc
-        del kps
+        logging.info("Test KPubSub Single Topic Single Group")
+        expected = list()
+        actual = list()
+        expected, actual = KPuBsubUtil.kpubsub_test(msg_factory=self.msg_factory,
+                                                    num_msg=50)
+        self.assertTrue(len(expected) == len(actual))
+        for e, a in zip(expected, actual):
+            self.assertEqual(e, a)
         return
 
     def test_kpubsub_single_topic_multi_group(self):

@@ -2,7 +2,6 @@ import unittest
 import logging
 import time
 from typing import List
-from pubsub import pub
 from journey11.src.interface.ether import Ether
 from journey11.src.interface.capability import Capability
 from journey11.src.lib.loggingsetup import LoggingSetup
@@ -11,10 +10,13 @@ from journey11.src.main.simple.simpleether import SimpleEther
 from journey11.src.main.simple.simplesrcsinkping import SimpleSrcSinkPing
 from journey11.src.main.simple.simplecapability import SimpleCapability
 from journey11.src.test.agent.dummysrcsink import DummySrcSink
+from journey11.src.main.simple.simplekps import SimpleKps
+from journey11.src.main.simple.simplesrcsinkproxy import SimpleSrcSinkProxy
 
 
 class TestEther(unittest.TestCase):
     _id = 1
+    _kps = SimpleKps()
     capability_1 = "Cap1"
     capability_2 = "Cap2"
     NO_CAPABILITIES_REQUIRED = []
@@ -29,7 +31,8 @@ class TestEther(unittest.TestCase):
         return
 
     def tearDown(self) -> None:
-        pub.unsubAll()
+        # UnSubscribe
+        return
 
     def test_ether_capability(self):
         ether = SimpleEther("TestEther1")
@@ -52,12 +55,13 @@ class TestEther(unittest.TestCase):
 
                 ping = SimpleSrcSinkPing(sender_srcsink=srcsink, required_capabilities=reqd_cap)
                 if i == 0:
-                    ether(ping)  # Invoke as callable
+                    ether(msg=ping)  # Invoke as callable - i.e. bypass Kafka
                 elif i == 1:
-                    pub.sendMessage(topicName=ether.topic, notification=ping)  # Publish direct to Ether private topic
+                    TestEther._kps.connection.publish(topic=ether.topic,
+                                                      msg=ping)  # Publish direct to Ether private topic
                 else:
-                    pub.sendMessage(topicName=Ether.back_plane_topic(),
-                                    notification=ping)  # Publish to back plane topic
+                    TestEther._kps.connection.publish(topic=Ether.back_plane_topic(),
+                                                      msg=ping)  # Publish to back plane topic
 
                 srcsink_topics = list(x.topic for x in ether.get_addressbook())
                 self.assertEqual(1, len(srcsink_topics))  # We expect a single topic only
@@ -114,8 +118,8 @@ class TestEther(unittest.TestCase):
         # Force in some SrcSinks with capabilities via protected methods just for testing
         ds1 = DummySrcSink(name="DS1", capability=SimpleCapability(capability_name=self.capability_1))
         ds2 = DummySrcSink(name="DS2", capability=SimpleCapability(capability_name=self.capability_2))
-        ether_rx1._update_addressbook(srcsink=ds1)
-        ether_rx2._update_addressbook(srcsink=ds2)
+        ether_rx1._update_addressbook(src_sink_proxy=ds1)
+        ether_rx2._update_addressbook(src_sink_proxy=ds2)
 
         ping = SimpleSrcSinkPing(sender_srcsink=ether_tx1, required_capabilities=reqd_cap)
 

@@ -30,8 +30,7 @@ class TestSimpleSrcSinkProxy(unittest.TestCase):
         expected = list()
         actual = list()
         expected, actual = KPuBsubUtil.kpubsub_test(msg_factory=self._factory,
-                                                    num_msg=50,
-                                                    msg_map_url=kpubsubai.MSG_MAP_URL)
+                                                    num_msg=50)
         self.assertTrue(len(expected) == len(actual))
         for e, a in zip(expected, actual):
             self.assertEqual(e, a)
