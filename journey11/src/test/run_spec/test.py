@@ -1,7 +1,7 @@
 import unittest
 import logging
 from src.lib.aitrace.trace import Trace
-from journey11.src.test.build_spec import RunSpec
+from journey11.src.test.run_spec import RunSpec
 
 
 class TestBuildSpec(unittest.TestCase):
