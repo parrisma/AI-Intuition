@@ -1,3 +1,4 @@
+from typing import Dict
 import numpy as np
 import pytz
 from datetime import datetime, timedelta, timezone
@@ -55,6 +56,10 @@ class Json2Elastic:
             print(str(e))
         return res
 
+    @ staticmethod
+    def status_ok(res: Dict)->bool:
+        pass
+
     def create_idx(self,
                    idx_name: str = None) -> str:
         if idx_name is None:
@@ -65,7 +70,7 @@ class Json2Elastic:
             res = self._es.indices.create(index=idx_name,
                                           body=body,
                                           wait_for_active_shards=1,
-                                          ignore=[400])
+                                          ignore=[400, 404])
         except Exception as e:
             print(str(e))
         return idx_name
@@ -75,7 +80,7 @@ class Json2Elastic:
         type_n = self._types[np.random.randint(low=1, high=self._num_type, size=1)[0]]
         trace_date = Json2Elastic.elastic_time_format(self.rnd_time())
         message = Gibberish.more_gibber()
-        json_trace_doc = '{{"session_uuid":"{}","type_uuid":"{}","timestamp":"{}","message":"{}"}}'.format(sess_n,
+        json_trace_doc = '{{"session_uuid":"{}","level":"{}","timestamp":"{}","message":"{}"}}'.format(sess_n,
                                                                                                            type_n,
                                                                                                            trace_date,
                                                                                                            message)

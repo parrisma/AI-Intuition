@@ -10,12 +10,12 @@
       "session_uuid": {
         "type": "text"
       },
-      "type_uuid": {
+      "level": {
         "type": "text"
       },
       "timestamp": {
         "type": "date",
-        "format" : "yyyy-MM-dd'T'HH:mm:ssZ"
+        "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
       },
       "message": {
         "type": "text"

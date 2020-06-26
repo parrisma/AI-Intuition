@@ -13,9 +13,13 @@ default:
   git_root: "https://raw.githubusercontent.com/parrisma/AI-Intuition/"
   branch: "<current-git-branch>"
   kafka_yml: "journey11/src/test/kpubsubai/settings.yaml"
+  elastic_yml: "journey11/src/test/run_spec/elastic_settings.yaml"
+  trace_yml: "journey11/src/test/run_spec/trace_settings.yaml"
 
 # Spec create for current branch, testing KPubSub itself.
 kps:
   git_root: "https://raw.githubusercontent.com/parrisma/AI-Intuition"
   branch: "<current-git-branch>"
   kafka_yml: "journey11/src/test/kpubsub/settings.yaml"
+  elastic_yml: "journey11/src/test/run_spec/elastic_settings.yaml"
+  trace_yml: "journey11/src/test/run_spec/trace_settings.yaml"

@@ -8,3 +8,4 @@ header:
   description: "Trace Logging Test Env Settings"
 default:
   elastic_index_name: "trace_log"
+  elastic_index_json: "https://raw.githubusercontent.com/parrisma/AI-Intuition/<current-git-branch>/journey11/src/lib/aitrace/elastic_index_trace_log.json"

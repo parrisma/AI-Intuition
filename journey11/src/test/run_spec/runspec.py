@@ -62,6 +62,18 @@ class RunSpec:
                                  getattr(cls._settings, "{}_kafka_yml".format(cls._spec)))
 
     @classmethod
+    def elastic_settings_yaml(cls) -> str:
+        return "{}/{}/{}".format(getattr(cls._settings, "{}_git_root".format(cls._spec)),
+                                 getattr(cls._settings, "{}_branch".format(cls._spec)),
+                                 getattr(cls._settings, "{}_elastic_yml".format(cls._spec)))
+
+    @classmethod
+    def trace_settings_yaml(cls) -> str:
+        return "{}/{}/{}".format(getattr(cls._settings, "{}_git_root".format(cls._spec)),
+                                 getattr(cls._settings, "{}_branch".format(cls._spec)),
+                                 getattr(cls._settings, "{}_trace_yml".format(cls._spec)))
+
+    @classmethod
     def get_spec(cls) -> str:
         return cls._spec
 

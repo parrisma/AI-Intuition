@@ -25,21 +25,16 @@ class ElasticFormatter(Formatter):
 
         @staticmethod
         def _elastic_time_format(dt: datetime) -> str:
-            return dt.strftime('%Y-%m-%dT%H:%M:%S%z')
+            return dt.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
     _jflds = ["session_uuid", "type_uuid", "timestamp", "message"]
-    _level_map = {"CRITICAL": "a94a495f-d2e3-4545-9ae5-b95214fba933",
-                  50: "a94a495f-d2e3-4545-9ae5-b95214fba933",
-                  "ERROR": "6dfdfa2c-1f92-48bf-b5ab-b8e9391e23b4",
-                  40: "6dfdfa2c-1f92-48bf-b5ab-b8e9391e23b4",
-                  "WARNING": "0d8d29c2-042a-4e3e-b157-f42af972e0bb",
-                  30: "0d8d29c2-042a-4e3e-b157-f42af972e0bb",
-                  "INFO": "2c9678b2-d156-4847-b5aa-d460fe431f63",
-                  20: "2c9678b2-d156-4847-b5aa-d460fe431f63",
-                  "DEBUG": "9d89fba7-6744-4179-8013-08007249c275",
-                  10: "9d89fba7-6744-4179-8013-08007249c275",
-                  "NOTSET": "ff4fcc6a-3b5d-46fd-a850-b0c326bbbfd2",
-                  0: "ff4fcc6a-3b5d-46fd-a850-b0c326bbbfd2",
+    # Allow cross platform consistency of logging levels
+    _level_map = {50: "CRITICAL",
+                  40: "ERROR",
+                  30: "WARNING",
+                  20: "INFO",
+                  10: "DEBUG",
+                  0: "NOTSET"
                   }
 
     def __init__(self,
@@ -51,7 +46,7 @@ class ElasticFormatter(Formatter):
         :param level_map: Dictionary of log level numbers to string equivelent : None => use str(level_no)
         :param json_field_names: Names of 4 json fields in order [session_uuid, type_uuid, timestamp, message].
                                  None implies use the field names as show in this desription
-        :param date_formatter: Takes a datetime and return as string - if None fmt = %Y-%m-%dT%H:%M:%S%z
+        :param date_formatter: Takes a datetime and return as string - if None fmt = %Y-%m-%dT%H:%M:%S.%f%z
         """
         super(ElasticFormatter, self).__init__()
 

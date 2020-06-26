@@ -4,21 +4,23 @@ from elasticsearch import Elasticsearch
 
 class ElasticHandler(Handler):
     def __init__(self,
-                 elastic_server_utl: str,
+                 elastic_connection: Elasticsearch,
                  log_index_name: str):
         """
         Connect to given Elastic instance.
-        :param elastic_server_utl: The URL of the Elastic server e.g. http://localhost:9200
+        :param elastic_connection: An elastic search connection object
         :param log_index_name: The name of the elastic index to write logs to
         """
         Handler.__init__(self)
-        self._es = Elasticsearch([elastic_server_utl])
+        self._es = elastic_connection
         self._es_index = log_index_name
         return
 
     def emit(self, record):
         msg = self.formatter.format(record=record)
-        self._es.create(index=self._es_index,
-                        body=msg,
-                        id=1)
+        try:
+            res = self._es.index(index=self._es_index,
+                                 body=msg)
+        except Exception as e:
+            raise RuntimeError("Failed to write log to Elastic")
         return

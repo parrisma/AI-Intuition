@@ -1,7 +1,7 @@
 import unittest
 import logging
 import numpy as np
-from src.lib.aitrace.trace import Trace
+from journey11.src.lib.aitrace.trace import Trace
 from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.main.simple.simplesrcsinkproxy import SimpleSrcSinkProxy
 from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkPingNotification

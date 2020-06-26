@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Callable, IO
 from datetime import datetime
 import pytz
 from elasticsearch import Elasticsearch
@@ -28,18 +28,19 @@ class ESUtil:
         return cls._es[connection_str]
 
     @staticmethod
-    def load_json(filename: str) -> str:
+    def load_json(json_stream: Callable[[], IO[str]]) -> str:
         """
-        Read the given JSON file and return contents as string
-        :param filename: The Json file to load.
+        Read the given JSON stream and return contents as string
+        :param json_stream: A callable that returns an open stream to the YAML source
         :return: The contents of the Json file as string.
         """
         res = str()
         try:
-            for l in open(filename, "r"):
-                res += l
+            _stream = json_stream()
+            for _line in _stream:
+                res += _line.decode("utf-8")
         except Exception as e:
-            raise RuntimeError("Unable to open json file : {}".format(filename))
+            raise RuntimeError("Unable to read json from given stream")
         return res
 
     @staticmethod
@@ -54,16 +55,16 @@ class ESUtil:
     @staticmethod
     def create_index_from_json(es: Elasticsearch,
                                idx_name: str,
-                               json_filename: str) -> bool:
+                               json_stream: Callable[[], IO[str]]) -> bool:
         """
 
         :param es: An valid elastic search connection
         :param idx_name: The name of the index to create
-        :param json_filename: The json file that contains the index definition
+        :param json_stream: A callable that returns an open stream to the YAML source
         :return: True if created or if index already exists
         """
         try:
-            body = ESUtil.load_json(json_filename)
+            body = ESUtil.load_json(json_stream)
 
             # Exception will indicate index create error.
             _ = es.indices.create(index=idx_name,
@@ -72,5 +73,5 @@ class ESUtil:
                                   ignore=[400, 404])
         except Exception as e:
             raise RuntimeError(
-                "Failed to create elastic index [{}] from Json file [{}}".format(idx_name, json_filename))
+                "Failed to create elastic index [{}] from Json stream".format(idx_name))
         return True
