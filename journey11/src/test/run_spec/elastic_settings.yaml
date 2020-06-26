@@ -9,3 +9,4 @@ header:
 default:
   host: "<current-host>"
   port: "9200"
+  trace_log_index_name: "trace_log"
