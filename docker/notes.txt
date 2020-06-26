@@ -1,8 +1,0 @@
- cd "C:\Program Files\Docker\Docker\"
- ./DockerCli.exe -SwitchDaemon
-
-  //d/Dev/devroot:/var/data
-
- docker run -it -v //d/Dev/devroot:/var/data parrisma/py-env:1.0
-
- protoc --proto_path=. --python_out=. ./state.proto
