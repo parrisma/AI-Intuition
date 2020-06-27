@@ -35,6 +35,10 @@ class EnvBootstrap:
         return
 
     @classmethod
+    def get_context(cls) -> Dict:
+        return cls._context
+    
+    @classmethod
     def _bootstrap(cls) -> None:
         """
         Execute the environment builders.

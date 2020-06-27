@@ -27,7 +27,7 @@ class ElasticFormatter(Formatter):
         def _elastic_time_format(dt: datetime) -> str:
             return dt.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
-    _jflds = ["session_uuid", "type_uuid", "timestamp", "message"]
+    _jflds = ["session_uuid", "level", "timestamp", "message"]
     # Allow cross platform consistency of logging levels
     _level_map = {50: "CRITICAL",
                   40: "ERROR",
@@ -43,9 +43,9 @@ class ElasticFormatter(Formatter):
                  date_formatter: ElasticDateFormatter = None):
         """
         Boostrap Elastic Log Formatter
-        :param level_map: Dictionary of log level numbers to string equivelent : None => use str(level_no)
+        :param level_map: Dictionary of log level numbers to string equivalent : None => use str(level_no)
         :param json_field_names: Names of 4 json fields in order [session_uuid, type_uuid, timestamp, message].
-                                 None implies use the field names as show in this desription
+                                 None implies use the field names as show in this description
         :param date_formatter: Takes a datetime and return as string - if None fmt = %Y-%m-%dT%H:%M:%S.%f%z
         """
         super(ElasticFormatter, self).__init__()
@@ -95,6 +95,6 @@ class ElasticFormatter(Formatter):
         sess_n = record.name
         type_n = self._translate_level_no(record.levelno)
         trace_date = self._date_formatter.format(record.created)
-        message = record.msg  # json.dumps(record.msg)  - ensure special characters are escaped eg ' & "
+        message = json.dumps(record.msg)[1:-1]  # ensure special characters are escaped eg ' & "
         json_msg = self._fmt.format(sess_n, type_n, trace_date, message)
         return json_msg

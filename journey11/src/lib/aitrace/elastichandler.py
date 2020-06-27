@@ -21,6 +21,8 @@ class ElasticHandler(Handler):
         try:
             res = self._es.index(index=self._es_index,
                                  body=msg)
+            if res.get('result', None) != 'created':
+                raise RuntimeError("Bad Elastic return status [{}]".format(str(res)))
         except Exception as e:
-            raise RuntimeError("Failed to write log to Elastic")
+            raise RuntimeError("Failed to write log to Elastic with exception [{}]".format(str(e)))
         return

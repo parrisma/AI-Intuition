@@ -1,6 +1,7 @@
-from typing import Dict, Callable, IO
+from typing import Dict, Callable, IO, List
 from datetime import datetime
 import pytz
+import re
 from elasticsearch import Elasticsearch
 
 
@@ -9,6 +10,8 @@ class ESUtil:
     _es: Dict[str, Elasticsearch]
 
     _es = dict()
+    _ALL = 10000
+    _COUNT = 0
 
     @classmethod
     def get_connection(cls,
@@ -44,6 +47,23 @@ class ESUtil:
         return res
 
     @staticmethod
+    def json_insert_args(json_source: str,
+                         **kwargs) -> str:
+        """
+        Replace all parameters in kwargs with name that matches arg<999> with the value of the parameter
+        where the marker in the source json is of the form <0> = arg0, <1> = arg1 etc
+        :param json_source: The Json source to do parameter insertion on
+        :param kwargs: arbitrary arguments to insert that match pattern arg0, arg1, arg2, ...
+        :return: Source json with the arguments substituted
+        """
+        arg_pattern = re.compile("^arg[0-9]+$")
+        for k, v in kwargs.items():
+            if arg_pattern.search(k):
+                repl_re = "(<{}>)".format(k)
+                json_source = re.sub(repl_re, v, json_source)
+        return json_source
+
+    @staticmethod
     def datetime_in_elastic_time_format(dt: datetime) -> str:
         """
         Return a datetime in format to be written to elastic as timezone aware
@@ -58,7 +78,7 @@ class ESUtil:
                                json_stream: Callable[[], IO[str]]) -> bool:
         """
 
-        :param es: An valid elastic search connection
+        :param es: An open elastic search connection
         :param idx_name: The name of the index to create
         :param json_stream: A callable that returns an open stream to the YAML source
         :return: True if created or if index already exists
@@ -75,3 +95,31 @@ class ESUtil:
             raise RuntimeError(
                 "Failed to create elastic index [{}] from Json stream".format(idx_name))
         return True
+
+    @staticmethod
+    def run_search(es: Elasticsearch,
+                   idx_name: str,
+                   json_query: str,
+                   **kwargs) -> List[Dict]:
+        """
+
+        :param es: An open elastic search connection
+        :param idx_name: The name of the index to execute search on
+        :param json_query: The Json query to run
+        :param kwargs: arguments to the json_query of the form arg0='value 0', arg1='value 1' .. argn='value n'
+                       where the argument values will be substituted into the json query before it is executed.
+                       The raw query { x: { y: <arg0> } } will have <arg0> fully replaced with the corresponding
+                       kwargs value supplied for all arg0..argn. Where there are multiple occurrences of any <argn>
+                       all occurrences will be replaced.
+        :return: Raise an exception on error
+        """
+        try:
+            json_query_to_execute = ESUtil.json_insert_args(json_source=json_query, **kwargs)
+            # Exception will indicate search error.
+            res = es.search(index=idx_name,
+                            body=json_query_to_execute,
+                            size=ESUtil._ALL)
+        except Exception as e:
+            raise RuntimeError(
+                "Failed to execute query [{}] on Index [{}]".format(json_query, idx_name))
+        return list(res['hits']['hits'])

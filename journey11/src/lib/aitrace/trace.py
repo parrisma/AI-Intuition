@@ -12,7 +12,8 @@ class Trace:
     _console_handler: logging.Handler
     _elastic_handler: logging.Handler
 
-    _CONSOLE_FORMATTER = logging.Formatter("%(asctime)s — %(levelname)s — %(message)s", datefmt='%Y-%m-%dT%H:%M:%S%z')
+    _CONSOLE_FORMATTER = logging.Formatter("%(asctime)s — %(levelname)s — %(message)s",
+                                           datefmt='%Y-%m-%dT%H:%M:%S%z')
     _ELASTIC_FORMATTER = ElasticFormatter()
     _logger = None
     _console_handler = None
