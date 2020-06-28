@@ -23,7 +23,7 @@
       "notification_type_uuid": {
         "type": "text"
       },
-      "payload_uuid": {
+      "work_ref_uuid": {
         "type": "text"
       }
     }
