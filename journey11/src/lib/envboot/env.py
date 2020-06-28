@@ -4,6 +4,7 @@ from journey11.src.lib.namegen.namegen import NameGen
 from journey11.src.lib.aitrace.trace import Trace
 from journey11.src.lib.elastic.elasticenvbuilder import ElasticEnvBuilder
 from journey11.src.lib.aitrace.traceelasticenvbuilder import TraceElasticEnvBuilder
+from journey11.src.lib.kpubsub.kpsenvbuilder import KPSEnvBuilder
 
 
 class EnvBootstrap:
@@ -37,7 +38,7 @@ class EnvBootstrap:
     @classmethod
     def get_context(cls) -> Dict:
         return cls._context
-    
+
     @classmethod
     def _bootstrap(cls) -> None:
         """
@@ -46,6 +47,7 @@ class EnvBootstrap:
         """
         ElasticEnvBuilder().execute(cls._context)
         TraceElasticEnvBuilder().execute(cls._context)
+        KPSEnvBuilder().execute(cls._context)
         return
 
     @classmethod
