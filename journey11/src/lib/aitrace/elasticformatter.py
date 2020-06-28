@@ -1,31 +1,11 @@
-from abc import ABC, abstractmethod
 from datetime import datetime
-from logging import Formatter
+from logging import Formatter, LogRecord
 from typing import Dict, List
-import pytz
+from journey11.src.lib.elastic.esutil import ESUtil
 import json
 
 
 class ElasticFormatter(Formatter):
-    class ElasticDateFormatter(ABC):
-
-        @abstractmethod
-        def format(self, dtm) -> str:
-            pass
-
-    class DefaultElasticDateFormatter(ElasticDateFormatter):
-
-        def format(self, dtm) -> str:
-            if isinstance(dtm, float):
-                dtm = datetime.fromtimestamp(dtm)
-            elif not isinstance(dtm, datetime):
-                raise ValueError(
-                    "Log created date must be supplied as float (timestamp) or datetime not {}".format(str(type(dtm))))
-            return self._elastic_time_format(pytz.utc.localize(dtm))
-
-        @staticmethod
-        def _elastic_time_format(dt: datetime) -> str:
-            return dt.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
     _jflds = ["session_uuid", "level", "timestamp", "message"]
     # Allow cross platform consistency of logging levels
@@ -40,7 +20,7 @@ class ElasticFormatter(Formatter):
     def __init__(self,
                  level_map: Dict = None,
                  json_field_names: List = None,
-                 date_formatter: ElasticDateFormatter = None):
+                 date_formatter: ESUtil.ElasticDateFormatter = None):
         """
         Boostrap Elastic Log Formatter
         :param level_map: Dictionary of log level numbers to string equivalent : None => use str(level_no)
@@ -51,15 +31,17 @@ class ElasticFormatter(Formatter):
         super(ElasticFormatter, self).__init__()
 
         if json_field_names is None or len(json_field_names) == 0:
-            self.json_fields = self._jflds
+            self._json_fields = self._jflds
         else:
-            self.json_fields = json_field_names
+            self._json_fields = json_field_names
 
-        self._fmt = '{{{{"{}":"{{}}","{}":"{{}}","{}":"{{}}","{}":"{{}}"}}}}'.format(self._jflds[0], self._jflds[1],
-                                                                                     self._jflds[2], self._jflds[3])
+        self._fmt = '{{{{"{}":"{{}}","{}":"{{}}","{}":"{{}}","{}":"{{}}"}}}}'.format(self._json_fields[0],
+                                                                                     self._json_fields[1],
+                                                                                     self._json_fields[2],
+                                                                                     self._json_fields[3])
 
         if date_formatter is None:
-            self._date_formatter = ElasticFormatter.DefaultElasticDateFormatter()
+            self._date_formatter = ESUtil.DefaultElasticDateFormatter()
         else:
             self._date_formatter = date_formatter
 
@@ -86,11 +68,12 @@ class ElasticFormatter(Formatter):
             res = str(level_no)
         return res
 
-    def format(self, record):
+    def format(self,
+               record: LogRecord) -> str:
         """
         Extract Record (name, level, timestamp and message) and format as json ready to be written to elastic DB
         :param record: The logging record to parse
-        :return: The log entry as JSON
+        :return: The log entry as JSON string
         """
         sess_n = record.name
         type_n = self._translate_level_no(record.levelno)

@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
-import logging
 import kpubsubai
 from journey11.src.interface.capability import Capability
+from journey11.src.lib.envboot.env import Env
 from src.lib.aitrace.trace import Trace
 from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.main.simple.simplecapability import SimpleCapability
@@ -14,17 +14,17 @@ class TestCapability(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        Trace()
+        Env()
 
     def test_simple(self):
-        logging.info("Capability Test: Case 1")
+        Trace.log().info("Capability Test: Case 1")
         capability_name = "DummyCapability1"
         test_capability = SimpleCapability(uuid=UniqueRef().ref, capability_name=capability_name)
         self.assertEqual(capability_name, test_capability.value())
         return
 
     def test_equality_same_type(self):
-        logging.info("Capability Test: Case 2")
+        Trace.log().info("Capability Test: Case 2")
         capability_name_one = "DummyCapability1"
         capability_name_two = "DummyCapability2"
         test_capability_1 = SimpleCapability(uuid=UniqueRef().ref, capability_name=capability_name_one)
@@ -35,7 +35,7 @@ class TestCapability(unittest.TestCase):
         return
 
     def test_equality_diff_type(self):
-        logging.info("Capability Test: Case 3")
+        Trace.log().info("Capability Test: Case 3")
         capability_name_one = "DummyCapability1"
         test_capability_1 = SimpleCapability(uuid=UniqueRef().ref, capability_name=capability_name_one)
         self.assertEqual(True, test_capability_1 != capability_name_one)
@@ -46,7 +46,7 @@ class TestCapability(unittest.TestCase):
         """
         Test the equivalency factor calc.
         """
-        logging.info("Capability Test: Case 4")
+        Trace.log().info("Capability Test: Case 4")
         cap1 = SimpleCapability(uuid=UniqueRef().ref, capability_name="Cap_one")
         cap2 = SimpleCapability(uuid=UniqueRef().ref, capability_name="Cap_two")
         cap3 = SimpleCapability(uuid=UniqueRef().ref, capability_name="Cap_three")
@@ -96,7 +96,7 @@ class TestCapability(unittest.TestCase):
                     np.random.shuffle(reqd)
                 if given is not None:
                     np.random.shuffle(given)
-                logging.info("Required [{}]  Given [{}] expected {}".format(reqd, given, factor))
+                Trace.log().info("Required [{}]  Given [{}] expected {}".format(reqd, given, factor))
                 self.assertEqual(factor,
                                  Capability.equivalence_factor(required_capabilities=reqd, given_capabilities=given))
         return
@@ -114,12 +114,11 @@ class TestCapability(unittest.TestCase):
         Generate 1000 random capabilities and ensure that all serialize/deserialize correctly.
         The requires the containerized test Kafka Service to be running locally.
         """
-        logging.info("Capability Test: Case 5")
+        Trace.log().info("Capability Test: Case 5")
         expected = list()
         actual = list()
         expected, actual = KPuBsubUtil.kpubsub_test(msg_factory=self._factory,
-                                                    num_msg=50,
-                                                    msg_map_url=kpubsubai.MSG_MAP_URL)
+                                                    num_msg=50)
         self.assertTrue(len(expected) == len(actual))
         for e, a in zip(expected, actual):
             self.assertEqual(e, a)

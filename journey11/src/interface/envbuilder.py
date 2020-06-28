@@ -1,18 +1,28 @@
-from typing import Dict
 from abc import ABC, abstractmethod
 from journey11.src.lib.purevirtual import purevirtual
 
 
 class EnvBuilder(ABC):
+    #
+    # These are in effect global variables - so minimise at all cost adding general variables or state to
+    # the context. The intention is just to hold environment specific objects that are shared state of
+    # the entire project - i.e. Singleton Class Instances.
+    #
+    EnvName = 'EnvName'
+    EnvSessionUUID = 'EnvSessionUUID'
+    TraceContext = "Trace"
+    TraceReport = "TraceReporter"
+    RunSpecificationContext = 'RunSpecification'
     ElasticDbConnectionContext = 'ElasticConnection'
+    KafkaPubSubContext = 'KafkaPubSub'
 
     @abstractmethod
     @purevirtual
     def execute(self,
-                context: Dict) -> None:
+                purge: bool) -> None:
         """
         Execute actions to build the element of the environment owned by this builder
-        :param context: Dictionary of current environment context that can be used or added to by builder
+        :param purge: If true eliminate any existing context and data in the environment
         :return: None: Implementation should throw and exception to indicate failure
         """
         pass

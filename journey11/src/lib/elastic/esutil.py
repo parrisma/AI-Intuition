@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Dict, Callable, IO, List
 from datetime import datetime
 import pytz
@@ -12,6 +13,26 @@ class ESUtil:
     _es = dict()
     _ALL = 10000
     _COUNT = 0
+
+    class ElasticDateFormatter(ABC):
+
+        @abstractmethod
+        def format(self, dtm) -> str:
+            pass
+
+    class DefaultElasticDateFormatter(ElasticDateFormatter):
+
+        def format(self, dtm) -> str:
+            if isinstance(dtm, float):
+                dtm = datetime.fromtimestamp(dtm)
+            elif not isinstance(dtm, datetime):
+                raise ValueError(
+                    "Log created date must be supplied as float (timestamp) or datetime not {}".format(str(type(dtm))))
+            return self._elastic_time_format(pytz.utc.localize(dtm))
+
+        @staticmethod
+        def _elastic_time_format(dt: datetime) -> str:
+            return dt.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
     @classmethod
     def get_connection(cls,
@@ -97,6 +118,24 @@ class ESUtil:
         return True
 
     @staticmethod
+    def delete_index(es: Elasticsearch,
+                     idx_name: str) -> bool:
+        """
+
+        :param es: An open elastic search connection
+        :param idx_name: The name of the index to delete
+        :return: True if deleted or is not there
+        """
+        try:
+            # Exception will indicate index create error.
+            _ = es.indices.delete(index=idx_name,
+                                  ignore=[400, 404])
+        except Exception as e:
+            raise RuntimeError(
+                "Failed to delete elastic index [{}]`".format(idx_name))
+        return True
+
+    @staticmethod
     def run_search(es: Elasticsearch,
                    idx_name: str,
                    json_query: str,
@@ -111,7 +150,7 @@ class ESUtil:
                        The raw query { x: { y: <arg0> } } will have <arg0> fully replaced with the corresponding
                        kwargs value supplied for all arg0..argn. Where there are multiple occurrences of any <argn>
                        all occurrences will be replaced.
-        :return: Raise an exception on error
+        :return: A list of the resulting documents
         """
         try:
             json_query_to_execute = ESUtil.json_insert_args(json_source=json_query, **kwargs)
@@ -123,3 +162,50 @@ class ESUtil:
             raise RuntimeError(
                 "Failed to execute query [{}] on Index [{}]".format(json_query, idx_name))
         return list(res['hits']['hits'])
+
+    @staticmethod
+    def run_count(es: Elasticsearch,
+                  idx_name: str,
+                  json_query: str,
+                  **kwargs) -> int:
+        """
+        Get the number of records that match the query on the given index
+        :param es: An open elastic search connection
+        :param idx_name: The name of the index to execute count on
+        :param json_query: The Json query to run
+        :param kwargs: arguments to the json_query of the form arg0='value 0', arg1='value 1' .. argn='value n'
+                       where the argument values will be substituted into the json query before it is executed.
+                       The raw query { x: { y: <arg0> } } will have <arg0> fully replaced with the corresponding
+                       kwargs value supplied for all arg0..argn. Where there are multiple occurrences of any <argn>
+                       all occurrences will be replaced.
+        :return: The number of matching documents
+        """
+        try:
+            json_query_to_execute = ESUtil.json_insert_args(json_source=json_query, **kwargs)
+            # Exception will indicate search error.
+            res = es.count(index=idx_name,
+                           body=json_query_to_execute)
+        except Exception as e:
+            raise RuntimeError(
+                "Failed to execute query [{}] on Index [{}]".format(json_query, idx_name))
+        return int(res['count'])
+
+    @staticmethod
+    def write_doc_to_index(es: Elasticsearch,
+                           idx_name: str,
+                           document_as_json: str) -> None:
+        """
+        Apply the associated formatter to the given LogRecord and persist it to Elastic
+        :param es: An open elastic search connection
+        :param idx_name: The name of the index to add the document to
+        :param document_as_json: The document (as json) to add to the index
+        """
+        try:
+            res = es.index(index=idx_name,
+                           body=document_as_json)
+            if res.get('result', None) != 'created':
+                raise RuntimeError(
+                    "Index [{}] bad elastic return status when adding document[{}]".format(idx_name, str(res)))
+        except Exception as e:
+            raise RuntimeError("Elastic failed to document to index [{}] with exception [{}]".format(idx_name, str(e)))
+        return

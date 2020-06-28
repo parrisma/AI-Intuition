@@ -1,7 +1,9 @@
+import time
 import unittest
-import logging
 import numpy as np
 from journey11.src.interface.capability import Capability
+from journey11.src.lib.envboot.env import Env
+from journey11.src.lib.envboot.env import EnvBuilder
 from journey11.src.lib.aitrace.trace import Trace
 from journey11.src.lib.uniqueref import UniqueRef
 from journey11.src.main.simple.simplecapability import SimpleCapability
@@ -12,10 +14,14 @@ from journey11.src.test.gibberish.gibberish import Gibberish
 
 
 class TestSimpleSrcSinkPing(unittest.TestCase):
+    # Annotation
+    _env: Env
+    _trace: Trace
 
     @classmethod
     def setUpClass(cls):
-        Trace()
+        cls._env = Env(purge=False)
+        cls._trace = cls._env.get_context()[EnvBuilder.TraceContext]
 
     @staticmethod
     def _capabilities() -> [Capability]:
@@ -42,10 +48,11 @@ class TestSimpleSrcSinkPing(unittest.TestCase):
         Generate random SrcSinkPings and ensure that all serialize/deserialize correctly.
         The requires the containerized test Kafka Service to be running locally.
         """
-        logging.info("SimpleSrcSinkPing Test: Case 1")
+        self._trace.log().info("SimpleSrcSinkPing Test: Case 1")
         expected = list()
         actual = list()
-        expected, actual = KPuBsubUtil.kpubsub_test(msg_factory=self._factory,
+        expected, actual = KPuBsubUtil.kpubsub_test(self._env.get_kps(),
+                                                    msg_factory=self._factory,
                                                     num_msg=50)
         self.assertTrue(len(expected) == len(actual))
         for e, a in zip(expected, actual):

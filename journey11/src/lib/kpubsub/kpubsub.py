@@ -77,9 +77,9 @@ class KPubSub:
 
         return kcons
 
-    def register_message_map(self,
-                             native_type: Type,
-                             protobuf_type: Type) -> None:
+    def register_message_mapping(self,
+                                 native_type: Type,
+                                 protobuf_type: Type) -> None:
         """
         Register a mapping between a general 'user' object and the protobuf version.
         :param native_type: The type of the user object
@@ -90,6 +90,13 @@ class KPubSub:
             "Kafka PubSub - created message type map entry native:{} <-> protobuf:{}".format(str(native_type),
                                                                                              str(protobuf_type)))
         return
+
+    def get_message_type_map(self) -> MessageTypeMap:
+        """
+        Get the message type map - which maps native to protobuf objects & associated UUID
+        :return: Message Type Map
+        """
+        return self._message_map
 
     def subscribe(self,
                   topic: str,

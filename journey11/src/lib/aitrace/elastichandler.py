@@ -1,22 +1,29 @@
-from logging import Handler
+from logging import Handler, LogRecord
 from elasticsearch import Elasticsearch
 
 
 class ElasticHandler(Handler):
+    _es: Elasticsearch
+
     def __init__(self,
-                 elastic_connection: Elasticsearch,
-                 log_index_name: str):
+                 es: Elasticsearch,
+                 trace_log_index_name: str):
         """
         Connect to given Elastic instance.
-        :param elastic_connection: An elastic search connection object
-        :param log_index_name: The name of the elastic index to write logs to
+        :param es: An elastic search connection object
+        :param trace_log_index_name: The name of the elastic index to write logs to
         """
         Handler.__init__(self)
-        self._es = elastic_connection
-        self._es_index = log_index_name
+        self._es = es
+        self._es_index = trace_log_index_name
         return
 
-    def emit(self, record):
+    def emit(self,
+             record: LogRecord) -> None:
+        """
+        Apply the associated formatter to the given LogRecord and persist it to Elastic
+        :param record: The LogRecord to format and persist in elastic
+        """
         msg = self.formatter.format(record=record)
         try:
             res = self._es.index(index=self._es_index,

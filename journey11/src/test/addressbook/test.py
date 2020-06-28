@@ -1,9 +1,9 @@
 import unittest
-import logging
 import time
 from pubsub import pub
 from journey11.src.lib.addressbook import AddressBook
-from src.lib.aitrace.trace import Trace
+from journey11.src.lib.envboot.env import Env
+from journey11.src.lib.aitrace.trace import Trace
 from journey11.src.test.agent.dummysrcsink import DummySrcSink
 from journey11.src.main.simple.simplecapability import SimpleCapability
 
@@ -13,10 +13,10 @@ class TestAddressBook(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        Trace()
+        Env()
 
     def setUp(self) -> None:
-        logging.info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestAddressBook._id))
+        Trace.log().info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestAddressBook._id))
         TestAddressBook._id += 1
         return
 
@@ -105,7 +105,7 @@ class TestAddressBook(unittest.TestCase):
 
         for scenario in scenarios:
             case_num, caps, threshold, expected, n = scenario
-            logging.info("test_get_with_capabilities_partial_matches case {}".format(case_num))
+            Trace.log().info("test_get_with_capabilities_partial_matches case {}".format(case_num))
             res = test_address_book.get_with_capabilities(required_capabilities=caps,
                                                           match_threshold=threshold,
                                                           n=n
@@ -117,7 +117,7 @@ class TestAddressBook(unittest.TestCase):
                 self.assertEqual(len(expected), len(res))  # Should have same num results.
                 for i in range(len(expected)):  # Order dependent equality.
                     self.assertEqual(expected[i], res[i])
-            logging.info("case {} passed OK".format(case_num))
+            Trace.log().info("case {} passed OK".format(case_num))
 
         return
 
@@ -161,14 +161,16 @@ class TestAddressBook(unittest.TestCase):
         ss_last = ss_list[-1]
         self.assertEqual(None,
                          test_address_book.get_with_capabilities(ss_last.capabilities, max_age_in_seconds=delay - 0.1))
-        self.assertEqual(ss_last, test_address_book.get_with_capabilities(ss_last.capabilities, max_age_in_seconds=100)[0])
+        self.assertEqual(ss_last,
+                         test_address_book.get_with_capabilities(ss_last.capabilities, max_age_in_seconds=100)[0])
 
         # Add one more and make sure it comes back
         ss_new = DummySrcSink("DummySrcSink-new")
         test_address_book.update(ss_new)
         self.assertEqual(ss_new,
                          test_address_book.get_with_capabilities(ss_new.capabilities, max_age_in_seconds=None)[0])
-        self.assertEqual(ss_new, test_address_book.get_with_capabilities(ss_new.capabilities, max_age_in_seconds=0.5)[0])
+        self.assertEqual(ss_new,
+                         test_address_book.get_with_capabilities(ss_new.capabilities, max_age_in_seconds=0.5)[0])
         return
 
 

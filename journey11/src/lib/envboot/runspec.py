@@ -3,116 +3,93 @@
 #
 from typing import List
 import subprocess
-import logging
+import os
 from journey11.src.lib.transformer import Transformer
 from journey11.src.lib.settings import Settings
 from journey11.src.lib.filestream import FileStream
 
+
 # todo: bootstrap from a YML file.
 
-
-"""
-    Singleton - setting for running in current context
-"""
-
-
 class RunSpec:
+    # Annotation
+    _settings: Settings
+    _spec_file: str
+    _spec: str
+
+    SPECS_FILE = "specs.yml"
     DEFAULT = "default"
     RUN_SPEC_PATH_ENV_VAR = "BUILD_SPEC_PATH"
-    SPECS_FILE = "specs.yml"
     SPEC_TO_USE_ENV_VAR = "BUILD_SPEC_TO_USE"
     M_BRANCH = "_branch"
     M_CURR_BRANCH = "_current_git_branch"
-    _settings = None
-    _spec = DEFAULT
-    _running = False
 
-    @classmethod
-    def __init__(cls,
-                 bootstrap_yaml_filename: str,
-                 throw_if_already_running: bool = True):
-        if not RunSpec._running:
-            cls._git_current_branch()
-            cls._settings = Settings(settings_yaml_stream=FileStream(bootstrap_yaml_filename),
-                                     bespoke_transforms=[cls.current_branch_transformer()])
-            cls._spec = cls.DEFAULT
-        else:
-            if throw_if_already_running:
-                raise RuntimeError("RunSpec is singleton and is already established cannot set new RunSpec")
-            else:
-                logging.info("RunSpec is already running, attempt to __init__ again ignored.")
+    def __init__(self,
+                 bootstrap_yaml_filename: str):
+        if not os.path.exists(bootstrap_yaml_filename):
+            raise ValueError("Run spec bootstrap file does not exist {}".format(bootstrap_yaml_filename))
+
+        self._git_current_branch()
+        self._settings = Settings(settings_yaml_stream=FileStream(bootstrap_yaml_filename),
+                                  bespoke_transforms=[self.current_branch_transformer()])
+        self._spec = self.DEFAULT
         return
 
-    @classmethod
-    def is_running(cls) -> bool:
-        return cls._running
+    def branch(self) -> str:
+        return getattr(self._settings, "{}{}".format(self._spec, self.M_BRANCH))
 
-    @classmethod
-    def branch(cls) -> str:
-        return getattr(cls._settings, "{}{}".format(cls._spec, cls.M_BRANCH))
+    def current_branch(self) -> str:
+        return getattr(self, "{}".format(self.M_CURR_BRANCH))
 
-    @classmethod
-    def current_branch(cls) -> str:
-        return getattr(cls, "{}".format(cls.M_CURR_BRANCH))
+    def pubsub_settings_yaml(self) -> str:
+        return "{}/{}/{}".format(getattr(self._settings, "{}_git_root".format(self._spec)),
+                                 getattr(self._settings, "{}_branch".format(self._spec)),
+                                 getattr(self._settings, "{}_kafka_yml".format(self._spec)))
 
-    @classmethod
-    def pubsub_settings_yaml(cls) -> str:
-        return "{}/{}/{}".format(getattr(cls._settings, "{}_git_root".format(cls._spec)),
-                                 getattr(cls._settings, "{}_branch".format(cls._spec)),
-                                 getattr(cls._settings, "{}_kafka_yml".format(cls._spec)))
+    def elastic_settings_yaml(self) -> str:
+        return "{}/{}/{}".format(getattr(self._settings, "{}_git_root".format(self._spec)),
+                                 getattr(self._settings, "{}_branch".format(self._spec)),
+                                 getattr(self._settings, "{}_elastic_yml".format(self._spec)))
 
-    @classmethod
-    def elastic_settings_yaml(cls) -> str:
-        return "{}/{}/{}".format(getattr(cls._settings, "{}_git_root".format(cls._spec)),
-                                 getattr(cls._settings, "{}_branch".format(cls._spec)),
-                                 getattr(cls._settings, "{}_elastic_yml".format(cls._spec)))
+    def trace_settings_yaml(self) -> str:
+        return "{}/{}/{}".format(getattr(self._settings, "{}_git_root".format(self._spec)),
+                                 getattr(self._settings, "{}_branch".format(self._spec)),
+                                 getattr(self._settings, "{}_trace_yml".format(self._spec)))
 
-    @classmethod
-    def trace_settings_yaml(cls) -> str:
-        return "{}/{}/{}".format(getattr(cls._settings, "{}_git_root".format(cls._spec)),
-                                 getattr(cls._settings, "{}_branch".format(cls._spec)),
-                                 getattr(cls._settings, "{}_trace_yml".format(cls._spec)))
+    def get_spec(self) -> str:
+        return self._spec
 
-    @classmethod
-    def get_spec(cls) -> str:
-        return cls._spec
-
-    @classmethod
-    def set_spec(cls,
+    def set_spec(self,
                  spec: str) -> None:
-        if hasattr(cls._settings, spec):
-            if callable(getattr(cls._settings, cls._spec)):
-                cls._spec = spec
+        if hasattr(self._settings, spec):
+            if callable(getattr(self._settings, self._spec)):
+                self._spec = spec
             else:
                 raise ValueError("No such run spec {} has been loaded from the yaml config".format(spec))
         else:
             raise ValueError("No such run spec {} has been loaded from the yaml config".format(spec))
         return
 
-    @classmethod
-    def _git_current_branch(cls):
+    def _git_current_branch(self):
         res = subprocess.check_output("git rev-parse --abbrev-ref HEAD").decode('utf-8')
         if res is None or len(res) == 0:
             res = "Warning cannot establish current git branch"
         else:
-            res = cls._chomp(res)
-        setattr(cls, cls.M_CURR_BRANCH, res)
+            res = self._chomp(res)
+        setattr(self, self.M_CURR_BRANCH, res)
         return
 
-    @classmethod
-    def branch_transformer(cls) -> Transformer.Transform:
+    def branch_transformer(self) -> Transformer.Transform:
         return Transformer.Transform(regular_expression='.*<git-branch>.*',
-                                     transform=lambda s: s.replace('<git-branch>', cls.branch(), 1))
+                                     transform=lambda s: s.replace('<git-branch>', self.branch(), 1))
 
-    @classmethod
-    def current_branch_transformer(cls) -> Transformer.Transform:
+    def current_branch_transformer(self) -> Transformer.Transform:
         return Transformer.Transform(regular_expression='.*<current-git-branch>.*',
-                                     transform=lambda s: s.replace('<current-git-branch>', cls.current_branch(), 1))
+                                     transform=lambda s: s.replace('<current-git-branch>', self.current_branch(), 1))
 
-    @classmethod
-    def setting_transformers(cls) -> List[Transformer.Transform]:
-        return [cls.branch_transformer(),
-                cls.current_branch_transformer()]
+    def setting_transformers(self) -> List[Transformer.Transform]:
+        return [self.branch_transformer(),
+                self.current_branch_transformer()]
 
     @staticmethod
     def _chomp(s: str) -> str:

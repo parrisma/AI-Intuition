@@ -8,10 +8,11 @@ from journey11.src.lib.aitrace.trace import Trace
 from journey11.src.lib.kpubsub.messagetypemap import MessageTypeMap
 from journey11.src.lib.kpubsub.kpubsub import KPubSub
 from journey11.src.lib.uniqueref import UniqueRef
-from journey11.src.lib.webstream import WebStream
 from journey11.src.lib.filestream import FileStream
-from journey11.src.lib.settings import Settings
-from journey11.src.test.run_spec.runspec import RunSpec
+from journey11.src.lib.kpubsub.kpsutil import KPSUtil
+from journey11.src.lib.envboot.env import Env
+from journey11.src.lib.envboot.env import EnvBuilder
+from src.lib.envboot.runspec import RunSpec
 from journey11.src.test.kpubsub.pb_message1_pb2 import PBMessage1
 from journey11.src.test.kpubsub.pb_message2_pb2 import PBMessage2
 from journey11.src.test.kpubsub.message2 import Message2
@@ -23,6 +24,7 @@ class ConsumerListener:
                  name: str,
                  messages: List,
                  release_after: int = None):
+        self._trace = Env().get_trace()
         self._name = name
         self._messages = messages
         self._msg_idx = 0
@@ -42,22 +44,23 @@ class ConsumerListener:
         if msg is None:
             assert ("{} - Expected Message to be passed by name 'msg' to listener, rx'ed {}".format(self._name,
                                                                                                     str(**kwargs)))
-        Trace.log().info("{} - Listener rx'ed message {}".format(self._name, str(msg)))
+        self._trace.log().info("{} - Listener rx'ed message {}".format(self._name, str(msg)))
         self._messages.append(msg)
         self._num_rx = len(self._messages)
         if self._release_after is not None:
-            Trace.log().info("{} of {} messages received".format(str(len(self._messages)), str(self._release_after)))
+            self._trace.log().info(
+                "{} of {} messages received".format(str(len(self._messages)), str(self._release_after)))
             if self._num_rx == self._release_after:
                 self._done = True
-                Trace.log().info("All messages received, release Event wait")
+                self._trace.log().info("All messages received, release Event wait")
                 self._event.set()
         return
 
     def wait_until_all_rx(self):
         if self._num_rx is not None and self._event is not None and not self._done:
-            Trace.log().info("Blocking wait for all messages to be rx'ed by Consumer")
+            self._trace.log().info("Blocking wait for all messages to be rx'ed by Consumer")
             self._event.wait()
-            Trace.log().info("Blocking wait release, all massed rx'ed")
+            self._trace.log().info("Blocking wait release, all massed rx'ed")
         return
 
 
@@ -76,6 +79,7 @@ class ProducerTestClient:
         :param messages: List to which every sent message is added.
         :param msg_factory: Callable that creates new message objects
         """
+        self._trace = Env().get_trace()
         self._num_sent = 0
         self._kps = kps
         self._topic = topic
@@ -91,7 +95,8 @@ class ProducerTestClient:
         msg = self._msg_factory()
         self._messages.append(msg)
         self._num_sent += 1
-        Trace.log().info("{} of {} Messages Published:= {}".format(str(self._num_sent), str(self._num_msg), str(msg)))
+        self._trace.log().info(
+            "{} of {} Messages Published:= {}".format(str(self._num_sent), str(self._num_msg), str(msg)))
         self._kps.publish(topic=self._topic, msg=msg)
         if len(self._messages) < self._num_msg:
             self._runner = threading.Timer(np.random.random() * .5, self)
@@ -106,19 +111,18 @@ class ProducerTestClient:
 
 class KPuBsubUtil:
     @staticmethod
-    def kpubsub_test(msg_factory: Callable[[], Any],
+    def kpubsub_test(kps: KPubSub,
+                     msg_factory: Callable[[], Any],
                      num_msg: int) -> Tuple[List, List]:
         """
         Use message factory to create num_msg messages and send them over Kafka. This verifies the message type
         is correctly set-up to be serialized.
 
         Utility method that can be called by other object test classes to verify serialisation.
-
+        :param kps: Kafka Pub Sub connection
         :param msg_factory: Callable that creates instances of the messages type under test
         :param num_msg: The number of messages to send.
-        :param msg_map_url: The URL of the Message Map YAML.
         """
-        kps = KPuBsubUtil._bootstrap_kpubsub()
         topic = UniqueRef().ref
         sent = list()
         rxed = list()
@@ -131,34 +135,28 @@ class KPuBsubUtil:
         del kps
         return sent, rxed
 
-    @staticmethod
-    def _bootstrap_kpubsub() -> KPubSub:
-        """
-        Create a KPubSub instance
-        :return: a KPubSub instance.
-        """
-        # We expect a Kafka server running the same machine as this test. This can be run up with the Swarm service
-        # or stand along container script that is also part of this project.
-        settings = Settings(settings_yaml_stream=WebStream(RunSpec.pubsub_settings_yaml()),
-                            bespoke_transforms=RunSpec.setting_transformers())
-        hostname, port_id, msg_map_url = settings.default()
-        kps = KPubSub(server=hostname,
-                      port=port_id,
-                      yaml_stream=WebStream(msg_map_url))
-        return kps
-
 
 class TestKPubSub(unittest.TestCase):
+    # Annotation
+    _env: Env
+    _trace: Trace
+    _run_spec: RunSpec
+    _id: int
+
+    # Current Case Id
     _id = 0
 
     @classmethod
     def setUpClass(cls):
-        Trace()
+        cls._env = Env()
+        cls._trace = cls._env.get_trace()
+        cls._run_spec = cls._env.get_context()[EnvBuilder.RunSpecificationContext]
+        cls._run_spec.set_spec("kps")
+        return
 
     def setUp(self) -> None:
-        Trace.log().info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestKPubSub._id))
+        self._trace.log().info("\n\n- - - - - - C A S E  {} - - - - - -\n\n".format(TestKPubSub._id))
         TestKPubSub._id += 1
-        RunSpec.set_spec("kps")
         return
 
     @staticmethod
@@ -174,7 +172,7 @@ class TestKPubSub(unittest.TestCase):
         """
         Test random messages being sent over single topic being consumed by a single consumer in a single group
         """
-        Trace.log().info("Test KPubSub Single Topic Single Group")
+        self._trace.log().info("Test KPubSub Single Topic Single Group")
         expected = list()
         actual = list()
         expected, actual = KPuBsubUtil.kpubsub_test(msg_factory=self.msg_factory,
@@ -190,7 +188,7 @@ class TestKPubSub(unittest.TestCase):
         0.0 and 0.5 seconds, where all messages are pushed to the same topic
 
         """
-        kps = KPuBsubUtil._bootstrap_kpubsub()
+        kps = KPSUtil(**KPSUtil.args_from_run_spec(self._run_spec)).kps()
         topic = UniqueRef().ref  # Topic not seen by kafka before to keep test clean
         group_1 = UniqueRef().ref
         group_2 = UniqueRef().ref
@@ -218,7 +216,7 @@ class TestKPubSub(unittest.TestCase):
         0.0 and 0.5 seconds, where all messages are pushed to the same topic
 
         """
-        kps = KPuBsubUtil._bootstrap_kpubsub()
+        kps = KPSUtil(**KPSUtil.args_from_run_spec(self._run_spec)).kps()
         topic = UniqueRef().ref  # Topic not seen by kafka before to keep test clean
         group = UniqueRef().ref
         messages_sent = list()  # Keep a chronological list of messages sent

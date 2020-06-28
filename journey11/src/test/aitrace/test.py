@@ -4,14 +4,13 @@ import time
 from typing import List, Dict
 from datetime import datetime
 from journey11.src.interface.envbuilder import EnvBuilder
-from journey11.src.lib.envboot.envbootstrap import EnvBootstrap
+from journey11.src.lib.envboot.env import Env
 from journey11.src.lib.aitrace.trace import Trace
 from journey11.src.lib.elastic.esutil import ESUtil
 from journey11.src.lib.uniqueref import UniqueRef
-from journey11.src.lib.webstream import WebStream
-from journey11.src.lib.settings import Settings
 from journey11.src.lib.aitrace.elasticformatter import ElasticFormatter
-from journey11.src.test.run_spec.runspec import RunSpec
+from journey11.src.lib.aitrace.notificationformatter import NotificationFormatter
+from journey11.src.lib.aitrace.tracereport import TraceReport
 
 
 class TestAITrace(unittest.TestCase):
@@ -30,7 +29,8 @@ class TestAITrace(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        EnvBootstrap()
+        cls._env = Env(purge=False)
+        cls._trace = cls._env.get_context()[EnvBuilder.TraceContext]
         return
 
     def test_elastic_formatter(self):
@@ -87,47 +87,81 @@ class TestAITrace(unittest.TestCase):
         self.assertEqual("0=0 2=2 1=1 10=10 2=22 20=<arg20>", actual)
         return
 
-    def test_elastic(self):
+    def test_notification_formatter(self):
+        nf = NotificationFormatter()
+        actual = nf.format(notification_type_uuid="123",
+                           work_ref_uuid="234",
+                           session_uuid="345",
+                           sink_uuid="456",
+                           src_uuid="567",
+                           timestamp=datetime(year=2000, month=6, day=20,
+                                              hour=18, minute=37, second=51, microsecond=67))
+        self.assertEqual(
+            '{"notification_type_uuid":"123","work_ref_uuid":"234","session_uuid":"345","sink_uuid":"456","src_uuid":"567","timestamp":"2000-06-20T18:37:51.000067+0000"}'
+            , actual)
+        return
+
+    def test_notification_log_write_to_elastic(self):
+        """
+        Write 100 random notification log events to elastic
+        """
+        tr: TraceReport
+        tr = Env.get_context()[EnvBuilder.TraceReport]
+
+        try:
+            _num_to_create = 100
+            session_uuid = UniqueRef().ref  # session uuid remains fixed.
+            for i in range(_num_to_create):
+                tr.log_notification(notification_type_uuid=UniqueRef().ref,
+                                    work_ref_uuid=UniqueRef().ref,
+                                    session_uuid=session_uuid,
+                                    sink_uuid=UniqueRef().ref,
+                                    src_uuid=UniqueRef().ref)
+                self._trace.log().debug(
+                    "Written random notification log number {} for session {}".format(i, session_uuid))
+            time.sleep(1)
+            self.assertEqual(_num_to_create, self._num_docs_in_notification_log_session(session_uuid=session_uuid))
+        except Exception as e:
+            self.assertFalse("Unexpected Exception while testing notification logging")
+        return
+
+    def test_trace_log_write_to_elastic(self):
         """
         Write 100 records to Trace, which is elastic enabled and check that 100 matching records appear in
         the appropriate index.
         """
         _num_to_create = 100
         try:
-            correlation_ref = UniqueRef().ref
+            session_uuid = UniqueRef().ref
             for i in range(_num_to_create):
-                Trace.log().debug("{}-{}".format(correlation_ref, i))
+                self._trace.log().debug("{}-{}".format(session_uuid, i))
             time.sleep(1)
-            res = self._test_search(correlation_ref=correlation_ref)
-            self.assertEqual(_num_to_create, len(res))
+            self.assertEqual(_num_to_create, self._num_docs_in_trace_log_session(message_uuid=session_uuid))
         except Exception as e:
             self.assertFalse("Unexpected Exception while testing Trace logging")
         return
 
-    def _test_search(self,
-                     correlation_ref: str) -> List[Dict]:
+    def _num_docs_in_trace_log_session(self,
+                                       message_uuid: str) -> int:
         """
-        Look for the records inserted with message containing the given correlation ref.
-        :param correlation_ref: The correlation refernce to search for
+        How many trace_log entries are there that match the given session_uuid
+        :param message_uuid: The message uuid to count documents for
         """
-        json_query = """{
-            "query": {
-                "wildcard": {
-                    "message": "*<arg0>*"
-                }
-            }
-        }"""
+        tr: TraceReport
+        tr = Env.get_context()[EnvBuilder.TraceReport]
+        return tr.trace_log_count(field_name="message",
+                                  session_uuid_pattern="{}*".format(message_uuid))
 
-        settings = Settings(settings_yaml_stream=WebStream(RunSpec.trace_settings_yaml()),
-                            bespoke_transforms=RunSpec.setting_transformers())
-        elastic_index_name, _ = settings.default()
-
-        es = EnvBootstrap.get_context()[EnvBuilder.ElasticDbConnectionContext]
-        res = ESUtil.run_search(es=es,
-                                idx_name=elastic_index_name,
-                                json_query=json_query,
-                                arg0=correlation_ref)
-        return res
+    def _num_docs_in_notification_log_session(self,
+                                              session_uuid: str) -> int:
+        """
+        How many notification_log entries are there that match the given session_uuid
+        :param session_uuid: The session uuid to count documents for
+        """
+        tr: TraceReport
+        tr = Env.get_context()[EnvBuilder.TraceReport]
+        return tr.notification_log_count(field_name="session_uuid",
+                                         session_uuid_pattern="{}*".format(session_uuid))
 
 
 if __name__ == "__main__":

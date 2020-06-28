@@ -1,7 +1,7 @@
 from journey11.src.lib.kpubsub.kpubsub import KPubSub
 from journey11.src.lib.webstream import WebStream
 from journey11.src.lib.settings import Settings
-from journey11.src.test.run_spec.runspec import RunSpec
+from src.lib.envboot.runspec import RunSpec
 
 
 class SimpleKps:
@@ -24,6 +24,6 @@ class SimpleKps:
     def connection(self) -> KPubSub:
         """
         The Kafka Pub Sub connection established during class __init__
-        :return: Kakfa Pub Sub (KPubSub) connection
+        :return: Kafka Pub Sub (KPubSub) connection
         """
         return self._kps

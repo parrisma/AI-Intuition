@@ -23,7 +23,7 @@ from journey11.src.lib.uniqueworkref import UniqueWorkRef
 from journey11.src.lib.capabilityregister import CapabilityRegister
 from journey11.src.lib.notificationhandler import NotificationHandler
 from journey11.src.lib.countdownbarrier import CountDownBarrier
-from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkNotification
+from journey11.src.main.simple.simplesrcsinkpingnotification import SimpleSrcSinkPingNotification
 from journey11.src.main.simple.simpleworkrequest import SimpleWorkRequest
 from journey11.src.main.simple.simpleworknotificationfinalise import SimpleWorkNotificationFinalise
 from journey11.src.main.simple.simpleworknotificationinitiate import SimpleWorkNotificationInitiate
